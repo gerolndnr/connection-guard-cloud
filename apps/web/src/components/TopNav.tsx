@@ -1,9 +1,11 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronsUpDown, LogOut } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { api, type Me } from "../api.ts";
 import { serverName } from "../format.ts";
 import { ThemeToggle } from "./ThemeToggle.tsx";
+import { AccountMenu } from "./AccountMenu.tsx";
+import { resetAnalytics } from "../analytics.ts";
 
 function Slash() {
   return <svg aria-hidden viewBox="0 0 24 24" className="size-5 shrink-0 text-line-strong"><path d="M16.88 3.549L7.12 20.451" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>;
@@ -30,7 +32,7 @@ export function TopNav({ me, networkId }: { me?: Me | undefined; networkId?: str
         {network && (
           <>
             <span className="hidden items-center sm:flex"><Slash /></span>
-            <span className="hidden max-w-48 truncate text-sm font-medium sm:inline">{network.name}</span>
+            <span className="ph-no-capture hidden max-w-48 truncate text-sm font-medium sm:inline">{network.name}</span>
             {installs.length > 1 && (
               <>
                 <Slash />
@@ -53,22 +55,15 @@ export function TopNav({ me, networkId }: { me?: Me | undefined; networkId?: str
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-3">
           <ThemeToggle />
           {me && (
-            <>
-              {me.user.avatar
-                ? <img src={me.user.avatar} alt={me.user.name} title={me.user.name} className="size-7 rounded-full" />
-                : <span title={me.user.name} className="grid size-7 place-items-center rounded-full bg-fg text-xs font-semibold text-surface">{me.user.name.slice(0, 1)}</span>}
-              <button type="button" className="btn btn-ghost size-8 p-0" aria-label="Sign out" title="Sign out"
-                onClick={async () => {
-                  await api.logout().catch(() => {});
-                  // setQueryData notifies mounted components (clear() alone does not), so the UI signs out
-                  // immediately even when we are already on "/" and no route remount happens.
-                  qc.setQueryData(["me"], null);
-                  qc.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" && q.queryKey[0] !== "config" });
-                  navigate({ to: "/" });
-                }}>
-                <LogOut className="size-4" />
-              </button>
-            </>
+            <AccountMenu me={me} onSignOut={async () => {
+              await api.logout().catch(() => {});
+              resetAnalytics();
+              // setQueryData notifies mounted components (clear() alone does not), so the UI signs out
+              // immediately even when we are already on "/" and no route remount happens.
+              qc.setQueryData(["me"], null);
+              qc.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" && q.queryKey[0] !== "config" });
+              navigate({ to: "/" });
+            }} />
           )}
         </div>
       </div>

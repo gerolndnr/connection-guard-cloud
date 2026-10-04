@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useConfig } from "./Shell.tsx";
 import { api } from "../api.ts";
+import { track } from "../analytics.ts";
 
 function DiscordMark() {
   return (
@@ -19,7 +20,7 @@ export function SignIn({ next }: { next: string }) {
   const href = `/api/auth/discord/start?next=${encodeURIComponent(next)}`;
   return (
     <div className="space-y-4">
-      <a href={config.data?.discord_enabled === false ? undefined : href} aria-disabled={config.data?.discord_enabled === false}
+      <a href={config.data?.discord_enabled === false ? undefined : href} onClick={() => track("sign_in_clicked", { method: "discord" })} aria-disabled={config.data?.discord_enabled === false}
         className={`btn btn-discord h-10 w-full no-underline ${config.data?.discord_enabled === false ? "pointer-events-none opacity-50" : ""}`}>
         <DiscordMark /> Sign in with Discord
       </a>

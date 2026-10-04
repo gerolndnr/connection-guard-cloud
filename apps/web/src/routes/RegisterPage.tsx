@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { api, type RegisterEvent } from "../api.ts";
 import { Shell } from "../components/Shell.tsx";
 import { DecisionTable, WhySheet } from "../components/Register.tsx";
+import { track } from "../analytics.ts";
 
 type Filter = "all" | "refused" | "would" | "errors";
 const FILTERS: { id: Filter; label: string }[] = [
@@ -20,6 +21,8 @@ export function RegisterPage() {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<RegisterEvent | null>(null);
   useEffect(() => { const t = window.setTimeout(() => setQ(input.trim()), 250); return () => window.clearTimeout(t); }, [input]);
+  // Only that a search happened; the search text may be an IP address.
+  useEffect(() => { if (q) track("decisions_searched", { filter }); }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const net = useQuery({ queryKey: ["network", networkId], queryFn: () => api.network(networkId) });
   const events = useInfiniteQuery({
@@ -53,7 +56,7 @@ export function RegisterPage() {
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <div role="group" aria-label="Filter" className="segmented">
-            {FILTERS.map((f) => <button key={f.id} type="button" aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</button>)}
+            {FILTERS.map((f) => <button key={f.id} type="button" aria-pressed={filter === f.id} onClick={() => { setFilter(f.id); track("decisions_filtered", { filter: f.id }); }}>{f.label}</button>)}
           </div>
           <label className="relative w-full sm:w-80">
             <span className="sr-only">Search by IP, UUID, country code or ISP</span>
@@ -77,7 +80,7 @@ export function RegisterPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <DecisionTable events={rows} narrow={selected !== null} fresh={fresh} installs={installs} selected={selected?.id ?? null} onSelect={setSelected} />
+              <DecisionTable events={rows} narrow={selected !== null} fresh={fresh} installs={installs} selected={selected?.id ?? null} onSelect={(e) => { setSelected(e); if (e) track("decision_opened", { outcome: e.outcome, reason: e.reason, mode: e.mode }); }} />
             </div>
           )}
         </div>

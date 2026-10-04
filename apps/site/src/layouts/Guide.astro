@@ -22,7 +22,7 @@ const fmt = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "numer
 const crumbs: [string, string][] = [["Guides", "/guides"], [p.h1, p.path]];
 const schema = [article({ title: p.h1, description: p.description, path: p.path, published: p.published, modified: p.modified, image: p.og }), breadcrumbs(crumbs), ...(p.faq ? [faqSchema(p.faq)] : [])];
 ---
-<Base title={p.title} description={p.description} path={p.path} og={p.og} type="article" schema={schema}>
+<Base title={p.title} description={p.description} path={p.path} og={p.og} type="article" schema={schema} view={{ event: "guide_opened", guide: p.path.split("/").pop()! }}>
   <header class="border-b border-line">
     <div class="container-site py-12 sm:py-16">
       <Breadcrumbs items={crumbs} />
@@ -49,7 +49,7 @@ const schema = [article({ title: p.h1, description: p.description, path: p.path,
           <p class="text-lg font-semibold tracking-[-0.02em]">Try it on your server</p>
           <p class="mt-1 text-sm text-fg-2">Connection Guard is free and open source. One JAR for Paper, Spigot, BungeeCord and Velocity.</p>
         </div>
-        <a href="/download" class="btn btn-primary btn-lg shrink-0 no-underline">Download free</a>
+        <a href="/download" class="btn btn-primary btn-lg shrink-0 no-underline" data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location="guide_end">Download free</a>
       </aside>
       {p.faq && <div class="mt-16"><Faq items={p.faq} title="Frequently asked questions" /></div>}
       <slot name="after" />

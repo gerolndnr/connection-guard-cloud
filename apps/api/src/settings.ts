@@ -1,5 +1,6 @@
 // Dashboard-managed plugin settings: read effective values, save a new desired version, reset to config.yml.
 import type { Hono } from "hono";
+import { capture } from "./analytics.ts";
 import { z } from "zod";
 import { CONFIG_FIELDS, ConfigValues, SECRET_PATHS, fieldSchema, isConfigPath, type ConfigPath, type Status } from "@cg/protocol";
 import type { AppEnv, Env } from "./env.ts";
@@ -113,6 +114,12 @@ export function registerSettings(app: Hono<AppEnv>) {
         // Only which settings changed are logged, never their secret values.
         .bind(access.network_id, user.id, JSON.stringify({ installs: targets, paths: [...Object.keys(values), ...Object.keys(secrets)] }), now),
     ]);
+    // Which settings changed, never their values.
+    capture(c, {
+      event: "settings_saved", distinct_id: user.id, groups: { network: access.network_id },
+      properties: { fields: Object.keys(values), field_count: Object.keys(values).length, secret_fields: Object.keys(secrets).length,
+        apply_to, servers: targets.length, mode: typeof values["operation.mode"] === "string" ? values["operation.mode"] : undefined },
+    });
     return c.json({ versions });
   });
 
@@ -138,6 +145,7 @@ export function registerSettings(app: Hono<AppEnv>) {
       env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, 'config.reset', ?, ?)")
         .bind(access.network_id, user.id, JSON.stringify({ install_id: access.id }), now),
     ]);
+    capture(c, { event: "settings_reset", distinct_id: user.id, groups: { network: access.network_id } });
     return c.json({ version });
   });
 }

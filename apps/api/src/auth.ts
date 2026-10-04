@@ -1,5 +1,6 @@
 // Discord OAuth login and cookie sessions for the dashboard.
 import { Hono, type MiddlewareHandler } from "hono";
+import { capture } from "./analytics.ts";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { AppEnv, Env, SessionUser } from "./env.ts";
 import { DAY, newId, sha256Hex } from "./util.ts";
@@ -30,16 +31,16 @@ export async function sessionUser(env: Env, token: string | undefined): Promise<
   ).bind(await sha256Hex(token), Date.now()).first<SessionUser>();
 }
 
-export async function upsertUser(env: Env, discordId: string, name: string, avatar: string | null): Promise<string> {
+export async function upsertUser(env: Env, discordId: string, name: string, avatar: string | null): Promise<{ id: string; created: boolean }> {
   const existing = await env.DB.prepare("SELECT id FROM users WHERE discord_id = ?").bind(discordId).first<{ id: string }>();
   if (existing) {
     await env.DB.prepare("UPDATE users SET name = ?, avatar = ? WHERE id = ?").bind(name, avatar, existing.id).run();
-    return existing.id;
+    return { id: existing.id, created: false };
   }
   const id = newId("usr");
   await env.DB.prepare("INSERT INTO users (id, discord_id, name, avatar, created_at) VALUES (?, ?, ?, ?, ?)")
     .bind(id, discordId, name, avatar, Date.now()).run();
-  return id;
+  return { id, created: true };
 }
 
 function startSession(c: Parameters<MiddlewareHandler<AppEnv>>[0], token: string) {
@@ -108,8 +109,10 @@ auth.get("/discord/callback", async (c) => {
   const me = await meRes.json<{ id: string; username: string; global_name?: string | null; avatar?: string | null }>();
   // We keep only what the dashboard shows. The Discord access token is discarded.
   const avatar = me.avatar ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64` : null;
-  const userId = await upsertUser(env, me.id, (me.global_name || me.username).slice(0, 64), avatar);
-  startSession(c, await createSession(env, userId));
+  const user = await upsertUser(env, me.id, (me.global_name || me.username).slice(0, 64), avatar);
+  startSession(c, await createSession(env, user.id));
+  // Identified by the random dashboard user ID only; the Discord name and ID stay out of analytics.
+  capture(c, { event: user.created ? "user_signed_up" : "user_signed_in", distinct_id: user.id, properties: { method: "discord" } });
   return c.redirect(safeNext(next), 302);
 });
 
@@ -120,8 +123,8 @@ auth.post("/dev-login", async (c) => {
   }
   const body = await c.req.json<{ name?: string }>().catch(() => ({} as { name?: string }));
   const name = (body.name ?? "Dev Operator").slice(0, 64);
-  const userId = await upsertUser(c.env, `dev-${name}`, name, null);
-  startSession(c, await createSession(c.env, userId));
+  const user = await upsertUser(c.env, `dev-${name}`, name, null);
+  startSession(c, await createSession(c.env, user.id));
   return c.json({ ok: true });
 });
 

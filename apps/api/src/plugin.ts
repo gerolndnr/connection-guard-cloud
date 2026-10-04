@@ -2,6 +2,7 @@
 // Nothing here is on a Minecraft login path: the plugin calls these from a
 // background thread and treats every failure as "try again later".
 import { Hono, type Context } from "hono";
+import { capture } from "./analytics.ts";
 import {
   Command, InstallRequest, MAX_BODY_BYTES, SyncRequest,
   type Counters, type DesiredConfig, type ErrorResponse, type InstallResponse, type SyncResponse,
@@ -56,11 +57,11 @@ async function authenticate(env: Env, header: string | undefined) {
   if (!match) return null;
   const [, installId, secret] = match;
   const row = await env.DB.prepare(
-    "SELECT i.id, i.secret_hash, i.network_id, i.last_seq, i.last_seen_at, i.created_at, i.status_json, i.plugin_version, " +
+    "SELECT i.id, i.secret_hash, i.network_id, i.last_seq, i.last_seen_at, i.created_at, i.status_json, i.plugin_version, i.platform, " +
     "i.platform_version, n.name AS network_name, COALESCE(n.watched_until, 0) AS watched_until FROM installs i LEFT JOIN networks n ON n.id = i.network_id WHERE i.id = ?",
   ).bind(installId).first<{
     id: string; secret_hash: string; network_id: string | null; last_seq: number; last_seen_at: number; created_at: number;
-    status_json: string | null; plugin_version: string; platform_version: string; network_name: string | null; watched_until: number;
+    status_json: string | null; plugin_version: string; platform: string; platform_version: string; network_name: string | null; watched_until: number;
   }>();
   if (!row) return null;
   if (!timingSafeEqualHex(row.secret_hash, await sha256Hex(secret!))) return null;
@@ -101,6 +102,12 @@ function writeMetrics(env: Env, installId: string, platform: string, pluginVersi
         counters.geo_flagged, counters.cache_hits, counters.lookups, counters.latency_ms_p95 ?? 0],
     });
   } catch { /* metrics are best effort */ }
+}
+
+/** "21.0.4" → 21, "1.8.0_402" → 8. */
+function javaMajor(v: string): number | null {
+  const m = /^(?:1\.)?(\d+)/.exec(v);
+  return m ? Number(m[1]) : null;
 }
 
 export const plugin = new Hono<AppEnv>();
@@ -150,6 +157,11 @@ plugin.post("/v1/installs", async (c) => {
     // Onboarding pace from the very first sync (see ONBOARDING_WINDOW).
     next_sync_in: nextSyncIn(gov, { busy: true, live: false, fast: true }),
   };
+  capture(c, {
+    event: "plugin_installed", distinct_id: installId, person: false, groups: { network: networkId },
+    properties: { platform: req.platform, platform_version: req.platform_version, plugin_version: req.plugin_version,
+      java_major: javaMajor(req.java_version), via_network_token: networkId !== null },
+  });
   return c.json(body, 201);
 });
 
@@ -180,6 +192,15 @@ plugin.post("/v1/sync", async (c) => {
     writeMetrics(env, install.id, req.status.mode, req.plugin_version, req.counters, claimed);
 
     if (claimed && req.events.length > 0) {
+      // Activation: the first decisions this server ever sent to the dashboard.
+      const first = !(await env.DB.prepare("SELECT 1 FROM event_batches WHERE install_id = ? LIMIT 1").bind(install.id).first());
+      if (first) {
+        capture(c, {
+          event: "first_decisions_received", distinct_id: install.id, person: false, groups: { network: install.network_id },
+          properties: { platform: install.platform, plugin_version: req.plugin_version, mode: req.status.mode,
+            minutes_since_install: Math.round((now - install.created_at) / 60_000), decisions: req.events.length },
+        });
+      }
       const ats = req.events.map((e) => e.at);
       await env.DB.prepare(
         `INSERT INTO event_batches (network_id, install_id, received_at, first_at, last_at, event_count, denied_count, payload)
@@ -243,9 +264,13 @@ plugin.post("/v1/sync", async (c) => {
         // Applied: the plugin keeps its own copy of the secrets, so ours are deleted now.
         await env.DB.prepare("UPDATE install_configs SET applied_version = ?, applied_at = ?, secrets_enc = NULL, error_version = NULL, error_message = NULL WHERE install_id = ?")
           .bind(cfg.version, now, install.id).run();
+        capture(c, { event: "settings_applied", distinct_id: install.id, person: false, groups: { network: install.network_id },
+          properties: { version: cfg.version, reset: cfg.reset === 1, platform: install.platform, plugin_version: req.plugin_version } });
       } else if (fresh && reported && !reported.ok && reported.version === cfg.version && cfg.error_version !== cfg.version) {
         await env.DB.prepare("UPDATE install_configs SET error_version = ?, error_message = ? WHERE install_id = ?")
           .bind(cfg.version, reported.message ?? "The server rejected these settings.", install.id).run();
+        capture(c, { event: "settings_rejected", distinct_id: install.id, person: false, groups: { network: install.network_id },
+          properties: { version: cfg.version, message: (reported.message ?? "").slice(0, 160), platform: install.platform, plugin_version: req.plugin_version } });
       } else if (!appliedNow && cfg.error_version !== cfg.version && !(reported && !reported.ok && reported.version === cfg.version)) {
         configPending = true;
         const values: Record<string, unknown> = JSON.parse(cfg.values_json);

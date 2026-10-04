@@ -6,6 +6,7 @@ These are not written here on purpose. They need review by someone qualified (EU
    - the data in the table in the plugin's `docs/CLOUD.md`
    - Discord login data (ID, name, avatar)
    - Cloudflare as sub-processor (EU jurisdiction for D1; Analytics Engine without personal data)
+   - PostHog (EU cloud) as sub-processor for product analytics: website cookieless (daily hash, no profile), dashboard usage linked to the random account ID with masked session replay and opt-out, server lifecycle events without player data; legal basis to be reviewed (legitimate interest), DPA with PostHog to be signed; see `docs/ANALYTICS.md`
    - retention (30 days, 13 months, 30 days for unlinked installs)
    - data subject rights and contact (`privacy@connectionguard.net`)
 2. **Data processing agreement (DPA / AVV)** accepted when linking. Its version string is `DPA_VERSION` in `apps/api/wrangler.jsonc`. Changing it asks the next linker to accept again.

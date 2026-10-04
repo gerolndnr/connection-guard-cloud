@@ -12,6 +12,7 @@ import { StatusDot } from "../components/Badge.tsx";
 import { SetupChecklist } from "../components/SetupChecklist.tsx";
 import { notes, providers, type ProviderRow } from "../health.ts";
 import { ago, countryName, ms, num, pct, platformName, reasonText, serverName } from "../format.ts";
+import { track } from "../analytics.ts";
 
 const RANGES: { id: Range; label: string; long: string }[] = [
   { id: "24h", label: "24h", long: "24 hours" }, { id: "7d", label: "7d", long: "7 days" },
@@ -142,6 +143,7 @@ export function Overview() {
   const allNotes = notes(installs);
   const attention = allNotes.filter((n) => !isDismissed(n));
   const dismissedCount = allNotes.length - attention.length;
+  const dismissTracked: typeof dismiss = (n) => { track("issue_dismissed", { kind: n.id.split(":")[0], tone: n.tone }); dismiss(n); };
   const canManage = net.data?.role !== "viewer";
   const removeServer = canManage ? async (installId: string) => { await api.unlink(installId); await qc.invalidateQueries(); } : undefined;
   const settingsLink = (label: string) => (
@@ -180,7 +182,7 @@ export function Overview() {
           <p className="mt-1 text-fg-2">{net.data ? `${net.data.network.name}${server && installs[0] ? ` · ${serverName(installs[0])}` : ""}` : " "}</p>
         </div>
         <div role="group" aria-label="Period" className="segmented">
-          {RANGES.map((r) => <button key={r.id} type="button" aria-pressed={range === r.id} aria-label={r.long} onClick={() => setRange(r.id)}>{r.label}</button>)}
+          {RANGES.map((r) => <button key={r.id} type="button" aria-pressed={range === r.id} aria-label={r.long} onClick={() => { setRange(r.id); track("range_changed", { range: r.id }); }}>{r.label}</button>)}
         </div>
       </div>
 
@@ -229,7 +231,7 @@ export function Overview() {
       {attention.length > 0 && (
         <section id="attention" aria-labelledby="att-m" className="card mt-4 scroll-mt-28 overflow-hidden lg:hidden">
           <CardHeader id="att-m" title="Needs attention"><span className="num text-[0.8125rem] text-fg-3">{countText}</span></CardHeader>
-          <Attention notes={attention} onDismiss={dismiss} onRemoveServer={removeServer} settingsLink={settingsLink} />
+          <Attention notes={attention} onDismiss={dismissTracked} onRemoveServer={removeServer} settingsLink={settingsLink} />
           {showDismissed && <div className="border-t border-line px-4 py-2.5">{showDismissed}</div>}
         </section>
       )}
@@ -276,7 +278,7 @@ export function Overview() {
             <CardHeader id="att-h" title="Needs attention">{attention.length > 0 && <span className="num text-[0.8125rem] text-fg-3">{countText}</span>}</CardHeader>
             {net.data && attention.length === 0
               ? <p className="flex items-center gap-2.5 px-4 py-4 text-fg-2"><CircleCheck aria-hidden className="size-4 text-accent" /> {dismissedCount ? "Nothing new." : "Nothing right now. Providers answer and quotas are fine."}</p>
-              : <Attention notes={attention} onDismiss={dismiss} onRemoveServer={removeServer} settingsLink={settingsLink} />}
+              : <Attention notes={attention} onDismiss={dismissTracked} onRemoveServer={removeServer} settingsLink={settingsLink} />}
             {showDismissed && <div className="border-t border-line px-4 py-2.5">{showDismissed}</div>}
           </section>
           <section className="card overflow-hidden" aria-labelledby="prov-h">

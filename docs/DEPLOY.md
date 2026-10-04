@@ -12,6 +12,7 @@ Everything stays on the Cloudflare **Workers Free** plan. Never enable Workers P
 | KV | `connection-guard-cloud-public` (`c601f9f0de2649419283c89e0be54ec3`) |
 | Secrets | `CONFIG_SECRET_KEY` (set). Still needed: `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` |
 | Website | `connection-guard-site` (static assets, `connectionguard.net`) and `connection-guard-www` (301 from `www.` to the apex) |
+| Analytics | PostHog EU, off until `POSTHOG_KEY` (API) and `PUBLIC_POSTHOG_KEY` (site) are set; see `docs/ANALYTICS.md` |
 | Optional | Turnstile (`TURNSTILE_SITE_KEY` var plus `TURNSTILE_SECRET` secret), Analytics Engine (`METRICS` binding) |
 
 ## Discord login (required before anyone can sign in)

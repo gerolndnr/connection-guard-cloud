@@ -9,10 +9,10 @@ const published = stats.latest?.published
   ? new Date(stats.latest.published).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
   : null;
 const sources = [
-  { ...s.modrinth, note: "Recommended. Shows every version and its changelog.", primary: true },
-  { ...s.hangar, note: "PaperMC's plugin directory.", primary: false },
-  { ...s.spigot, note: "The classic resource page.", primary: false },
-  { ...s.github, note: "Release files built by CI, with checksums.", primary: false },
+  { ...s.modrinth, key: "modrinth", note: "Recommended. Shows every version and its changelog.", primary: true },
+  { ...s.hangar, key: "hangar", note: "PaperMC's plugin directory.", primary: false },
+  { ...s.spigot, key: "spigotmc", note: "The classic resource page.", primary: false },
+  { ...s.github, key: "github", note: "Release files built by CI, with checksums.", primary: false },
 ];
 const platforms = [
   { name: "Paper / Spigot", folder: "plugins/", java: "Java 8 or newer", note: "Built against the 1.8.8 API. Use the Java version your server software needs." },
@@ -44,7 +44,7 @@ const fmt = new Intl.NumberFormat("en-US");
       <ul class="grid gap-3 sm:grid-cols-2">
         {sources.map((x) => (
           <li>
-            <a href={x.url} class={`card group flex h-full items-center justify-between gap-6 p-5 no-underline transition-colors hover:border-line-strong ${x.primary ? "border-[color-mix(in_srgb,var(--accent)_45%,transparent)]" : ""}`}>
+            <a href={x.url} data-ph-event="download_clicked" data-ph-destination={x.key} data-ph-location="download_page" class={`card group flex h-full items-center justify-between gap-6 p-5 no-underline transition-colors hover:border-line-strong ${x.primary ? "border-[color-mix(in_srgb,var(--accent)_45%,transparent)]" : ""}`}>
               <span>
                 <span class="flex items-center gap-2 text-base font-semibold tracking-[-0.015em]">
                   {x.name}
@@ -102,8 +102,8 @@ const fmt = new Intl.NumberFormat("en-US");
         <h3 class="text-base font-semibold tracking-[-0.015em]">Need help?</h3>
         <p class="mt-2 text-sm leading-relaxed text-fg-2">Share your plugin, platform and Java versions and what you expected. Remove API keys, webhook URLs and player IPs before posting.</p>
         <div class="mt-5 flex flex-wrap gap-2">
-          <a href="https://discord.gg/GekQVPqsfS" class="btn btn-secondary no-underline">Discord</a>
-          <a href="https://github.com/gerolndnr/connection-guard/issues" class="btn btn-secondary no-underline">Open an issue</a>
+          <a href="https://discord.gg/GekQVPqsfS" class="btn btn-secondary no-underline" data-ph-event="support_clicked" data-ph-channel="discord" data-ph-location="download_page">Discord</a>
+          <a href="https://github.com/gerolndnr/connection-guard/issues" class="btn btn-secondary no-underline" data-ph-event="support_clicked" data-ph-channel="github" data-ph-location="download_page">Open an issue</a>
           <a href="https://github.com/gerolndnr/connection-guard#readme" class="btn btn-ghost no-underline">Read the docs</a>
         </div>
       </div>

@@ -41,11 +41,11 @@ const steps = [
         <h1 class="display text-[clamp(2.5rem,5.2vw,3.75rem)]">Keep VPN alts off your Minecraft server.</h1>
         <p class="lede mt-6 max-w-xl">Connection Guard is a free, open-source anti-VPN plugin with country rules for Paper, Spigot, BungeeCord and Velocity. You choose the detection services and how strict to be.</p>
         <div class="mt-9 flex flex-wrap gap-3">
-          <a href="/download" class="btn btn-primary btn-lg no-underline">
+          <a href="/download" class="btn btn-primary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location="hero">
             Download free
             <svg viewBox="0 0 24 24" aria-hidden="true" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0 5-5m-5 5-5-5M5 20h14"/></svg>
           </a>
-          <a href="#compare" class="btn btn-secondary btn-lg no-underline">How it compares</a>
+          <a href="#compare" class="btn btn-secondary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="compare" data-ph-location="hero">How it compares</a>
         </div>
         <ul class="mt-9 flex flex-wrap gap-x-6 gap-y-2 text-[0.8125rem] text-fg-2">
           {["MIT licensed", "No account needed", "Paper, Spigot, BungeeCord, Velocity"].map((t) => (
@@ -177,8 +177,8 @@ const steps = [
         <p class="lede mt-2">Free forever. Questions? The community is on Discord.</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <a href="/download" class="btn btn-primary btn-lg no-underline">Download free</a>
-        <a href="https://discord.gg/GekQVPqsfS" class="btn btn-secondary btn-lg no-underline">Join the Discord</a>
+        <a href="/download" class="btn btn-primary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location="closing">Download free</a>
+        <a href="https://discord.gg/GekQVPqsfS" class="btn btn-secondary btn-lg no-underline" data-ph-event="support_clicked" data-ph-channel="discord" data-ph-location="closing">Join the Discord</a>
       </div>
     </div>
   </section>

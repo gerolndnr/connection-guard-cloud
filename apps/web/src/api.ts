@@ -22,7 +22,11 @@ async function request<T>(path: string, init: RequestInit & { json?: unknown } =
 }
 
 export type Role = "owner" | "admin" | "viewer";
-export interface AppConfig { environment: string; discord_enabled: boolean; dev_login: boolean; turnstile_site_key: string; dpa_version: string }
+export interface AppConfig {
+  environment: string; discord_enabled: boolean; dev_login: boolean; turnstile_site_key: string; dpa_version: string;
+  /** Empty when product analytics is off. */
+  posthog_key: string; posthog_host: string;
+}
 export interface Me { user: { id: string; name: string; avatar: string | null }; networks: { id: string; name: string; role: Role; servers: number }[] }
 export interface Install {
   id: string; name: string | null; platform: "BUKKIT" | "BUNGEE" | "VELOCITY"; platform_version: string; plugin_version: string;

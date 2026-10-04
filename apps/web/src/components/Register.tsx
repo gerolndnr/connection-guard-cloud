@@ -24,7 +24,7 @@ export function DecisionTable({ events, installs, selected, onSelect, compact = 
   const multi = installs.length > 1;
   const wide = !compact && !narrow;
   return (
-    <table className="table">
+    <table className="table ph-no-capture">
       <thead>
         <tr>
           <th scope="col">Connection</th>
@@ -108,7 +108,7 @@ export function WhySheet({ event, installs, onClose }: { event: RegisterEvent; i
   const tone = v === "refused" ? "border-danger/30 bg-danger-soft" : v === "would-refuse" ? "border-warn/30 bg-warn-soft" : "border-line bg-subtle";
   return (
     <aside key={event.id} aria-label="Decision details" role={modal ? "dialog" : undefined} aria-modal={modal || undefined}
-      className="sheet-in fixed inset-0 z-30 overflow-y-auto bg-surface lg:inset-y-3 lg:left-auto lg:right-3 lg:w-[28rem] lg:rounded-xl lg:border lg:border-line lg:shadow-[var(--shadow-pop)]">
+      className="ph-no-capture sheet-in fixed inset-0 z-30 overflow-y-auto bg-surface lg:inset-y-3 lg:left-auto lg:right-3 lg:w-[28rem] lg:rounded-xl lg:border lg:border-line lg:shadow-[var(--shadow-pop)]">
       <div className="sticky top-0 flex items-center justify-between border-b border-line bg-surface/90 px-5 py-3 backdrop-blur">
         <h2 className="text-sm font-medium">Decision</h2>
         <button ref={closeRef} type="button" onClick={onClose} className="btn btn-ghost size-8 p-0" aria-label="Close"><X className="size-4" /></button>

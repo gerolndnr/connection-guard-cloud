@@ -14,8 +14,11 @@ interface Props {
   /** Extra schema.org nodes for this page. */
   schema?: object[];
   noindex?: boolean;
+  /** Page-level analytics event, e.g. { event: "install_guide_opened", platform: "velocity" }. */
+  view?: { event: string; [prop: string]: string };
 }
-const { title, description, path, og = "/og/home.png", type = "website", schema = [], noindex = false } = Astro.props;
+const { title, description, path, og = "/og/home.png", type = "website", schema = [], noindex = false, view } = Astro.props;
+const viewAttrs = view ? Object.fromEntries(Object.entries(view).map(([k, v]) => [k === "event" ? "data-ph-view" : `data-ph-${k}`, v])) : {};
 const canonical = new URL(path, SITE).toString();
 const image = new URL(og, SITE).toString();
 ---
@@ -63,7 +66,11 @@ const image = new URL(og, SITE).toString();
   <body class="bg-page text-fg">
     <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-3 focus:py-2">Skip to content</a>
     <Nav path={path} />
-    <main id="main"><slot /></main>
+    <main id="main" {...viewAttrs}><slot /></main>
     <Footer />
+    <script>
+      import { startSiteAnalytics } from "../lib/analytics";
+      startSiteAnalytics();
+    </script>
   </body>
 </html>

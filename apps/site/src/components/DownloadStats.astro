@@ -15,7 +15,7 @@ const date = new Date(stats.fetchedAt).toLocaleDateString("en-GB", { day: "numer
   <ul class="mt-6 space-y-3.5">
     {sources.map((s) => (
       <li>
-        <a href={s.url} class="group block no-underline">
+        <a href={s.url} class="group block no-underline" data-ph-event="download_clicked" data-ph-destination={s.name.toLowerCase()} data-ph-location="hero_stats">
           <span class="flex items-baseline justify-between text-sm">
             <span class="text-fg group-hover:underline">{s.name}</span>
             <span class="num text-fg-2">{fmt.format(s.downloads)}{s.stale && <span class="text-fg-3"> (last known)</span>}</span>

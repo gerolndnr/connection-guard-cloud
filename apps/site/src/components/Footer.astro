@@ -18,14 +18,15 @@ const groups = [
       <nav aria-label={g.title}>
         <p class="text-[0.8125rem] font-medium">{g.title}</p>
         <ul class="mt-3 space-y-2">
-          {g.links.map(([label, href]) => <li><a href={href} class="text-[0.8125rem] text-fg-2 no-underline hover:text-fg">{label}</a></li>)}
+          {g.links.map(([label, href]) => <li><a href={href} class="text-[0.8125rem] text-fg-2 no-underline hover:text-fg" {...(g.title === "Get it on" ? { "data-ph-event": "download_clicked", "data-ph-destination": label.split(" ")[0]!.toLowerCase(), "data-ph-location": "footer" }
+            : g.title === "Help" ? { "data-ph-event": "support_clicked", "data-ph-channel": href.includes("discord") ? "discord" : "github", "data-ph-location": "footer" } : {})}>{label}</a></li>)}
         </ul>
       </nav>
     ))}
   </div>
   <div class="border-t border-line">
     <p class="container-site py-5 text-[0.75rem] leading-relaxed text-fg-3">
-      Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft. This website sets no cookies and loads no trackers.
+      Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft. This website sets no cookies. Visits are counted anonymously and cookieless with PostHog (EU); <a href="/privacy" class="underline">details</a>.
     </p>
   </div>
 </footer>

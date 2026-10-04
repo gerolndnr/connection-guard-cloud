@@ -13,6 +13,10 @@ export interface Env {
   TURNSTILE_SECRET?: string;
   DPA_VERSION: string;
   CONFIG_SECRET_KEY?: string;
+  /** PostHog project token (public). Empty disables product analytics everywhere. */
+  POSTHOG_KEY?: string;
+  /** PostHog ingestion host, or the managed reverse proxy in front of it. */
+  POSTHOG_HOST?: string;
 }
 
 export interface SessionUser {

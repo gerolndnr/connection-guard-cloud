@@ -91,7 +91,7 @@ export function SecretField({ state, edit, onEdit, placeholder, type = "password
   if (edit.mode === "set") {
     return (
       <div className="flex gap-2">
-        <input id={id} className="input mono" type={type === "url" ? "url" : "password"} autoComplete="off" spellCheck={false} placeholder={placeholder}
+        <input id={id} className="ph-no-capture input mono" type={type === "url" ? "url" : "password"} autoComplete="off" spellCheck={false} placeholder={placeholder}
           value={edit.value} onChange={(e) => onEdit({ mode: "set", value: e.target.value.trim() })} autoFocus />
         <button type="button" className="btn btn-ghost" onClick={() => onEdit({ mode: "keep" })}>Cancel</button>
       </div>
@@ -122,7 +122,7 @@ export function TagInput({ values, onChange, placeholder, max = 200 }: { values:
     setDraft("");
   };
   return (
-    <div className="flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-line-strong bg-surface px-2 py-1.5 focus-within:border-accent focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_22%,transparent)]">
+    <div className="ph-no-capture flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-line-strong bg-surface px-2 py-1.5 focus-within:border-accent focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_22%,transparent)]">
       {values.map((v) => (
         <span key={v} className="mono inline-flex items-center gap-1 rounded bg-subtle px-1.5 py-0.5 text-[0.75rem]">
           {v}

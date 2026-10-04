@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 ---
 <Base title="Privacy: What Connection Guard Sends and Stores" path="/privacy" og="/og/privacy.png"
-  description="What this website, the Connection Guard plugin and its optional dashboard send and store, in plain language. This site sets no cookies and loads no trackers.">
+  description="What this website, the Connection Guard plugin and its optional dashboard send and store, in plain language. This site sets no cookies and counts visits without identifying you.">
   <article class="container-site max-w-3xl py-16 sm:py-20">
     <h1 class="display text-[clamp(2.25rem,5vw,3.25rem)]">Privacy, in plain language</h1>
     <p class="lede mt-5">This page explains what is sent where. The formal privacy policy for the dashboard will be published before the dashboard leaves preview.</p>
@@ -10,7 +10,8 @@ import Base from "../layouts/Base.astro";
     <div class="prose-cg mt-12 space-y-12">
       <section>
         <h2>This website</h2>
-        <p>connectionguard.net sets no cookies, uses no analytics and loads nothing from third parties. Your theme choice (light or dark) is kept in your browser's local storage and never leaves it. Download counts are read from Modrinth, SpigotMC, Hangar and GitHub when the site is built, not from your browser.</p>
+        <p>connectionguard.net sets no cookies and stores nothing in your browser for statistics. Your theme choice (light or dark) is kept in your browser's local storage and never leaves it. Download counts are read from Modrinth, SpigotMC, Hangar and GitHub when the site is built, not from your browser.</p>
+        <p>We count visits with <a href="https://posthog.com">PostHog</a>, hosted in the EU, in its cookieless mode: which pages are viewed, which buttons are clicked (for example which download site you pick), which questions are opened, page speed and script errors. To tell visits apart without storing anything, PostHog combines your IP address and browser version with a random value that changes every day into a one-way hash, and discards the IP address. No profile is created, and the same visitor can't be recognized on another day. If your browser sends Global Privacy Control or Do Not Track, nothing is counted.</p>
       </section>
 
       <section>
@@ -43,6 +44,9 @@ import Base from "../layouts/Base.astro";
           <li>You sign in with Discord. The dashboard reads only your Discord user ID, name and avatar.</li>
           <li>The server operator decides about their players' data. The dashboard processes it only to show it to them.</li>
         </ul>
+        <h3 class="mt-8 text-base font-semibold text-fg">How the dashboard itself is used</h3>
+        <p>To improve the dashboard, it records how it is used with PostHog in the EU: pages viewed, clicks, setup progress, errors, page speed and session recordings. Recordings hide all text and everything you type, so they show the layout and where you clicked, not your players or settings. Tables and panels with player data are excluded from click tracking. Events are linked to your random dashboard account ID, never to your Discord name, and nothing is stored in cookies. The service also records server lifecycle events: a server was installed, linked, unlinked, sent its first checks, or applied or rejected settings, plus a daily count of active servers. These contain platform and version details, never player data, setting values or keys.</p>
+        <p>You can switch this off any time under your avatar, "Share usage data". If your browser sends Global Privacy Control, it is off automatically.</p>
         <p>The exact wire format is public in <a href="https://github.com/gerolndnr/connection-guard-cloud/tree/main/packages/protocol">packages/protocol</a>.</p>
       </section>
 

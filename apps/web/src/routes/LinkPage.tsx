@@ -7,6 +7,7 @@ import { Shell, useConfig, useMe } from "../components/Shell.tsx";
 import { SignIn } from "../components/SignIn.tsx";
 import { Turnstile } from "../components/Turnstile.tsx";
 import { ago, num, platformName } from "../format.ts";
+import { track } from "../analytics.ts";
 
 const errorText: Record<string, string> = {
   unknown_code: "This link is no longer valid. Links last 24 hours and work once. Run /cg cloud link on your server for a fresh one.",
@@ -44,6 +45,9 @@ export function LinkPage() {
   const preview = useQuery({ queryKey: ["link", code], queryFn: () => api.linkPreview(code), enabled: Boolean(me.data), retry: false, refetchInterval: false });
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const previewPlatform = preview.data?.install.platform;
+  useEffect(() => { if (previewPlatform) track("link_page_viewed", { platform: previewPlatform }); }, [previewPlatform]);
+  useEffect(() => { if (preview.isError) track("link_page_invalid"); }, [preview.isError]);
 
   const networks = me.data?.networks.filter((n) => n.role !== "viewer") ?? [];
   const [target, setTarget] = useState<string>("new");
@@ -89,10 +93,12 @@ export function LinkPage() {
         accept_dpa: true, dpa_version: config.data.dpa_version, turnstile_token: token ?? "not-configured",
       });
       setLinked(true);
+      track("link_claimed", { new_network: target === "new", server_named: Boolean(serverName.trim()), platform: preview.data?.install.platform });
       await qc.invalidateQueries({ queryKey: ["me"] });
       // Straight into the setup assistant; it steps aside on its own if the server is already configured.
       window.setTimeout(() => navigate({ to: "/n/$networkId/setup", params: { networkId: res.network_id }, search: { server: res.install_id } }), 900);
     } catch (err) {
+      track("link_claim_failed", { error: err instanceof ApiError ? err.code : "network" });
       setError(err instanceof ApiError ? errorText[err.code] ?? "Linking failed. Try again in a moment." : "Linking failed. Check your connection.");
       setBusy(false);
     }

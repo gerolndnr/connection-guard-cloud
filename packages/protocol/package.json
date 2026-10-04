@@ -6,7 +6,8 @@
   "license": "AGPL-3.0-only",
   "exports": {
     ".": "./src/index.ts",
-    "./examples": "./src/examples.ts"
+    "./examples": "./src/examples.ts",
+    "./scrub": "./src/scrub.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

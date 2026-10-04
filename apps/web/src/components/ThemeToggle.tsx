@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
+import { track } from "../analytics.ts";
 
 type Theme = "system" | "light" | "dark";
 const KEY = "cg-theme";
@@ -34,12 +35,12 @@ export function ThemeToggle() {
     <>
     {/* Phones: one button that cycles system, light, dark. */}
     <button type="button" className="btn btn-ghost size-8 p-0 sm:hidden" aria-label={`${current.label}. Switch to ${next.label.toLowerCase()}`}
-      title={current.label} onClick={() => setTheme(next.id)}>
+      title={current.label} onClick={() => { setTheme(next.id); track("theme_changed", { theme: next.id }); }}>
       <current.Icon className="size-4" />
     </button>
     <div role="group" aria-label="Theme" className="hidden rounded-full border border-line p-0.5 sm:flex">
       {options.map(({ id, label, Icon }) => (
-        <button key={id} type="button" aria-label={label} title={label} aria-pressed={theme === id} onClick={() => setTheme(id)}
+        <button key={id} type="button" aria-label={label} title={label} aria-pressed={theme === id} onClick={() => { setTheme(id); track("theme_changed", { theme: id }); }}
           className={`grid size-6 place-items-center rounded-full transition-colors ${theme === id ? "bg-subtle text-fg" : "text-fg-3 hover:text-fg"}`}>
           <Icon className="size-3.5" strokeWidth={2} />
         </button>

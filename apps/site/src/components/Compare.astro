@@ -21,7 +21,7 @@ const word = { yes: "Yes", no: "No", varies: "Varies" } as const;
           <th scope="row" class="px-5 py-4 align-top text-sm font-medium">
             {r.label}
             {r.soon && <span class="chip chip-soon ml-2 h-5 align-middle text-xs">0.5</span>}
-            {r.proof && <a href={r.proof} class="mt-1 block text-[0.8125rem] font-normal text-fg-3 no-underline hover:text-fg hover:underline">See it →</a>}
+            {r.proof && <a href={r.proof} data-ph-event="compare_proof_clicked" data-ph-row={r.label} class="mt-1 block text-[0.8125rem] font-normal text-fg-3 no-underline hover:text-fg hover:underline">See it →</a>}
           </th>
           {r.cells.map((c, i) => (
             <td class={`px-5 py-4 align-top ${i === 0 ? "bg-accent-soft/60" : ""}`}>
@@ -41,7 +41,7 @@ const word = { yes: "Yes", no: "No", varies: "Varies" } as const;
   {ROWS.map((r) => (
     <li class="px-4 py-4">
       <p class="flex items-center gap-2 text-sm font-semibold">{r.label}{r.soon && <span class="chip chip-soon h-5 text-xs">0.5</span>}
-        {r.proof && <a href={r.proof} class="ml-auto text-[0.8125rem] font-normal text-fg-3 no-underline hover:text-fg hover:underline">See it →</a>}</p>
+        {r.proof && <a href={r.proof} data-ph-event="compare_proof_clicked" data-ph-row={r.label} class="ml-auto text-[0.8125rem] font-normal text-fg-3 no-underline hover:text-fg hover:underline">See it →</a>}</p>
       <dl class="mt-3 space-y-2 text-sm">
         {r.cells.map((c, i) => (
           <div class={`grid grid-cols-[7.5rem_minmax(0,1fr)] gap-3 rounded-md ${i === 0 ? "-mx-2 bg-accent-soft/60 px-2 py-1.5" : "py-0.5"}`}>

@@ -1,5 +1,6 @@
 // JSON API for the dashboard SPA (same origin, cookie session).
 import { Hono } from "hono";
+import { capture } from "./analytics.ts";
 import { z } from "zod";
 import type { DecisionEvent, Status } from "@cg/protocol";
 import type { AppEnv, Env } from "./env.ts";
@@ -101,6 +102,9 @@ dashboard.get("/config", (c) => c.json({
   dev_login: c.env.ENVIRONMENT !== "production" && c.env.APP_ORIGIN.startsWith("http://localhost"),
   turnstile_site_key: c.env.TURNSTILE_SITE_KEY,
   dpa_version: c.env.DPA_VERSION,
+  // Set only in production (and for local analytics checks via `--var POSTHOG_KEY:...`).
+  posthog_key: c.env.ENVIRONMENT === "test" ? "" : (c.env.POSTHOG_KEY ?? ""),
+  posthog_host: c.env.POSTHOG_HOST || "https://eu.i.posthog.com",
 }));
 
 dashboard.use("/*", sameOrigin);
@@ -186,6 +190,13 @@ dashboard.post("/link/:code", async (c) => {
       .bind(networkId, user.id, JSON.stringify({ install_id: link.install_id }), now),
   );
   await env.DB.batch(statements);
+  const ins = await env.DB.prepare("SELECT platform, plugin_version, created_at FROM installs WHERE id = ?").bind(link.install_id)
+    .first<{ platform: string; plugin_version: string; created_at: number }>();
+  capture(c, {
+    event: "server_linked", distinct_id: user.id, groups: { network: networkId },
+    properties: { new_network: !body.network_id, platform: ins?.platform, plugin_version: ins?.plugin_version,
+      minutes_since_install: ins ? Math.round((now - ins.created_at) / 60_000) : null, server_named: Boolean(body.server_name) },
+  });
   return c.json({ network_id: networkId, install_id: link.install_id }, 201);
 });
 
@@ -268,6 +279,7 @@ dashboard.post("/networks/:id/tokens", async (c) => {
   await env.DB.prepare("INSERT INTO network_tokens (token_hash, network_id, created_by, created_at) VALUES (?, ?, ?, ?)")
     .bind(await sha256Hex(token), id, user.id, Date.now()).run();
   await audit(env, id, user.id, "network_token.created");
+  capture(c, { event: "network_token_created", distinct_id: user.id, groups: { network: id } });
   // Shown exactly once; only the hash is stored.
   return c.json({ token }, 201);
 });
@@ -288,6 +300,7 @@ dashboard.patch("/installs/:id", async (c) => {
   if (!parsed.success) return c.json({ error: "bad_request" }, 400);
   await env.DB.prepare("UPDATE installs SET display_name = ? WHERE id = ?").bind(parsed.data.name, installId).run();
   await audit(env, networkId, user.id, "install.renamed", { install_id: installId });
+  capture(c, { event: "server_renamed", distinct_id: user.id, groups: { network: networkId } });
   return c.json({ ok: true });
 });
 
@@ -308,5 +321,6 @@ dashboard.post("/installs/:id/unlink", async (c) => {
     env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, 'install.unlinked', ?, ?)")
       .bind(networkId, user.id, JSON.stringify({ install_id: installId }), now),
   ]);
+  capture(c, { event: "server_unlinked", distinct_id: user.id, groups: { network: networkId } });
   return c.json({ ok: true });
 });
