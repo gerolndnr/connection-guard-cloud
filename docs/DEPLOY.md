@@ -2,49 +2,53 @@
 
 Everything stays on the Cloudflare **Workers Free** plan. Never enable Workers Paid or any auto-upgrade; see `docs/CAPACITY.md`.
 
-## One-time setup (account owner)
+## Current production
 
-1. **Zone.** Add `connectionguard.net` to Cloudflare and switch the registrar's nameservers to Cloudflare.
-2. **Email Routing.** Forward `support@` and `privacy@connectionguard.net` to the owner's mailbox.
-3. **D1 in the EU.**
-   ```bash
-   pnpm --dir apps/api exec wrangler d1 create cg --jurisdiction eu
-   ```
-   Put the printed `database_id` into `apps/api/wrangler.jsonc` under `env.production.d1_databases`.
-4. **KV.**
-   ```bash
-   pnpm --dir apps/api exec wrangler kv namespace create PUBLIC
-   ```
-   Put the id into `env.production.kv_namespaces`.
-5. **Analytics Engine.** The dataset `cg_sync` is created on first write. Nothing to do.
-6. **Turnstile.** Create a widget for `app.connectionguard.net` in "Managed" mode. Put the site key into `env.production.vars.TURNSTILE_SITE_KEY`, then:
-   ```bash
-   pnpm --dir apps/api exec wrangler secret put TURNSTILE_SECRET --env production
-   ```
-7. **Discord application.**
-   1. Create it at https://discord.com/developers/applications.
-   2. Under OAuth2, add the redirect `https://app.connectionguard.net/api/auth/discord/callback`. Only the `identify` scope is used.
-   3. Put the client ID into `env.production.vars.DISCORD_CLIENT_ID`, then:
-      ```bash
-      pnpm --dir apps/api exec wrangler secret put DISCORD_CLIENT_SECRET --env production
-      ```
-8. **Workers Builds** (optional). Connect the GitHub repo in the Cloudflare dashboard with:
-   - build command: `pnpm install && pnpm --filter @cg/web build`
-   - deploy command: `pnpm --dir apps/api exec wrangler deploy --env production`
+| Resource | Value |
+| --- | --- |
+| Worker | `connection-guard-cloud-production` |
+| Domains | `app.connectionguard.net` (dashboard), `api.connectionguard.net` (plugin API), both Workers custom domains |
+| D1 | `cg` (`7bbde5b7-6de2-47ed-950d-af22f2ad9030`), EU jurisdiction |
+| KV | `connection-guard-cloud-public` (`c601f9f0de2649419283c89e0be54ec3`) |
+| Secrets | `CONFIG_SECRET_KEY` (set). Still needed: `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` |
+| Optional | Turnstile (`TURNSTILE_SITE_KEY` var plus `TURNSTILE_SECRET` secret), Analytics Engine (`METRICS` binding) |
 
-## Deploy
+## Discord login (required before anyone can sign in)
+
+1. Create an application at https://discord.com/developers/applications.
+2. Under **OAuth2**, add the redirect `https://app.connectionguard.net/api/auth/discord/callback`. Only the `identify` scope is used.
+3. Store both values as Worker secrets; no redeploy needed:
+   ```bash
+   cd apps/api
+   npx wrangler secret put DISCORD_CLIENT_ID --env production
+   npx wrangler secret put DISCORD_CLIENT_SECRET --env production
+   ```
+
+## Optional hardening
+
+- **Turnstile on the link page:**
+  1. Create a widget for `app.connectionguard.net`.
+  2. Put its site key into `env.production.vars.TURNSTILE_SITE_KEY`.
+  3. Run `npx wrangler secret put TURNSTILE_SECRET --env production`, then redeploy.
+
+  Without it, linking still requires a Discord sign-in and a single-use, 24-hour code.
+- **Analytics Engine** (product metrics only; the dashboard reads D1):
+  1. Enable it once in the Cloudflare dashboard (Workers & Pages > Analytics Engine).
+  2. Restore the `analytics_engine_datasets` line in `wrangler.jsonc` and redeploy.
+- **Email Routing:** forward `support@` and `privacy@connectionguard.net` to the owner's mailbox.
+
+## Deploy a new version
 
 ```bash
 pnpm install && pnpm -r typecheck && pnpm -r test
 pnpm --filter @cg/web build
-pnpm --dir apps/api exec wrangler d1 migrations apply cg --remote --env production
-pnpm --dir apps/api exec wrangler deploy --env production
+cd apps/api
+npx wrangler d1 migrations apply cg --remote --env production
+npx wrangler deploy --env production
 ```
-
-The `custom_domain` routes create `app.` and `api.connectionguard.net` automatically.
 
 ## Before public launch
 
 - The legal texts in `docs/LEGAL.md` are published and reviewed.
 - Plugin listings (Modrinth, Hangar, Spigot) disclose the opt-out data flow; see `connection-guard/docs/CLOUD.md`.
-- `/v1/health` answers, and a fresh plugin install prints a working link.
+- The plugin release that contains the cloud link is published (branch `codex/cloud-dashboard` in the plugin repo).
