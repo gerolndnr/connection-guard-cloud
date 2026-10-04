@@ -22,7 +22,9 @@ const PAGES = {
   privacy: ["Privacy, in plain language", "What is sent where. No cookies on this site."],
 };
 
-const mark = `<svg viewBox="0 0 32 32" width="44" height="44"><rect width="32" height="32" rx="8" fill="#0a0a0a" stroke="#2e2e2e"/><path d="M10 16.5l4 4 8-9" fill="none" stroke="#10b981" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+// The open-ring mark (marketing/brand): ring = the boundary, dot = the connection checked at its opening.
+const RING = `<path d="M44.7 19.3A18 18 0 1 0 44.7 44.7" fill="none" stroke="#ededed" stroke-width="6" stroke-linecap="round"/><circle cx="47" cy="32" r="5.5" fill="#10b981"/>`;
+const mark = `<svg viewBox="8 9 48 46" width="44" height="42">${RING}</svg>`;
 const base = `<style>
 @font-face{font-family:G;src:url(data:font/woff2;base64,${sans}) format("woff2");font-weight:100 900}
 @font-face{font-family:M;src:url(data:font/woff2;base64,${mono}) format("woff2");font-weight:100 900}
@@ -35,7 +37,7 @@ const card = ([h, sub]) => `${base}<div style="width:1200px;height:630px;padding
   <div style="display:flex;gap:14px;font-family:M;font-size:22px;color:#a1a1a1">
     ${["Free · MIT", "Paper", "Spigot", "BungeeCord", "Velocity"].map((t, i) => `<span style="padding:9px 18px;border-radius:999px;border:1px solid ${i ? "#2e2e2e" : "rgba(16,185,129,.45)"};color:${i ? "#a1a1a1" : "#34d399"};background:${i ? "#0a0a0a" : "rgba(16,185,129,.12)"}">${t}</span>`).join("")}
   </div></div>`;
-const icon = (size, radius) => `${base}<style>body{background:transparent}</style><svg viewBox="0 0 32 32" width="${size}" height="${size}" style="display:block"><rect width="32" height="32" rx="${radius}" fill="#0a0a0a"/><path d="M10 16.5l4 4 8-9" fill="none" stroke="#10b981" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const icon = (size, radius) => `${base}<style>body{background:transparent}</style><svg viewBox="0 0 64 64" width="${size}" height="${size}" style="display:block"><rect width="64" height="64" rx="${radius}" fill="#0a0a0a"/>${RING}</svg>`;
 
 mkdirSync(`${site}public/og`, { recursive: true });
 const browser = await chromium.launch({ channel: "chrome" });
@@ -45,7 +47,7 @@ for (const [slug, text] of Object.entries(PAGES)) {
   await page.screenshot({ path: `${site}public/og/${slug}.png` });
 }
 // Square icons: Apple adds its own rounding, so the touch icon is full-bleed.
-for (const [file, size, radius] of [["apple-touch-icon.png", 180, 0], ["icon-192.png", 192, 8], ["icon-512.png", 512, 8], ["favicon-32.png", 32, 8]]) {
+for (const [file, size, radius] of [["apple-touch-icon.png", 180, 0], ["icon-192.png", 192, 15], ["icon-512.png", 512, 15], ["favicon-32.png", 32, 15]]) {
   await page.setViewportSize({ width: size, height: size });
   await page.setContent(icon(size, radius));
   await page.screenshot({ path: `${site}public/${file}`, omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } });
