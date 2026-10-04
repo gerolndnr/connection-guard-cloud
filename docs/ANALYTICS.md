@@ -49,8 +49,8 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | Event | Properties |
 | --- | --- |
 | `sign_in_clicked` | `method` |
-| `link_page_viewed`, `link_page_invalid` | `platform` |
-| `link_claimed`, `link_claim_failed` | `new_network`, `server_named`, `platform` / `error` |
+| `link_page_viewed`, `link_page_invalid` | `platform`, `source` (console, join, command, unknown: the `?src=` the plugin appends) |
+| `link_claimed`, `link_claim_failed` | `source`, `new_network`, `server_named`, `platform` / `error` |
 | `setup_step_viewed` | `step` (goals, providers, mode, apply, verify), `platform` |
 | `setup_finished` | `vpn`, `providers[]`, `keys_entered`, `votes`, `country_mode`, `countries` (count), `mode`, `platform` |
 | `setup_applied`, `setup_rejected`, `setup_already_configured` | `seconds`, `mode` |

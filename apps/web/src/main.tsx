@@ -56,7 +56,11 @@ function Telemetry() {
 
 const root = createRootRoute({ component: () => <><Telemetry /><Outlet /></>, notFoundComponent: NotFound });
 const home = createRoute({ getParentRoute: () => root, path: "/", component: Home });
-const link = createRoute({ getParentRoute: () => root, path: "/link/$code", component: LinkPage });
+// ?src= tells which hint brought the operator here: the console notice, the in-game join message or /cg cloud link.
+const LINK_SOURCES = ["console", "join", "command"] as const;
+const linkSearch = (s: Record<string, unknown>): { src?: (typeof LINK_SOURCES)[number] } =>
+  typeof s.src === "string" && (LINK_SOURCES as readonly string[]).includes(s.src) ? { src: s.src as (typeof LINK_SOURCES)[number] } : {};
+const link = createRoute({ getParentRoute: () => root, path: "/link/$code", component: LinkPage, validateSearch: linkSearch });
 const serverSearch = (s: Record<string, unknown>): { server?: string } =>
   typeof s.server === "string" && /^ins_[A-Za-z0-9]{20,32}$/.test(s.server) ? { server: s.server } : {};
 const overview = createRoute({ getParentRoute: () => root, path: "/n/$networkId", component: Overview, validateSearch: serverSearch });

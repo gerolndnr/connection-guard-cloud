@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Server } from "lucide-react";
 import { api, ApiError } from "../api.ts";
@@ -40,13 +40,14 @@ function Privacy() {
 
 export function LinkPage() {
   const { code } = useParams({ from: "/link/$code" });
+  const { src } = useSearch({ from: "/link/$code" });
   const me = useMe();
   const config = useConfig();
   const preview = useQuery({ queryKey: ["link", code], queryFn: () => api.linkPreview(code), enabled: Boolean(me.data), retry: false, refetchInterval: false });
   const navigate = useNavigate();
   const qc = useQueryClient();
   const previewPlatform = preview.data?.install.platform;
-  useEffect(() => { if (previewPlatform) track("link_page_viewed", { platform: previewPlatform }); }, [previewPlatform]);
+  useEffect(() => { if (previewPlatform) track("link_page_viewed", { platform: previewPlatform, source: src ?? "unknown" }); }, [previewPlatform]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (preview.isError) track("link_page_invalid"); }, [preview.isError]);
 
   const networks = me.data?.networks.filter((n) => n.role !== "viewer") ?? [];
@@ -73,7 +74,7 @@ export function LinkPage() {
           <section className="card p-8">
             <h1 className="text-2xl font-semibold tracking-[-0.025em]">Link a server</h1>
             <p className="mt-2 text-fg-2">Sign in first. You come straight back to link <span className="mono text-fg">{code}</span>.</p>
-            <div className="mt-8"><SignIn next={`/link/${code}`} /></div>
+            <div className="mt-8"><SignIn next={`/link/${code}${src ? `?src=${src}` : ""}`} /></div>
           </section>
           <div className="mt-4 px-2"><Privacy /></div>
         </div>
@@ -93,7 +94,7 @@ export function LinkPage() {
         accept_dpa: true, dpa_version: config.data.dpa_version, turnstile_token: token ?? "not-configured",
       });
       setLinked(true);
-      track("link_claimed", { new_network: target === "new", server_named: Boolean(serverName.trim()), platform: preview.data?.install.platform });
+      track("link_claimed", { source: src ?? "unknown", new_network: target === "new", server_named: Boolean(serverName.trim()), platform: preview.data?.install.platform });
       await qc.invalidateQueries({ queryKey: ["me"] });
       // Straight into the setup assistant; it steps aside on its own if the server is already configured.
       window.setTimeout(() => navigate({ to: "/n/$networkId/setup", params: { networkId: res.network_id }, search: { server: res.install_id } }), 900);
