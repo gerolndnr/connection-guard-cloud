@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-03T12:00:00Z",
+  "title": "Design System: Connection Guard Cloud",
+  "extensions": {
+    "colorMeta": {
+      "emerald": { "role": "primary", "displayName": "Signal Emerald", "canonical": "#059669", "theme": "light", "tonalRamp": ["#022c22", "#064e3b", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0", "#ecfdf5"] },
+      "emerald-deep": { "role": "primary", "displayName": "Deep Emerald", "canonical": "#047857", "theme": "light", "tonalRamp": ["#022c22", "#064e3b", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0", "#ecfdf5"] },
+      "emerald-wash": { "role": "primary", "displayName": "Emerald Wash", "canonical": "#ecfdf5", "theme": "light" },
+      "emerald-dark": { "role": "primary", "displayName": "Signal Emerald (dark)", "canonical": "#10b981", "theme": "dark", "tonalRamp": ["#022c22", "#064e3b", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0", "#ecfdf5"] },
+      "emerald-dark-text": { "role": "primary", "displayName": "Emerald Text (dark)", "canonical": "#34d399", "theme": "dark" },
+      "emerald-dark-ink": { "role": "primary", "displayName": "Emerald Ink (dark primary button text)", "canonical": "#04130d", "theme": "dark" },
+      "page": { "role": "neutral", "displayName": "Page Gray", "canonical": "#fafafa", "theme": "light", "tonalRamp": ["#09090b", "#27272a", "#52525b", "#71717a", "#a1a1aa", "#d4d4d8", "#f4f4f5", "#fafafa"] },
+      "surface": { "role": "neutral", "displayName": "Surface White", "canonical": "#ffffff", "theme": "light" },
+      "subtle": { "role": "neutral", "displayName": "Subtle Zinc", "canonical": "#f4f4f5", "theme": "light" },
+      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "#ebebeb", "theme": "light" },
+      "line-strong": { "role": "neutral", "displayName": "Strong Hairline", "canonical": "#d4d4d8", "theme": "light" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#0a0a0a", "theme": "light" },
+      "ink-2": { "role": "neutral", "displayName": "Ink 2", "canonical": "#52525b", "theme": "light" },
+      "ink-3": { "role": "neutral", "displayName": "Ink 3", "canonical": "#71717a", "theme": "light" },
+      "page-dark": { "role": "neutral", "displayName": "Pure Black", "canonical": "#000000", "theme": "dark", "tonalRamp": ["#000000", "#0a0a0a", "#161616", "#1f1f1f", "#2e2e2e", "#8f8f8f", "#a1a1a1", "#ededed"] },
+      "surface-dark": { "role": "neutral", "displayName": "Surface (dark)", "canonical": "#0a0a0a", "theme": "dark" },
+      "subtle-dark": { "role": "neutral", "displayName": "Subtle (dark)", "canonical": "#161616", "theme": "dark" },
+      "line-dark": { "role": "neutral", "displayName": "Hairline (dark)", "canonical": "#1f1f1f", "theme": "dark" },
+      "line-strong-dark": { "role": "neutral", "displayName": "Strong Hairline (dark)", "canonical": "#2e2e2e", "theme": "dark" },
+      "ink-dark": { "role": "neutral", "displayName": "Ink (dark)", "canonical": "#ededed", "theme": "dark" },
+      "ink-2-dark": { "role": "neutral", "displayName": "Ink 2 (dark)", "canonical": "#a1a1a1", "theme": "dark" },
+      "ink-3-dark": { "role": "neutral", "displayName": "Ink 3 (dark)", "canonical": "#8f8f8f", "theme": "dark" },
+      "refused": { "role": "state", "displayName": "Refused Red", "canonical": "#dc2626", "theme": "light", "tonalRamp": ["#450a0a", "#7f1d1d", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fecaca", "#fef2f2"] },
+      "refused-text": { "role": "state", "displayName": "Refused Text", "canonical": "#b91c1c", "theme": "light" },
+      "refused-wash": { "role": "state", "displayName": "Refused Wash", "canonical": "#fef2f2", "theme": "light" },
+      "refused-dark": { "role": "state", "displayName": "Refused Red (dark)", "canonical": "#e5484d", "theme": "dark", "darkWash": "rgb(229 72 77 / 0.13)" },
+      "refused-dark-text": { "role": "state", "displayName": "Refused Text (dark)", "canonical": "#ff6369", "theme": "dark" },
+      "caution": { "role": "state", "displayName": "Caution Amber", "canonical": "#d97706", "theme": "light", "tonalRamp": ["#451a03", "#78350f", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a", "#fffbeb"] },
+      "caution-text": { "role": "state", "displayName": "Caution Text", "canonical": "#b45309", "theme": "light" },
+      "caution-wash": { "role": "state", "displayName": "Caution Wash", "canonical": "#fffbeb", "theme": "light" },
+      "caution-dark": { "role": "state", "displayName": "Caution Amber (dark)", "canonical": "#f5a524", "theme": "dark", "darkWash": "rgb(245 165 36 / 0.12)" },
+      "caution-dark-text": { "role": "state", "displayName": "Caution Text (dark)", "canonical": "#f5b84a", "theme": "dark" },
+      "discord-blurple": { "role": "third-party", "displayName": "Discord Blurple", "canonical": "#5865f2", "note": "Sign in with Discord button only." },
+      "discord-blurple-hover": { "role": "third-party", "displayName": "Discord Blurple Hover", "canonical": "#4752c4" }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Page titles and sign-in card titles." },
+      "metric": { "displayName": "Metric", "purpose": "KPI values; Geist Sans with tabular-nums, never mono." },
+      "title": { "displayName": "Title", "purpose": "Card headers, sheet section headings, row primaries." },
+      "wordmark": { "displayName": "Wordmark", "purpose": "\"Connection Guard\" in the top bar; the only brand mark." },
+      "body": { "displayName": "Body", "purpose": "Running text and table cells; ss01 on globally." },
+      "label": { "displayName": "Label", "purpose": "KPI labels, table headers, tabs, segmented items." },
+      "caption": { "displayName": "Caption", "purpose": "Deltas, quota lines, footnotes, badge text." },
+      "mono": { "displayName": "Mono", "purpose": "IPs, UUIDs, versions, rule IDs, link codes, config snippets only." }
+    },
+    "themes": {
+      "strategy": "class",
+      "darkClass": ".dark on <html>",
+      "bootstrap": "Inline head script reads localStorage 'cg-theme' (light|dark), else prefers-color-scheme, and toggles .dark before first paint.",
+      "toggle": "System / light / dark; three icon pills from sm, single cycling ghost button on mobile."
+    },
+    "shadows": [
+      { "name": "pop-light", "value": "0 8px 24px -8px rgb(0 0 0 / 0.16), 0 2px 6px -2px rgb(0 0 0 / 0.08)", "purpose": "Chart tooltip and desktop why sheet, light theme." },
+      { "name": "pop-dark", "value": "0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px var(--line-strong)", "purpose": "Same floating layers in dark; the ring carries the edge on black." },
+      { "name": "segment-lift", "value": "0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px var(--line)", "purpose": "Pressed segmented-control item." },
+      { "name": "focus-ring-input", "value": "0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)", "purpose": "Focused input, with emerald stroke." }
+    ],
+    "motion": [
+      { "name": "state-transition", "value": "150ms ease-out", "purpose": "Color, border and shadow changes on buttons, inputs, rows, tabs." },
+      { "name": "row-in", "value": "1.6s cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "New decision row fades from a 12% emerald wash; the one authored moment." },
+      { "name": "sheet-in", "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Why sheet slides 16px in from the right with fade." },
+      { "name": "shimmer", "value": "1.4s ease-in-out infinite", "purpose": "Skeleton sheen." },
+      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce", "purpose": "Disables row-in, sheet-in, shimmer and the healthy-dot ping." }
+    ],
+    "chartEncoding": {
+      "admitted": "solid emerald (var(--accent))",
+      "wouldRefuse": "amber hatch: 45deg 1.75px var(--warn) stroke at 4px pitch over var(--warn-soft); state, secondary encoding by texture",
+      "refused": "solid red (var(--danger)), stacked on top",
+      "order": "bottom to top: admitted, would-refuse, refused; 2px gaps between segments; 4px rounded top on the topmost segment",
+      "cvd": "Emerald/red pair validated for color-vision deficiency in both themes (finish review); legend and fixed order back it up."
+    },
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px", "note": "Right rail appears; why sheet becomes a non-modal side panel." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The committing action (link server). Emerald-700 with white text in light; emerald-500 with near-black text in dark.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Link server</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.25rem; padding: 0 0.875rem; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; font-weight: 500; font-size: 0.875rem; border-radius: 6px; border: 1px solid transparent; cursor: pointer; white-space: nowrap; transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out, filter 150ms ease-out; } .ds-btn-primary { background: #047857; color: #ffffff; } .ds-btn-primary:hover { filter: brightness(1.08); } .ds-btn:focus-visible { outline: 2px solid #059669; outline-offset: 2px; } .dark .ds-btn-primary { background: #10b981; color: #04130d; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Default action: Review, Load more, Dev sign-in, Go to your networks.",
+      "html": "<button class=\"ds-btn-secondary\">Review</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; height: 2.25rem; padding: 0 0.875rem; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; font-weight: 500; font-size: 0.875rem; border-radius: 6px; background: #ffffff; color: #0a0a0a; border: 1px solid #d4d4d8; cursor: pointer; transition: background-color 150ms ease-out; } .ds-btn-secondary:hover { background: #f4f4f5; } .ds-btn-secondary:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }"
+    },
+    {
+      "name": "Discord Sign-in Button",
+      "kind": "button",
+      "refersTo": "button-discord",
+      "description": "Third-party brand exception: Discord blurple, only for sign-in.",
+      "html": "<a class=\"ds-btn-discord\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18.2 18.2 0 0 0-5.6 0L8.6 3a19.6 19.6 0 0 0-4.9 1.5C.6 9.1-.3 13.6.1 18a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14.1 14.1 0 0 0 12.2 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.5-3.6-13.6ZM8 15.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 10.4 8 10.4s2.2 1.1 2.2 2.5-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.5 2.2-2.5 2.2 1.1 2.2 2.5-1 2.4-2.2 2.4Z\"/></svg>Sign in with Discord</a>",
+      "css": ".ds-btn-discord { display: flex; align-items: center; justify-content: center; gap: 0.5rem; height: 2.5rem; width: 100%; max-width: 22rem; border-radius: 6px; background: #5865f2; color: #ffffff; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; font-weight: 500; font-size: 0.875rem; text-decoration: none; transition: background-color 150ms ease-out; } .ds-btn-discord:hover { background: #4752c4; } .ds-btn-discord:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Register search with leading icon; emerald stroke and soft ring on focus.",
+      "html": "<label class=\"ds-search\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-input\" placeholder=\"Search IP, UUID, country code, ISP\"></label>",
+      "css": ".ds-search { position: relative; display: block; width: 20rem; color: #71717a; } .ds-search svg { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); pointer-events: none; } .ds-input { height: 2.25rem; width: 100%; padding: 0 0.75rem 0 2.25rem; background: #ffffff; color: #0a0a0a; border: 1px solid #d4d4d8; border-radius: 6px; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; caret-color: #059669; transition: border-color 150ms ease-out, box-shadow 150ms ease-out; } .ds-input::placeholder { color: #71717a; } .ds-input:hover { border-color: #71717a; } .ds-input:focus { outline: none; border-color: #059669; box-shadow: 0 0 0 3px color-mix(in srgb, #059669 22%, transparent); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "chip",
+      "refersTo": "segmented",
+      "description": "Range and filter switcher; pressed item lifts onto surface.",
+      "html": "<div class=\"ds-seg\" role=\"group\"><button aria-pressed=\"true\">24h</button><button aria-pressed=\"false\">7d</button><button aria-pressed=\"false\">30d</button><button aria-pressed=\"false\">90d</button></div>",
+      "css": ".ds-seg { display: inline-flex; padding: 2px; gap: 2px; border: 1px solid #ebebeb; border-radius: 8px; background: #f4f4f5; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; } .ds-seg button { height: 1.75rem; padding: 0 0.625rem; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 0.8125rem; font-weight: 500; color: #52525b; cursor: pointer; transition: color 150ms, background-color 150ms; } .ds-seg button:hover { color: #0a0a0a; } .ds-seg button[aria-pressed=\"true\"] { background: #ffffff; color: #0a0a0a; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px #ebebeb; } .ds-seg button:focus-visible { outline: 2px solid #059669; outline-offset: 2px; }"
+    },
+    {
+      "name": "Verdict Badges",
+      "kind": "chip",
+      "refersTo": "badge-admitted",
+      "description": "Pill with icon and word; color never alone.",
+      "html": "<span class=\"ds-badge ds-badge-ok\"><svg viewBox=\"0 0 24 24\" width=\"12\" height=\"12\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg>Admitted</span> <span class=\"ds-badge ds-badge-no\"><svg viewBox=\"0 0 24 24\" width=\"12\" height=\"12\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m4.9 4.9 14.2 14.2\"/></svg>Refused</span> <span class=\"ds-badge ds-badge-would\"><svg viewBox=\"0 0 24 24\" width=\"12\" height=\"12\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg>Would refuse</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 0.375rem; height: 1.375rem; padding: 0 0.5rem; border-radius: 999px; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; white-space: nowrap; } .ds-badge-ok { color: #047857; background: #ecfdf5; } .ds-badge-no { color: #b91c1c; background: #fef2f2; } .ds-badge-would { color: #b45309; background: #fffbeb; }"
+    },
+    {
+      "name": "KPI Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat card on the page ground; tabular sans metric with delta.",
+      "html": "<div class=\"ds-card ds-kpi\"><div class=\"ds-kpi-label\"><span class=\"ds-kpi-dot\"></span>Refused</div><div class=\"ds-kpi-row\"><span class=\"ds-kpi-value\">37</span><span class=\"ds-kpi-delta\">+28% <span>vs previous</span></span></div><div class=\"ds-kpi-sub\">7.0% of checks</div></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #ebebeb; border-radius: 8px; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; color: #0a0a0a; } .ds-kpi { padding: 1rem 1.25rem; width: 16rem; } .ds-kpi-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; font-weight: 500; color: #52525b; } .ds-kpi-dot { width: 6px; height: 6px; border-radius: 999px; background: #dc2626; } .ds-kpi-row { margin-top: 0.5rem; display: flex; align-items: baseline; gap: 0.625rem; } .ds-kpi-value { font-size: 1.75rem; font-weight: 600; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; } .ds-kpi-delta { font-size: 0.75rem; color: #52525b; font-variant-numeric: tabular-nums; } .ds-kpi-delta span { color: #71717a; } .ds-kpi-sub { margin-top: 0.5rem; font-size: 0.8125rem; color: #71717a; }"
+    },
+    {
+      "name": "Top Navigation",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Sticky translucent bar: wordmark / network breadcrumb, underline tabs.",
+      "html": "<header class=\"ds-nav\"><div class=\"ds-nav-row\"><a class=\"ds-wordmark\" href=\"#\">Connection Guard</a><span class=\"ds-slash\">/</span><span class=\"ds-crumb\">Blockhaven</span></div><nav class=\"ds-tabs\"><a href=\"#\" aria-current=\"page\">Overview</a><a href=\"#\">Decisions</a></nav></header>",
+      "css": ".ds-nav { border-bottom: 1px solid #ebebeb; background: rgb(255 255 255 / 0.8); backdrop-filter: blur(12px); font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; padding: 0 1.5rem; } .ds-nav-row { display: flex; align-items: center; gap: 0.5rem; height: 3.5rem; } .ds-wordmark { font-size: 0.9375rem; font-weight: 600; letter-spacing: -0.01em; color: #0a0a0a; text-decoration: none; } .ds-slash { color: #d4d4d8; font-size: 1.25rem; } .ds-crumb { font-size: 0.875rem; font-weight: 500; color: #0a0a0a; } .ds-tabs { display: flex; margin-left: -0.75rem; } .ds-tabs a { position: relative; padding: 0.75rem; font-size: 0.8125rem; font-weight: 500; color: #52525b; text-decoration: none; transition: color 150ms; } .ds-tabs a:hover { color: #0a0a0a; } .ds-tabs a[aria-current=\"page\"] { color: #0a0a0a; } .ds-tabs a[aria-current=\"page\"]::after { content: \"\"; position: absolute; left: 0.75rem; right: 0.75rem; bottom: -1px; height: 2px; border-radius: 999px; background: #0a0a0a; } .ds-tabs a:focus-visible { outline: 2px solid #059669; outline-offset: 2px; border-radius: 4px; }"
+    },
+    {
+      "name": "Decision Table Row",
+      "kind": "custom",
+      "refersTo": "table-row",
+      "description": "44px hairline rows: mono IP, verdict badge, reason, tabular time.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Connection</th><th>Verdict</th><th>Reason</th><th class=\"r\">Time</th></tr></thead><tbody><tr><td><span class=\"ds-mono\">84.212.26.223</span> <span class=\"ds-meta\">Proxy</span></td><td><span class=\"ds-pill-no\">Refused</span></td><td class=\"ds-reason-no\">Country not allowed</td><td class=\"r ds-time\">44 min ago</td></tr></tbody></table>",
+      "css": ".ds-table { width: 36rem; border-collapse: collapse; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; color: #0a0a0a; background: #ffffff; } .ds-table th { text-align: left; font-weight: 500; font-size: 0.8125rem; color: #52525b; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ebebeb; } .ds-table td { padding: 0 0.75rem; height: 2.75rem; border-bottom: 1px solid #ebebeb; } .ds-table tbody tr { cursor: pointer; transition: background-color 150ms; } .ds-table tbody tr:hover { background: rgb(244 244 245 / 0.7); } .ds-table .r { text-align: right; } .ds-mono { font-family: \"Geist Mono Variable\", ui-monospace, Menlo, monospace; font-size: 0.92em; font-weight: 500; } .ds-meta { font-size: 0.8125rem; color: #71717a; } .ds-pill-no { display: inline-flex; align-items: center; height: 1.375rem; padding: 0 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; color: #b91c1c; background: #fef2f2; } .ds-reason-no { color: #b91c1c; } .ds-time { font-size: 0.8125rem; color: #71717a; font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Instrument",
+    "overview": "Connection Guard Cloud plays the modern SaaS dashboard straight, at the craft level of Vercel's dashboard: a neutral grayscale instrument with one emerald accent, where the first thing a hobby server admin sees is whether everything is working, then the numbers, then the reason behind each decision. Nothing is ornamental. Hierarchy comes from type weight, a little negative tracking on headings, and 1px hairlines, not from color or depth.\n\nThe density is that of an operator tool: 14px body, 44px table rows, 16px gaps between cards, a 1200px container. Light and dark are equal citizens. The theme follows the system setting, a stored choice overrides it, and a bootstrap script in the document head applies the `.dark` class before first paint so there is no flash. Color carries only state: emerald for admitted or healthy, red for refused or broken, amber for would-refuse, observe mode and attention. Each state always arrives with an icon or a word, never as color alone.\n\nThe earlier paper-and-ledger \"Gate Register\" world was rejected by the owner and is fully retired. Paper, stamps and ledger metaphors do not come back. The product is shown as a wordmark only; the shield logo is not used in the dashboard.",
+    "keyCharacteristics": [
+      "Monochrome grayscale ground with a single emerald brand color.",
+      "Flat cards on a slightly darker page, separated by 1px hairlines.",
+      "Geist Sans for everything people read; Geist Mono only for machine identifiers.",
+      "Status before numbers, and every status has an icon or a label.",
+      "Light and dark themes with equal care, applied before first paint."
+    ],
+    "rules": [
+      { "name": "The One Brand Color Rule", "body": "Emerald is the only brand color. Everything that is not a state is grayscale. Discord blurple is a third-party sign-in exception, never a palette member.", "section": "colors" },
+      { "name": "The Ground Split Rule", "body": "Cards are one step lighter than the page: #ffffff on #fafafa in light, #0a0a0a on #000000 in dark. Do not put cards on a same-tone ground.", "section": "colors" },
+      { "name": "The Never Color Alone Rule", "body": "A state color always comes with an icon, a label or a texture: verdict badges carry an icon and a word, chart segments have a legend and a fixed stacking order, and would-refuse is hatched.", "section": "colors" },
+      { "name": "The Tabular Sans Rule", "body": "Numbers in tables, KPIs, chart axes, tooltips and counters use Geist Sans with tabular-nums. Mono is not a number font.", "section": "typography" },
+      { "name": "The Copyable String Rule", "body": "Geist Mono is only for identifiers and config: IPs, UUIDs, versions, rule IDs, link codes and YAML or command snippets.", "section": "typography" },
+      { "name": "The Floating Only Rule", "body": "Cards, tables and buttons never cast shadows. A shadow means the layer floats above the page.", "section": "elevation" },
+      { "name": "The Hatch Is State Rule", "body": "Would-refuse is a hypothetical state, so in charts it is told apart by texture as well as hue: amber hatch, never a flat fill. Admitted is emerald and refused is red, a pairing validated for color-vision deficiency in both themes in the finish review.", "section": "components" },
+      { "name": "The One Authored Moment Rule", "body": "Motion is limited to the new-row arrival, the sheet slide-in, skeleton sheen and the healthy ping, and all of it stops under `prefers-reduced-motion`. Everything else is a 150ms color transition.", "section": "components" }
+    ],
+    "dos": [
+      "Do put #ffffff cards on a #fafafa page in light, and #0a0a0a cards on a #000000 page in dark.",
+      "Do use emerald as the only brand color; keep everything else grayscale unless it is a state.",
+      "Do pair every state color with an icon, a word or the hatch texture.",
+      "Do set numbers in Geist Sans with tabular-nums, and reserve Geist Mono for IPs, UUIDs, versions, rule IDs, link codes and config.",
+      "Do fill the primary button with emerald-700 and white text in light, and emerald-500 and near-black text in dark.",
+      "Do keep strokes at 1px, cards at 8px radius and controls at 6px.",
+      "Do design both themes, and apply the stored or system theme before first paint.",
+      "Do show the product as the \"Connection Guard\" wordmark in Geist Sans."
+    ],
+    "donts": [
+      "Don't bring back paper, stamps, ledger rules or any other \"Gate Register\" device.",
+      "Don't use the shield logo in the dashboard.",
+      "Don't introduce a brand blue or a second accent. Discord blurple stays on the Discord sign-in button only.",
+      "Don't put shadows on cards, tables or buttons; only tooltips and the side sheet float.",
+      "Don't draw would-refuse as a flat amber fill in charts.",
+      "Don't set KPI or table numbers in mono."
+    ]
+  }
+}

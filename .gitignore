@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+*.log
+.DS_Store
+playwright-report/
+test-results/
+# Local review screenshots and design-tool scratch output
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/
+.impeccable/direction-payload.json
+apps/web/.impeccable/live/
+.impeccable/brief-body.md
