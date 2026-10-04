@@ -1,6 +1,17 @@
-# Legal texts needed before public launch
+# Legal texts
 
-These are not written here on purpose. They need review by someone qualified (EU/GDPR; German or Portuguese law depending on the owner's residence).
+Status 2026-10-04: the operator lives in Germany. Drafts are written and in the site; a review by a qualified person is still recommended.
+
+| Text | Where | Status |
+| --- | --- | --- |
+| Impressum (§ 5 DDG, § 18 Abs. 2 MStV) | `apps/site/src/pages/impressum.astro`, English `legal-notice.astro` | Written; needs operator name, c/o address and federal state in `apps/site/src/data/operator.ts` (the production build fails until then) |
+| Datenschutzerklärung | `apps/site/src/pages/datenschutz.astro` (binding), English `privacy.astro` | Written; same operator data |
+| Data processing agreement (AVV) | — | **Missing.** The link page asks operators to accept version `DPA_VERSION`, so it must exist before the dashboard is announced |
+| Terms of service | — | Missing |
+
+Both legal pages are linked from every website page and from the dashboard footer. Keep `LEGAL_UPDATED` in `operator.ts` current when changing them. Update the privacy policy when adding a processor, cookie or tracking (for example Turnstile, which is not active yet).
+
+## Original checklist
 
 1. **Privacy policy** for app.connectionguard.net and connectionguard.net. It covers:
    - the data in the table in the plugin's `docs/CLOUD.md`

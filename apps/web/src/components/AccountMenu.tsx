@@ -42,7 +42,7 @@ export function AccountMenu({ me, onSignOut }: { me: Me; onSignOut: () => void }
               <input type="checkbox" role="switch" className="mt-0.5 size-4 accent-[var(--accent)]" disabled={!analyticsAvailable()}
                 checked={sharing && analyticsAvailable()} onChange={(e) => { setSharing(e.target.checked); setAnalyticsOptOut(!e.target.checked); }} />
             </label>
-            <a href="https://connectionguard.net/privacy" className="mt-2 inline-block text-[0.75rem] text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg">What is collected</a>
+            <a href="https://connectionguard.net/privacy#dashboard-analytics" className="mt-2 inline-block text-[0.75rem] text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg">What is collected</a>
           </div>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); onSignOut(); }}
             className="flex w-full items-center gap-2 rounded-md border-t border-line px-2.5 py-2 text-left text-[0.8125rem] text-fg-2 hover:bg-subtle hover:text-fg">

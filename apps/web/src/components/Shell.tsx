@@ -23,6 +23,12 @@ export function Shell({ networkId, children }: { networkId?: string; children: R
     <div className="min-h-dvh" data-shell>
       <TopNav me={me.data ?? undefined} networkId={networkId} />
       <main className="mx-auto max-w-[1200px] px-4 pb-24 pt-8 sm:px-6">{children}</main>
+      <footer className="mx-auto flex max-w-[1200px] flex-wrap gap-x-4 gap-y-1 border-t border-line px-4 py-5 text-[0.75rem] text-fg-3 sm:px-6">
+        <a href="https://connectionguard.net/impressum" lang="de" className="no-underline hover:text-fg">Impressum</a>
+        <a href="https://connectionguard.net/legal-notice" className="no-underline hover:text-fg">Legal notice</a>
+        <a href="https://connectionguard.net/privacy" className="no-underline hover:text-fg">Privacy</a>
+        <a href="https://connectionguard.net/datenschutz" lang="de" className="no-underline hover:text-fg">Datenschutz</a>
+      </footer>
     </div>
   );
 }

@@ -1,0 +1,129 @@
+---
+import Legal from "../layouts/Legal.astro";
+import { OPERATOR, addressLines } from "../data/operator";
+const address = addressLines("de");
+const toc: [string, string][] = [
+  ["kurzfassung", "Kurzfassung"],
+  ["verantwortlicher", "Verantwortlicher"],
+  ["website", "Diese Website"],
+  ["dashboard", "Das Dashboard"],
+  ["plugin", "Cloud-Verbindung des Plugins"],
+  ["email", "Kontakt per E-Mail"],
+  ["empfaenger", "Auftragsverarbeiter und Empfänger"],
+  ["drittland", "Übermittlung in Drittländer"],
+  ["rechte", "Ihre Rechte"],
+  ["aenderungen", "Änderungen"],
+];
+---
+<Legal title="Datenschutzerklärung | Connection Guard" h1="Datenschutzerklärung" path="/datenschutz" lang="de"
+  description="Wie connectionguard.net, das Connection-Guard-Dashboard und die optionale Cloud-Verbindung des Plugins personenbezogene Daten verarbeiten, auf welcher Rechtsgrundlage und wie lange."
+  alternate={{ lang: "en", path: "/privacy", label: "English version" }} toc={toc}>
+
+  <h2 id="kurzfassung">Kurzfassung</h2>
+  <ul>
+    <li><strong>Diese Website</strong> setzt keine Cookies. Besuche werden mit PostHog (EU) im cookielosen Modus gezählt: Es entsteht kein Profil, und Sie können an einem anderen Tag nicht wiedererkannt werden.</li>
+    <li><strong>Das Plugin</strong> (aktuelle Version 0.4.x) sendet IP-Adressen von Spielern nur an die Erkennungsdienste, die der Serverbetreiber aktiviert. An connectionguard.net geht nichts.</li>
+    <li><strong>Das optionale Dashboard</strong> (ab Plugin 0.5) nutzt die Anmeldung mit Discord, ein notwendiges Sitzungs-Cookie und eine abschaltbare Nutzungsanalyse. Spielerdaten verknüpfter Server verarbeiten wir nur im Auftrag des Serverbetreibers.</li>
+    <li>Die Daten werden in der EU gespeichert. Wir verkaufen keine Daten und nutzen sie nicht für Werbung.</li>
+  </ul>
+
+  <h2 id="verantwortlicher">1. Verantwortlicher</h2>
+  <p>Verantwortlicher im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:</p>
+  <p>{address.map((l, i) => <>{l}{i < address.length - 1 && <br />}</>)}<br />E-Mail: <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a></p>
+  <p>Ein Datenschutzbeauftragter ist nicht vorgeschrieben. Bei Fragen zum Datenschutz schreiben Sie bitte an die oben genannte Adresse.</p>
+
+  <h2 id="website">2. Diese Website (connectionguard.net)</h2>
+
+  <h3 id="hosting">2.1 Hosting und Auslieferung</h3>
+  <p>Die Website wird von der Cloudflare, Inc. (101 Townsend Street, San Francisco, CA 94107, USA) als unserem Auftragsverarbeiter ausgeliefert. Um Seiten auszuliefern und vor Angriffen zu schützen, verarbeitet Cloudflare Verbindungsdaten: IP-Adresse, Datum und Uhrzeit, die aufgerufene Adresse, die verweisende Seite und Angaben zum Browser (User-Agent). Wir selbst speichern diese Protokolle nicht.</p>
+  <p>Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse ist eine schnelle, sichere und zuverlässig erreichbare Website.</p>
+
+  <h3 id="speicher">2.2 Cookies und Speicher im Browser</h3>
+  <p>Diese Website setzt keine Cookies. Wenn Sie ein helles oder dunkles Design wählen, wird diese Wahl im lokalen Speicher Ihres Browsers abgelegt (<code>cg-theme</code>) und verlässt Ihr Gerät nicht. Diese Speicherung ist für eine von Ihnen gewünschte Funktion unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG).</p>
+
+  <h3 id="statistik">2.3 Besuchsstatistik (PostHog, ohne Cookies)</h3>
+  <p>Um zu verstehen, welche Seiten Serverbetreibern helfen und wo das Plugin heruntergeladen wird, nutzen wir PostHog. Anbieter ist die PostHog Inc. (USA) als unser Auftragsverarbeiter. Die Daten werden in der EU (Frankfurt) gespeichert, die Anfragen laufen über unsere Adresse t.connectionguard.net.</p>
+  <ul>
+    <li><strong>Erfasst werden:</strong> aufgerufene Seiten und wie weit gescrollt wurde, die vorherige Seite, Klicks (zum Beispiel welche Download-Quelle oder welche Frage Sie wählen), Ladezeiten (Web Vitals), Skriptfehler sowie Browser, Gerätetyp und Betriebssystem.</li>
+    <li><strong>Zählung ohne Cookies:</strong> PostHog bildet aus Ihrer IP-Adresse, der Browserkennung und einem täglich wechselnden Zufallswert einen nicht umkehrbaren Hashwert. Der Tageswert wird anschließend gelöscht. Es entsteht kein Profil, Sie können nicht über Tage hinweg wiedererkannt werden, und auf Ihrem Gerät wird nichts gespeichert. IP-Adressen werden nicht gespeichert (IP-Anonymisierung ist aktiv).</li>
+    <li><strong>Widerspruch per Browser:</strong> Sendet Ihr Browser „Global Privacy Control“ oder „Do Not Track“, wird nichts erfasst.</li>
+    <li><strong>Speicherdauer:</strong> Die Ereignisse werden nach einem Jahr gelöscht.</li>
+  </ul>
+  <p>Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse ist, die Website mit möglichst wenig Daten zu verstehen und zu verbessern. Da auf Ihrem Gerät nichts gespeichert oder ausgelesen wird, ist keine Einwilligung nach § 25 TDDDG erforderlich. Sie können jederzeit widersprechen (siehe Abschnitt 9).</p>
+
+  <h3 id="keine-dritten">2.4 Keine weiteren Inhalte Dritter</h3>
+  <p>Schriften, Bilder und Skripte werden von unserer eigenen Domain geladen. Die angezeigten Downloadzahlen fragen wir beim Erstellen der Website bei Modrinth, SpigotMC, Hangar und GitHub ab, nicht aus Ihrem Browser. Links zu diesen Seiten und zu Discord übertragen erst Daten, wenn Sie ihnen folgen; dann gilt die Datenschutzerklärung des jeweiligen Anbieters.</p>
+
+  <h2 id="dashboard">3. Das Dashboard (app.connectionguard.net)</h2>
+
+  <h3 id="discord">3.1 Anmeldung mit Discord</h3>
+  <p>Sie melden sich mit Ihrem Discord-Konto an. Die Anmeldung führt die Discord Inc. (444 De Haro Street, Suite 200, San Francisco, CA 94107, USA) als eigener Verantwortlicher durch. Wir fragen nur die Berechtigung <code>identify</code> an und speichern Ihre Discord-Nutzer-ID, Ihren Anzeigenamen und die Adresse Ihres Profilbilds. Ihre E-Mail-Adresse, Server und Nachrichten erhalten wir nicht. Ihr Profilbild wird von den Servern von Discord geladen, wenn das Dashboard es anzeigt; dabei wird Ihre IP-Adresse an Discord übertragen.</p>
+  <p>Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO, um Ihnen das Dashboard bereitzustellen, für das Sie sich anmelden.</p>
+
+  <h3 id="cookies">3.2 Cookies und Speicher im Browser</h3>
+  <ul>
+    <li><code>cg_session</code>: hält Sie angemeldet, gültig für 30 Tage oder bis zur Abmeldung.</li>
+    <li><code>cg_oauth_state</code>: schützt die Anmeldung mit Discord vor Fälschung, gültig für 10 Minuten.</li>
+    <li>Lokaler Speicher für Ihre Einstellungen: Design (<code>cg-theme</code>), ausgeblendete Hinweise (<code>cg-dismissed:…</code>, <code>cg-checklist-dismissed:…</code>) und, falls Sie die Nutzungsanalyse abschalten, diese Wahl (<code>cg-analytics-optout</code> sowie PostHogs eigenes <code>__ph_opt_in_out_…</code>).</li>
+  </ul>
+  <p>Alle sind für von Ihnen gewünschte Funktionen unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG; Art. 6 Abs. 1 lit. b DSGVO). Das Dashboard setzt keine Tracking-Cookies.</p>
+
+  <h3 id="konto">3.3 Konto, Netzwerke und Server</h3>
+  <p>Wir speichern, was Sie eingeben oder was bei der Nutzung entsteht: Namen von Netzwerken und Servern, Ihre Rolle im jeweiligen Netzwerk, den Zeitpunkt, zu dem Sie den Auftragsverarbeitungsvertrag akzeptiert haben, die Einstellungen, die Sie an Ihre Server senden, und ein Protokoll, wer wann was geändert hat. Eingegebene API-Schlüssel und Webhook-Adressen speichern wir nur verschlüsselt und nur so lange, bis Ihr Server den Empfang bestätigt; danach werden sie aus unseren Systemen gelöscht. Außerdem verarbeitet das Dashboard die Daten, die verknüpfte Server senden (Abschnitt 4.2).</p>
+  <p>Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO. Das Änderungsprotokoll dient zusätzlich unserem berechtigten Interesse an Sicherheit und Nachvollziehbarkeit (Art. 6 Abs. 1 lit. f DSGVO).</p>
+  <p>Speicherdauer: Anmeldesitzungen enden nach 30 Tagen. Konto, Netzwerkdaten und Änderungsprotokoll bleiben gespeichert, solange Sie das Dashboard nutzen. Wenn Sie Ihr Konto löschen lassen möchten, schreiben Sie an <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a>; wir löschen es dann innerhalb eines Monats.</p>
+
+  <h3 id="nutzungsanalyse">3.4 Nutzungsanalyse (PostHog)</h3>
+  <p>Um das Dashboard zu verbessern, erfassen wir mit PostHog (EU) wie in Abschnitt 2.3, wie es genutzt wird, hier jedoch Ihrem Konto zugeordnet. So sehen wir, wo die Einrichtung eines Servers scheitert.</p>
+  <ul>
+    <li><strong>Erfasst werden:</strong> aufgerufene Seiten, Klicks, der Fortschritt im Einrichtungsassistenten, Fehler und Ladezeiten. Sitzungsaufzeichnungen zeigen den Seitenaufbau und wohin Sie geklickt haben; <strong>alle Texte und alle Eingaben sind dabei unkenntlich gemacht</strong>. Bereiche mit Spielerdaten sind von der Klick-Erfassung ausgenommen.</li>
+    <li><strong>Zuordnung:</strong> über Ihre zufällige Dashboard-Konto-ID und die ID des angezeigten Netzwerks. Ihr Discord-Name und Ihre Discord-ID werden nie übertragen. Auf Ihrem Gerät wird dafür nichts gespeichert, und IP-Adressen werden nicht gespeichert.</li>
+    <li><strong>Speicherdauer:</strong> Sitzungsaufzeichnungen werden nach 30 Tagen gelöscht, die übrigen Ereignisse nach einem Jahr.</li>
+    <li><strong>Abschalten:</strong> unter Ihrem Profilbild, „Share usage data“. Bei „Global Privacy Control“ oder „Do Not Track“ ist die Analyse automatisch aus.</li>
+  </ul>
+  <p>Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse ist ein Dashboard, das für seine Nutzer funktioniert. Sie können jederzeit mit dem genannten Schalter widersprechen.</p>
+
+  <h3 id="protokolle">3.5 Server-Protokolle</h3>
+  <p>Das Dashboard und seine Schnittstelle laufen auf Cloudflare Workers. Zur Fehleranalyse speichert Cloudflare Anfrageprotokolle, die Ihre IP-Adresse enthalten können, für bis zu drei Tage. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (sicherer und zuverlässiger Betrieb).</p>
+
+  <h2 id="plugin">4. Cloud-Verbindung des Plugins (api.connectionguard.net, ab Plugin 0.5)</h2>
+  <p>Ab Version 0.5 kann sich das Plugin mit dem Dashboard verbinden. Die Anmeldung von Spielern wartet nie auf diese Verbindung. Serverbetreiber schalten sie vollständig ab mit <code>cloud.enabled: false</code>, <code>/cg cloud disable</code> oder der Umgebungsvariable <code>CONNECTIONGUARD_CLOUD=false</code>; dann erreicht uns keine Anfrage mehr.</p>
+
+  <h3 id="nicht-verknuepft">4.1 Nicht mit einem Konto verknüpfte Server (Standard)</h3>
+  <p>Das Plugin sendet eine anonyme Installations-ID, Plattform und Versionen, den Schutzmodus, Summen je Zeitraum (Prüfungen, Ablehnungen, Cache-Treffer, Antwortzeiten, Anzahl je Land und Grund) und den Zustand der Erkennungsdienste. Es sendet keine IP-Adressen, UUIDs oder Namen von Spielern und keine API-Schlüssel oder Webhook-Adressen. Wir nutzen diese Daten, um den Dienst zu betreiben, Kapazitäten zu planen und aktive Server zu zählen.</p>
+  <p>Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse ist der Betrieb und die Verbesserung des Plugins; Serverbetreiber können durch Abschalten der Verbindung widersprechen. Speicherdauer: Installationen, die sich nicht mehr melden, werden nach 30 Tagen gelöscht; stündliche Summen bleiben 13 Monate gespeichert.</p>
+
+  <h3 id="verknuepft">4.2 Verknüpfte Server: Verarbeitung im Auftrag des Serverbetreibers</h3>
+  <p>Nachdem ein Serverbetreiber einen Server verknüpft und den Auftragsverarbeitungsvertrag akzeptiert hat, sendet das Plugin zusätzlich einen Eintrag je Anmeldeprüfung. Jeder Eintrag enthält den Zeitpunkt, die IP-Adresse und die verifizierte UUID des Spielers, das Ergebnis mit Grund und die Antworten der Erkennungsdienste (Land, Netzwerk, Anbieter, Risiko). Diese Daten verarbeiten wir <strong>ausschließlich im Auftrag und nach Weisung des Serverbetreibers</strong> (Art. 28 DSGVO), der dafür Verantwortlicher ist. Fragen zu diesen Daten richten Spieler bitte an den Betreiber des Servers, auf dem sie gespielt haben; wir unterstützen Betreiber bei der Beantwortung.</p>
+  <p>Speicherdauer: Einträge werden nach 30 Tagen gelöscht, stündliche Summen nach 13 Monaten. Wird ein Server entknüpft, werden seine Einträge sofort gelöscht.</p>
+
+  <h3 id="produktstatistik">4.3 Produktstatistik über Server</h3>
+  <p>Aus der Cloud-Verbindung leiten wir außerdem Statistiken ab, etwa „ein Server wurde installiert, verknüpft, hat Einstellungen übernommen oder erste Prüfungen gesendet“, sowie eine tägliche Zahl aktiver Server. Diese senden wir an PostHog (Abschnitt 2.3), zugeordnet der Installations-ID oder Ihrer Konto-ID. Sie enthalten Angaben zu Plattform und Version, niemals Spielerdaten, Einstellungswerte oder Schlüssel. Rechtsgrundlage und Speicherdauer wie in Abschnitt 3.4.</p>
+
+  <h2 id="email">5. Kontakt per E-Mail</h2>
+  <p>Wenn Sie uns schreiben, verarbeiten wir Ihre Adresse und Nachricht, um Ihnen zu antworten. Nachrichten an Adressen unter @connectionguard.net leitet Cloudflare Email Routing an unser Postfach weiter. Rechtsgrundlage: Art. 6 Abs. 1 lit. b oder f DSGVO. Wir löschen die Nachrichten, wenn das Anliegen erledigt ist, soweit keine gesetzlichen Aufbewahrungspflichten bestehen.</p>
+
+  <h2 id="empfaenger">6. Auftragsverarbeiter und Empfänger</h2>
+  <ul>
+    <li><strong>Cloudflare, Inc.</strong>: Hosting, Auslieferung, Sicherheit, Datenbanken (Dashboard-Daten werden in der EU gespeichert), E-Mail-Weiterleitung. Auftragsverarbeiter.</li>
+    <li><strong>PostHog Inc.</strong>: Produktanalyse, gehostet in der EU. Auftragsverarbeiter.</li>
+    <li><strong>Discord Inc.</strong>: Anmeldung. Eigener Verantwortlicher.</li>
+  </ul>
+  <p>Mit unseren Auftragsverarbeitern haben wir Verträge zur Auftragsverarbeitung geschlossen. Darüber hinaus geben wir Daten nur weiter, wenn wir gesetzlich dazu verpflichtet sind.</p>
+
+  <h2 id="drittland">7. Übermittlung in Drittländer</h2>
+  <p>Cloudflare, PostHog und Discord sind Unternehmen mit Sitz in den USA. Auch wenn unsere Daten, wo der Dienst es erlaubt, in der EU gespeichert werden, ist ein Zugriff aus den USA nicht ausgeschlossen. Solche Übermittlungen stützen sich auf den Angemessenheitsbeschluss der EU-Kommission zum EU-U.S. Data Privacy Framework (Art. 45 DSGVO), soweit das Unternehmen danach zertifiziert ist, und im Übrigen auf die Standardvertragsklauseln der EU (Art. 46 Abs. 2 lit. c DSGVO).</p>
+
+  <h2 id="entscheidungen">8. Automatisierte Entscheidungen</h2>
+  <p>Wir treffen keine automatisierten Entscheidungen über Sie im Sinne von Art. 22 DSGVO. Ob ein Spieler einen Minecraft-Server betreten darf, entscheidet das Plugin auf diesem Server nach den Regeln, die dessen Betreiber gewählt hat.</p>
+
+  <h2 id="rechte">9. Ihre Rechte</h2>
+  <p>Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) und Datenübertragbarkeit (Art. 20). Schreiben Sie dazu an <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a>.</p>
+  <div class="callout">
+    <p><strong>Widerspruchsrecht (Art. 21 DSGVO):</strong> Soweit wir Daten auf Grundlage berechtigter Interessen verarbeiten (Art. 6 Abs. 1 lit. f DSGVO), können Sie aus Gründen, die sich aus Ihrer besonderen Situation ergeben, jederzeit widersprechen. Für die Nutzungsanalyse im Dashboard genügt der Schalter „Share usage data“.</p>
+  </div>
+  <p>Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO). Für uns zuständig ist: {OPERATOR.authority.url ? <a href={OPERATOR.authority.url}>{OPERATOR.authority.name}</a> : "[missing]"}.</p>
+
+  <h2 id="aenderungen">10. Änderungen</h2>
+  <p>Wir passen diese Datenschutzerklärung an, wenn sich unsere Dienste oder die Rechtslage ändern. Das Datum oben zeigt die aktuelle Fassung. Eine englische Übersetzung finden Sie unter <a href="/privacy" hreflang="en">Privacy policy</a>; maßgeblich ist die deutsche Fassung.</p>
+</Legal>

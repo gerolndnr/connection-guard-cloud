@@ -1,59 +1,129 @@
 ---
-import Base from "../layouts/Base.astro";
+import Legal from "../layouts/Legal.astro";
+import { OPERATOR, addressLines } from "../data/operator";
+const address = addressLines("en");
+const toc: [string, string][] = [
+  ["summary", "Summary"],
+  ["controller", "Controller"],
+  ["website", "This website"],
+  ["dashboard", "The dashboard"],
+  ["plugin", "The plugin's cloud link"],
+  ["email", "Contacting us"],
+  ["recipients", "Processors and recipients"],
+  ["transfers", "Transfers outside the EU"],
+  ["rights", "Your rights"],
+  ["changes", "Changes"],
+];
 ---
-<Base title="Privacy: What Connection Guard Sends and Stores" path="/privacy" og="/og/privacy.png"
-  description="What this website, the Connection Guard plugin and its optional dashboard send and store, in plain language. This site sets no cookies and counts visits without identifying you.">
-  <article class="container-site max-w-3xl py-16 sm:py-20">
-    <h1 class="display text-[clamp(2.25rem,5vw,3.25rem)]">Privacy, in plain language</h1>
-    <p class="lede mt-5">This page explains what is sent where. The formal privacy policy for the dashboard will be published before the dashboard leaves preview.</p>
+<Legal title="Privacy Policy | Connection Guard" h1="Privacy policy" path="/privacy" lang="en"
+  description="How connectionguard.net, the Connection Guard dashboard and the plugin's optional cloud link process personal data, on which legal basis and for how long."
+  alternate={{ lang: "de", path: "/datenschutz", label: "Deutsche Fassung" }} toc={toc}>
 
-    <div class="prose-cg mt-12 space-y-12">
-      <section>
-        <h2>This website</h2>
-        <p>connectionguard.net sets no cookies and stores nothing in your browser for statistics. Your theme choice (light or dark) is kept in your browser's local storage and never leaves it. Download counts are read from Modrinth, SpigotMC, Hangar and GitHub when the site is built, not from your browser.</p>
-        <p>We count visits with <a href="https://posthog.com">PostHog</a>, hosted in the EU, in its cookieless mode: which pages are viewed, which buttons are clicked (for example which download site you pick), which questions are opened, page speed and script errors. To tell visits apart without storing anything, PostHog combines your IP address and browser version with a random value that changes every day into a one-way hash, and discards the IP address. No profile is created, and the same visitor can't be recognized on another day. If your browser sends Global Privacy Control or Do Not Track, nothing is counted.</p>
-      </section>
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li><strong>This website</strong> sets no cookies. Visits are counted with PostHog (EU) in cookieless mode: no profile is created, and you cannot be recognized on another day.</li>
+    <li><strong>The plugin</strong> (current release 0.4.x) sends player IP addresses only to the detection services the server operator enables. Nothing goes to connectionguard.net.</li>
+    <li><strong>The optional dashboard</strong> (from plugin 0.5) uses Discord sign-in, one necessary session cookie and usage analytics you can switch off. Player data from linked servers is processed only on behalf of the server operator.</li>
+    <li>Data is stored in the EU. We do not sell data, and we do not use it for advertising.</li>
+  </ul>
 
-      <section>
-        <h2>The plugin (0.4.x, current release)</h2>
-        <p>The plugin sends a player's IP address only to the detection services you enable in <code>config.yml</code>, such as ProxyCheck or IP-API. Their own privacy terms apply. Nothing is sent to connectionguard.net.</p>
-      </section>
+  <h2 id="controller">1. Controller</h2>
+  <p>The controller under the General Data Protection Regulation (GDPR) is:</p>
+  <p>{address.map((l, i) => <>{l}{i < address.length - 1 && <br />}</>)}<br />Email: <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a></p>
+  <p>We are not required to appoint a data protection officer. For any privacy question, write to the address above.</p>
 
-      <section>
-        <h2>The optional dashboard (from 0.5)</h2>
-        <p>From 0.5, the plugin can link to the free dashboard at app.connectionguard.net. Logins never wait on it, and it turns off with <code>cloud.enabled: false</code>, <code>/cg cloud disable</code> or the environment variable <code>CONNECTIONGUARD_CLOUD=false</code>. Off means no request to connectionguard.net at all.</p>
-        <dl class="mt-6 divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">
-          {[
-            { state: "Off", sent: "Nothing.", never: null },
-            { state: "On, not linked (default from 0.5)", sent: "An anonymous install ID, platform and versions, the protection mode, totals per interval (checks, refusals, cache hits, response times, counts per country and reason) and detection service health.", never: "Player IPs, UUIDs, names, API keys, webhook URLs." },
-            { state: "Linked, terms accepted", sent: "Additionally one entry per check: time, IP, verified UUID, verdict and reason, and what each service answered (country, network, provider, risk).", never: "API keys, player names, console commands." },
-          ].map((r) => (
-            <div class="grid gap-x-6 gap-y-2 p-4 text-sm leading-relaxed sm:grid-cols-[11rem_minmax(0,1fr)] sm:p-5">
-              <dt class="font-semibold text-fg">{r.state}</dt>
-              <dd class="max-w-[36rem] space-y-1.5">
-                <p class="text-fg-2"><span class="font-medium text-fg">Sent: </span>{r.sent}</p>
-                {r.never && <p class="text-fg-2"><span class="font-medium text-fg">Never sent: </span>{r.never}</p>}
-              </dd>
-            </div>
-          ))}
-        </dl>
-        <ul>
-          <li>Entries are kept for 30 days, hourly totals for 13 months. Unlinked installs that stop reporting are deleted after 30 days.</li>
-          <li>Data is stored in the EU, on Cloudflare.</li>
-          <li>API keys entered in the dashboard are stored encrypted until your server confirms them, then deleted from the dashboard.</li>
-          <li>You sign in with Discord. The dashboard reads only your Discord user ID, name and avatar.</li>
-          <li>The server operator decides about their players' data. The dashboard processes it only to show it to them.</li>
-        </ul>
-        <h3 class="mt-8 text-base font-semibold text-fg">How the dashboard itself is used</h3>
-        <p>To improve the dashboard, it records how it is used with PostHog in the EU: pages viewed, clicks, setup progress, errors, page speed and session recordings. Recordings hide all text and everything you type, so they show the layout and where you clicked, not your players or settings. Tables and panels with player data are excluded from click tracking. Events are linked to your random dashboard account ID, never to your Discord name, and nothing is stored in cookies. The service also records server lifecycle events: a server was installed, linked, unlinked, sent its first checks, or applied or rejected settings, plus a daily count of active servers. These contain platform and version details, never player data, setting values or keys.</p>
-        <p>You can switch this off any time under your avatar, "Share usage data". If your browser sends Global Privacy Control, it is off automatically.</p>
-        <p>The exact wire format is public in <a href="https://github.com/gerolndnr/connection-guard-cloud/tree/main/packages/protocol">packages/protocol</a>.</p>
-      </section>
+  <h2 id="website">2. This website (connectionguard.net)</h2>
 
-      <section>
-        <h2>Questions</h2>
-        <p>Ask on <a href="https://discord.gg/8q4HFCh2RK">Discord</a> or <a href="https://github.com/gerolndnr/connection-guard-cloud/issues">open an issue</a>.</p>
-      </section>
-    </div>
-  </article>
-</Base>
+  <h3 id="hosting">2.1 Hosting and delivery</h3>
+  <p>The website is delivered by Cloudflare, Inc. (101 Townsend Street, San Francisco, CA 94107, USA) as our processor. To deliver pages and protect them against attacks, Cloudflare processes connection data: IP address, date and time, the requested address, the referring page and browser information (user agent). We do not store these logs ourselves.</p>
+  <p>Legal basis: Art. 6(1)(f) GDPR. Our legitimate interest is a fast, secure and reliably available website.</p>
+
+  <h3 id="storage">2.2 Cookies and browser storage</h3>
+  <p>This website sets no cookies. If you choose a light or dark theme, that choice is saved in your browser's local storage (<code>cg-theme</code>) and never leaves your device. This storage is strictly necessary for a function you request (§ 25(2) no. 2 TDDDG).</p>
+
+  <h3 id="site-analytics">2.3 Visit statistics (PostHog, cookieless)</h3>
+  <p>To learn which pages help server owners and where people download the plugin, we use PostHog. The provider is PostHog Inc. (USA), acting as our processor. The data is hosted in the EU (Frankfurt), and requests go through our address t.connectionguard.net.</p>
+  <ul>
+    <li><strong>What is recorded:</strong> pages viewed and how far they were scrolled, the previous page, clicks (for example which download site or question you choose), page speed (web vitals), script errors, and browser, device type and operating system.</li>
+    <li><strong>How visits are counted without cookies:</strong> PostHog combines your IP address and browser identifier with a random value that changes every day into a one-way hash. The daily value is deleted afterwards. No profile is created, you cannot be recognized across days, and nothing is stored on your device. IP addresses are not stored (IP anonymization is on).</li>
+    <li><strong>Opting out:</strong> if your browser sends Global Privacy Control or Do Not Track, nothing is recorded.</li>
+    <li><strong>Retention:</strong> events are deleted after one year.</li>
+  </ul>
+  <p>Legal basis: Art. 6(1)(f) GDPR. Our legitimate interest is understanding and improving the website with as little data as possible. Because nothing is stored on or read from your device, no consent under § 25 TDDDG is required. You can object at any time (see section 9).</p>
+
+  <h3 id="no-third-party">2.4 No other third-party content</h3>
+  <p>Fonts, images and scripts are served from our own domain. Download counts shown on the website are read from Modrinth, SpigotMC, Hangar and GitHub when we build the website, not from your browser. Links to those sites and to Discord only transfer data once you follow them; the respective provider's privacy policy then applies.</p>
+
+  <h2 id="dashboard">3. The dashboard (app.connectionguard.net)</h2>
+
+  <h3 id="discord">3.1 Sign-in with Discord</h3>
+  <p>You sign in with your Discord account. Discord Inc. (444 De Haro Street, Suite 200, San Francisco, CA 94107, USA) runs the sign-in as a separate controller. We request only the <code>identify</code> permission and keep your Discord user ID, display name and the address of your avatar image. We do not receive your email address, servers or messages. Your avatar is loaded from Discord's servers when the dashboard shows it, which transmits your IP address to Discord.</p>
+  <p>Legal basis: Art. 6(1)(b) GDPR, to provide the dashboard you sign up for.</p>
+
+  <h3 id="cookies">3.2 Cookies and browser storage</h3>
+  <ul>
+    <li><code>cg_session</code>: keeps you signed in, valid for 30 days or until you sign out.</li>
+    <li><code>cg_oauth_state</code>: protects the Discord sign-in against forgery, valid for 10 minutes.</li>
+    <li>Local storage for your choices: theme (<code>cg-theme</code>), notes you dismissed (<code>cg-dismissed:…</code>, <code>cg-checklist-dismissed:…</code>) and, if you switch off usage analytics, that choice (<code>cg-analytics-optout</code>, plus PostHog's own <code>__ph_opt_in_out_…</code>).</li>
+  </ul>
+  <p>All of these are strictly necessary for functions you request (§ 25(2) no. 2 TDDDG; Art. 6(1)(b) GDPR). The dashboard sets no tracking cookies.</p>
+
+  <h3 id="account">3.3 Account, networks and servers</h3>
+  <p>We store what you enter or what results from using the dashboard: network and server names, your role in each network, when you accepted the data processing agreement, the settings you send to your servers, and an audit log of who changed what and when. API keys and webhook addresses you enter are stored encrypted only until your server confirms receipt, then deleted from our systems. The dashboard also processes data that linked servers send (section 4.2).</p>
+  <p>Legal basis: Art. 6(1)(b) GDPR. The audit log also serves our legitimate interest in security and traceability (Art. 6(1)(f) GDPR).</p>
+  <p>Retention: sign-in sessions end after 30 days. Account, network data and audit log are kept while you use the dashboard. Write to <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a> to have your account deleted; we then delete it within one month.</p>
+
+  <h3 id="dashboard-analytics">3.4 Usage analytics (PostHog)</h3>
+  <p>To improve the dashboard, we record how it is used with PostHog (EU), as in section 2.3, but linked to your account. That way we can see where setting up a server fails.</p>
+  <ul>
+    <li><strong>What is recorded:</strong> pages viewed, clicks, progress through the setup assistant, errors and page speed. Session recordings show the page layout and where you clicked, with <strong>all text and everything you type hidden</strong>. Areas showing player data are excluded from click tracking.</li>
+    <li><strong>Identification:</strong> by your random dashboard account ID and the ID of the network you are viewing. Your Discord name and ID are never sent. Nothing is stored on your device for this, and IP addresses are not stored.</li>
+    <li><strong>Retention:</strong> session recordings are deleted after 30 days, other events after one year.</li>
+    <li><strong>Switching it off:</strong> under your avatar, "Share usage data". Global Privacy Control or Do Not Track switches it off automatically.</li>
+  </ul>
+  <p>Legal basis: Art. 6(1)(f) GDPR. Our legitimate interest is a dashboard that works for its users. You can object at any time with the switch described above.</p>
+
+  <h3 id="logs">3.5 Server logs</h3>
+  <p>The dashboard and its interface run on Cloudflare Workers. For error analysis, Cloudflare keeps request logs, which can include your IP address, for up to three days. Legal basis: Art. 6(1)(f) GDPR (secure and reliable operation).</p>
+
+  <h2 id="plugin">4. The plugin's cloud link (api.connectionguard.net, from plugin 0.5)</h2>
+  <p>From version 0.5, the plugin can connect to the dashboard. Players' logins never wait on this connection. Server operators turn it off completely with <code>cloud.enabled: false</code>, <code>/cg cloud disable</code> or the environment variable <code>CONNECTIONGUARD_CLOUD=false</code>; then no request reaches us.</p>
+
+  <h3 id="unlinked">4.1 Servers not linked to an account (default)</h3>
+  <p>The plugin sends an anonymous install ID, the platform and versions, the protection mode, totals per interval (checks, refusals, cache hits, response times, counts per country and reason) and the health of the detection services. It sends no player IP addresses, UUIDs or names, and no API keys or webhook addresses. We use this to run the service, plan capacity and count active servers.</p>
+  <p>Legal basis: Art. 6(1)(f) GDPR. Our legitimate interest is operating and improving the plugin; server operators can object by turning the link off. Retention: installs that stop reporting are deleted after 30 days; hourly totals are kept for 13 months.</p>
+
+  <h3 id="linked">4.2 Linked servers: processing on behalf of the server operator</h3>
+  <p>After a server operator links a server and accepts the data processing agreement, the plugin also sends one entry per login check. Each entry contains the time, the player's IP address and verified UUID, the verdict and reason, and what each detection service answered (country, network, provider, risk). We process this data <strong>only on behalf of and as instructed by the server operator</strong> (Art. 28 GDPR), who is the controller. Players should address questions about this data to the operator of the server they joined; we support operators in answering them.</p>
+  <p>Retention: entries are deleted after 30 days, hourly totals after 13 months. Unlinking a server deletes its entries immediately.</p>
+
+  <h3 id="product-events">4.3 Product statistics about servers</h3>
+  <p>From the cloud link we also derive statistics such as "a server was installed, linked, applied settings or sent its first checks", plus a daily count of active servers. We send these to PostHog (section 2.3), keyed by the install ID or your account ID. They contain platform and version details, never player data, setting values or keys. Legal basis and retention as in section 3.4.</p>
+
+  <h2 id="email">5. Contacting us</h2>
+  <p>If you email us, we process your address and message to answer you. Messages to @connectionguard.net addresses are forwarded to our mailbox by Cloudflare Email Routing. Legal basis: Art. 6(1)(b) or (f) GDPR. We delete the messages when the matter is closed, unless statutory retention obligations apply.</p>
+
+  <h2 id="recipients">6. Processors and recipients</h2>
+  <ul>
+    <li><strong>Cloudflare, Inc.</strong>: hosting, delivery, security, databases (dashboard data is stored in the EU), email forwarding. Processor.</li>
+    <li><strong>PostHog Inc.</strong>: product analytics, hosted in the EU. Processor.</li>
+    <li><strong>Discord Inc.</strong>: sign-in. Separate controller.</li>
+  </ul>
+  <p>We have concluded data processing agreements with our processors. We do not pass on data otherwise, unless we are legally required to.</p>
+
+  <h2 id="transfers">7. Transfers outside the EU</h2>
+  <p>Cloudflare, PostHog and Discord are companies based in the USA. Although our data is stored in the EU wherever the service allows it, access from the USA cannot be ruled out. Such transfers rest on the European Commission's adequacy decision for the EU-U.S. Data Privacy Framework (Art. 45 GDPR) where the company is certified under it, and otherwise on the EU standard contractual clauses (Art. 46(2)(c) GDPR).</p>
+
+  <h2 id="decisions">8. Automated decisions</h2>
+  <p>We make no automated decisions about you within the meaning of Art. 22 GDPR. Whether a player may join a Minecraft server is decided by the plugin on that server, according to the rules its operator chose.</p>
+
+  <h2 id="rights">9. Your rights</h2>
+  <p>You have the right to access your data (Art. 15 GDPR), to rectification (Art. 16), erasure (Art. 17), restriction of processing (Art. 18) and data portability (Art. 20). To use them, write to <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a>.</p>
+  <div class="callout">
+    <p><strong>Right to object (Art. 21 GDPR):</strong> where we process data based on legitimate interests (Art. 6(1)(f) GDPR), you can object at any time on grounds relating to your particular situation. For the dashboard's usage analytics, the "Share usage data" switch is enough.</p>
+  </div>
+  <p>You also have the right to lodge a complaint with a data protection supervisory authority (Art. 77 GDPR). The authority responsible for us is: {OPERATOR.authority.url ? <a href={OPERATOR.authority.url}>{OPERATOR.authority.name}</a> : "[missing]"}.</p>
+
+  <h2 id="changes">10. Changes</h2>
+  <p>We update this policy when our services or the law change. The date at the top shows the current version. The German version of this policy is legally binding: <a href="/datenschutz" hreflang="de">Datenschutzerklärung</a>.</p>
+</Legal>

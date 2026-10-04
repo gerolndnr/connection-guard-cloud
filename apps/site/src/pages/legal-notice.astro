@@ -1,0 +1,27 @@
+---
+import Legal from "../layouts/Legal.astro";
+import { OPERATOR, addressLines } from "../data/operator";
+const address = addressLines("en");
+---
+<Legal title="Legal notice | Connection Guard" h1="Legal notice" path="/legal-notice" lang="en"
+  description="Provider information for connectionguard.net and app.connectionguard.net under German law (§ 5 DDG, § 18 (2) MStV)."
+  alternate={{ lang: "de", path: "/impressum", label: "Deutsche Fassung (Impressum)" }}>
+  <p>This is a translation of the German <a href="/impressum" hreflang="de">Impressum</a>, which is the legally binding version.</p>
+
+  <h2 id="provider">Provider (§ 5 DDG)</h2>
+  <p>{address.map((l, i) => <>{l}{i < address.length - 1 && <br />}</>)}</p>
+
+  <h2 id="contact">Contact</h2>
+  <p>Email: <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a></p>
+  <p>The address is a service address (c/o). Mail sent there is reliably forwarded to the provider.</p>
+
+  <h2 id="mstv">Responsible for content under § 18 (2) MStV</h2>
+  <p>{OPERATOR.name || "[missing]"}, address as above.</p>
+
+  <h2 id="scope">Scope</h2>
+  <p>This notice covers connectionguard.net, app.connectionguard.net and api.connectionguard.net. Connection Guard is a free, open-source, non-commercial project.</p>
+
+  <h2 id="note">Note</h2>
+  <p>Connection Guard is not an official Minecraft product and is not approved by or associated with Mojang or Microsoft.</p>
+  <p>Privacy: <a href="/privacy">privacy policy</a>.</p>
+</Legal>

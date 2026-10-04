@@ -1,0 +1,25 @@
+---
+import Legal from "../layouts/Legal.astro";
+import { OPERATOR, addressLines } from "../data/operator";
+const address = addressLines("de");
+---
+<Legal title="Impressum | Connection Guard" h1="Impressum" path="/impressum" lang="de"
+  description="Anbieterkennzeichnung für connectionguard.net und app.connectionguard.net nach § 5 DDG und § 18 Abs. 2 MStV."
+  alternate={{ lang: "en", path: "/legal-notice", label: "English version" }}>
+  <h2 id="anbieter">Angaben gemäß § 5 DDG</h2>
+  <p>{address.map((l, i) => <>{l}{i < address.length - 1 && <br />}</>)}</p>
+
+  <h2 id="kontakt">Kontakt</h2>
+  <p>E-Mail: <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a></p>
+  <p>Die Anschrift ist eine Zustellanschrift (c/o). Post an diese Anschrift wird zuverlässig an den Anbieter weitergeleitet.</p>
+
+  <h2 id="mstv">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+  <p>{OPERATOR.name || "[missing]"}, Anschrift wie oben.</p>
+
+  <h2 id="geltungsbereich">Geltungsbereich</h2>
+  <p>Dieses Impressum gilt für connectionguard.net, app.connectionguard.net und api.connectionguard.net. Connection Guard ist ein kostenloses Open-Source-Projekt ohne Gewinnerzielungsabsicht.</p>
+
+  <h2 id="hinweis">Hinweis</h2>
+  <p>Connection Guard ist kein offizielles Minecraft-Produkt und weder von Mojang noch von Microsoft genehmigt oder mit ihnen verbunden.</p>
+  <p>Informationen zum Datenschutz: <a href="/datenschutz">Datenschutzerklärung</a>.</p>
+</Legal>

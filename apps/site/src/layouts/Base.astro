@@ -16,14 +16,17 @@ interface Props {
   noindex?: boolean;
   /** Page-level analytics event, e.g. { event: "install_guide_opened", platform: "velocity" }. */
   view?: { event: string; [prop: string]: string };
+  lang?: "en" | "de";
+  /** Language versions of this page for hreflang. */
+  alternates?: { lang: "en" | "de"; path: string }[];
 }
-const { title, description, path, og = "/og/home.png", type = "website", schema = [], noindex = false, view } = Astro.props;
+const { title, description, path, og = "/og/home.png", type = "website", schema = [], noindex = false, view, lang = "en", alternates = [] } = Astro.props;
 const viewAttrs = view ? Object.fromEntries(Object.entries(view).map(([k, v]) => [k === "event" ? "data-ph-view" : `data-ph-${k}`, v])) : {};
 const canonical = new URL(path, SITE).toString();
 const image = new URL(og, SITE).toString();
 ---
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -31,6 +34,7 @@ const image = new URL(og, SITE).toString();
     <title>{title}</title>
     <meta name="description" content={description} />
     {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    {alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={new URL(a.path, SITE).toString()} />)}
     <link rel="preload" href={geistLatin} as="font" type="font/woff2" crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
@@ -41,7 +45,7 @@ const image = new URL(og, SITE).toString();
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta property="og:type" content={type} />
     <meta property="og:site_name" content={NAME} />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content={lang === "de" ? "de_DE" : "en_US"} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
