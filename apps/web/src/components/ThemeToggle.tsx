@@ -16,8 +16,14 @@ function apply(theme: Theme) {
 
 /** System / light / dark. The choice is a per-browser convenience; system is the default. */
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(read);
+  // The first render must match the server-rendered HTML on the website (always "system"), or React aborts
+  // hydration (#418). The stored choice is read right after mounting; the inline script in the page head has
+  // already applied it to <html>, so nothing flashes.
+  const [theme, setTheme] = useState<Theme>("system");
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { setTheme(read()); setLoaded(true); }, []);
   useEffect(() => {
+    if (!loaded) return; // don't overwrite the stored choice with the placeholder
     apply(theme);
     try { if (theme === "system") localStorage.removeItem(KEY); else localStorage.setItem(KEY, theme); } catch { /* private mode */ }
     if (theme !== "system") return;
@@ -25,7 +31,7 @@ export function ThemeToggle() {
     const onChange = () => apply("system");
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [theme]);
+  }, [theme, loaded]);
   const options: { id: Theme; label: string; Icon: typeof Sun }[] = [
     { id: "system", label: "System theme", Icon: Monitor }, { id: "light", label: "Light theme", Icon: Sun }, { id: "dark", label: "Dark theme", Icon: Moon },
   ];
