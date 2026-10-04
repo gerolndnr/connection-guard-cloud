@@ -1,0 +1,108 @@
+---
+import Legal from "../layouts/Legal.astro";
+import { OPERATOR, LEGAL_VERSION, addressLines } from "../data/operator";
+const address = addressLines("en").join(", ");
+const toc: [string, string][] = [
+  ["preamble", "Preamble"],
+  ["subject", "Subject and duration"],
+  ["data", "Data and data subjects"],
+  ["instructions", "Instructions"],
+  ["obligations", "Processor obligations"],
+  ["subprocessors", "Sub-processors"],
+  ["transfers", "Third countries"],
+  ["assistance", "Assistance"],
+  ["deletion", "Deletion and return"],
+  ["audits", "Information and audits"],
+  ["controller", "Controller obligations"],
+  ["final", "Final provisions"],
+  ["annex-1", "Annex 1: Security measures"],
+  ["annex-2", "Annex 2: Sub-processors"],
+];
+---
+<Legal title="Data Processing Agreement (DPA) | Connection Guard" h1="Data processing agreement" path="/dpa" lang="en"
+  description="Data processing agreement under Art. 28 GDPR for server operators who link a Minecraft server to the Connection Guard dashboard."
+  alternate={{ lang: "de", path: "/avv", label: "Deutsche Fassung (AVV)" }} toc={toc}>
+
+  <p><strong>Version {LEGAL_VERSION}.</strong> This is a translation; the German <a href="/avv" hreflang="de">Auftragsverarbeitungsvertrag</a> is legally binding. This agreement under Art. 28(3) GDPR applies between the operator of a Minecraft server who links the server to the dashboard (<strong>controller</strong>) and {address} (<strong>processor</strong>). It is concluded electronically (Art. 28(9) GDPR) when the controller accepts it while linking a server.</p>
+
+  <h2 id="preamble">1. Preamble</h2>
+  <p>The Connection Guard plugin checks players' connections on the controller's server. When the controller links a server to the dashboard at app.connectionguard.net, the plugin sends the results of these checks to the processor so that the controller can view them and manage the server there. The controller is responsible for processing the players' data; the processor processes it only on the controller's behalf.</p>
+
+  <h2 id="subject">2. Subject matter, nature, purpose and duration</h2>
+  <p><strong>Subject matter and purpose:</strong> providing the dashboard for the controller's linked servers. This covers receiving, storing, analysing, displaying and deleting check results, and sending the settings and commands the controller triggers in the dashboard to the controller's servers.</p>
+  <p><strong>Nature of processing:</strong> collection (receipt from the plugin), storage, organisation, retrieval, consultation, aggregation into statistics, display, transmission to the controller's server, erasure.</p>
+  <p><strong>Duration:</strong> as long as at least one of the controller's servers is linked. For a server, the agreement ends when it is unlinked or the controller turns the cloud link off in the plugin; otherwise when the account is deleted.</p>
+
+  <h2 id="data">3. Types of personal data and categories of data subjects</h2>
+  <p><strong>Data subjects:</strong> players who connect to a linked server of the controller or who are named in its rules and exemptions.</p>
+  <p><strong>Types of data:</strong></p>
+  <ul>
+    <li>Per login check: time, IP address, the player's verified UUID, verdict and reason, rules applied, and the answers of the detection services (country, network or ASN, provider, risk score, VPN or proxy detection).</li>
+    <li>Entries in exemptions and access rules set by the controller: player name, UUID or IP address and an optional note.</li>
+    <li>Hourly statistics derived from these, which no longer identify individuals.</li>
+  </ul>
+  <p>No special categories of personal data (Art. 9 GDPR) are processed.</p>
+
+  <h2 id="instructions">4. Instructions</h2>
+  <p>The processor processes the data only on documented instructions from the controller (Art. 28(3)(a) GDPR), unless required to do so by Union or German law; in that case it informs the controller before processing, unless that law prohibits it. Instructions are this agreement, the plugin's configuration and all of the controller's settings and actions in the dashboard (for example unlinking, settings, access rules). Further instructions are given in text form to {OPERATOR.privacyEmail}. If the processor considers an instruction unlawful, it informs the controller without delay.</p>
+
+  <h2 id="obligations">5. Obligations of the processor</h2>
+  <ul>
+    <li>It processes the data only for the purposes of this agreement and does not use it for its own purposes, except for statistics without personal reference that are needed to run the service, such as the number of active servers. No player data goes into these.</li>
+    <li>Persons with access to the data are committed to confidentiality or are under a statutory obligation of confidentiality (Art. 28(3)(b) GDPR).</li>
+    <li>It takes the technical and organisational measures under Art. 32 GDPR set out in Annex 1 and keeps them up to date without lowering the level of protection.</li>
+    <li>It notifies the controller of personal data breaches without undue delay after becoming aware of them (Art. 33(2) GDPR), with the information the controller needs for its own notification. Notification is given by a notice in the dashboard and, where possible, through other channels.</li>
+  </ul>
+
+  <h2 id="subprocessors">6. Sub-processors</h2>
+  <p>The controller gives general authorisation to engage further processors (Art. 28(2) GDPR). Those engaged when the agreement is concluded are listed in Annex 2. The processor binds them contractually to a level of protection equivalent to this agreement (Art. 28(4) GDPR). It announces intended changes at least 30 days in advance on this page and in the dashboard. The controller may object on important data protection grounds; it may then end the link without any disadvantage.</p>
+
+  <h2 id="transfers">7. Processing outside the EU</h2>
+  <p>The data is stored in the EU. Access by sub-processors from third countries, in particular the USA, is only permitted where the requirements of Art. 44 et seq. GDPR are met, for example through an adequacy decision (EU-U.S. Data Privacy Framework) or the EU standard contractual clauses.</p>
+
+  <h2 id="assistance">8. Assistance to the controller</h2>
+  <ul>
+    <li><strong>Data subject rights:</strong> the dashboard lets the controller find a player's data (search by IP address or UUID), review it and delete it by unlinking a server. Beyond that, the processor assists with requests under Art. 12 to 23 GDPR. If a player contacts the processor directly, it refers the player to the controller where it can identify the controller.</li>
+    <li><strong>Art. 32 to 36 GDPR:</strong> it assists the controller with security, breach notifications, data protection impact assessments and prior consultation, as far as it has the relevant information.</li>
+  </ul>
+
+  <h2 id="deletion">9. Deletion and return</h2>
+  <p>Login check entries are deleted after 30 days, hourly statistics after 13 months. Unlinking a server deletes its entries immediately. When the agreement ends, the processor deletes all remaining personal data of the controller unless storage is required by law (Art. 28(3)(g) GDPR). On request, the controller can receive a copy beforehand.</p>
+
+  <h2 id="audits">10. Information and audits</h2>
+  <p>The processor makes available all information necessary to demonstrate compliance with Art. 28 GDPR and allows for audits (Art. 28(3)(h) GDPR). The source code of the dashboard and the plugin is public and shows which data is transmitted and how it is processed. Further audits are possible after timely notice in text form, without disproportionately disrupting operations.</p>
+
+  <h2 id="controller">11. Obligations of the controller</h2>
+  <ul>
+    <li>It ensures a legal basis for processing its players' data and informs players under Art. 13 and 14 GDPR, for example in its server's privacy notice.</li>
+    <li>It links only servers it operates or is authorised for.</li>
+    <li>It informs the processor without delay if it notices errors or irregularities in the processing.</li>
+  </ul>
+
+  <h2 id="final">12. Final provisions</h2>
+  <p>Liability is governed by Art. 82 GDPR. Otherwise the <a href="/terms">terms of service</a> apply; where they conflict on data protection, this agreement prevails. Changes get a new version, which the controller accepts again in the dashboard. German law applies. If a provision is invalid, the rest of the agreement remains valid.</p>
+
+  <h2 id="annex-1">Annex 1: Technical and organisational measures (Art. 32 GDPR)</h2>
+  <ul>
+    <li><strong>Physical security:</strong> no own servers. Operation only in data centres of the sub-processor Cloudflare, certified under ISO 27001 and audited under SOC 2.</li>
+    <li><strong>Access control:</strong> dashboard sign-in only via Discord. Roles per network (owner, admin, viewer). Sessions expire after 30 days and are stored server-side only as a hash. Servers authenticate with a secret stored only as a hash. Only the processor has administrative access to the infrastructure.</li>
+    <li><strong>Transmission:</strong> encrypted transport only (TLS). API keys and webhook addresses are encrypted with AES-GCM and deleted once the server confirms them.</li>
+    <li><strong>Storage:</strong> database with EU jurisdiction, encrypted at rest. Check results are stored per network and shown only to its members.</li>
+    <li><strong>Data minimisation:</strong> the plugin sends individual entries only after linking. Player names are not part of check results. Product analytics strips IP addresses and UUIDs and hides areas showing player data.</li>
+    <li><strong>Input control:</strong> an audit log records who changed which settings, rules or links and when.</li>
+    <li><strong>Availability:</strong> Cloudflare's distributed infrastructure. The plugin checks players independently of the dashboard, so an outage does not affect logins.</li>
+    <li><strong>Separation and deletion:</strong> access is limited to the respective network. Automatic deletion after the periods in section 9.</li>
+    <li><strong>Review:</strong> public source code, automated interface tests, and review of the measures whenever the service changes.</li>
+  </ul>
+
+  <h2 id="annex-2">Annex 2: Sub-processors</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Company</th><th scope="col">Service</th><th scope="col">Location</th></tr></thead>
+      <tbody>
+        <tr><td>Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, USA</td><td>Hosting, database, delivery, attack protection</td><td>Database in the EU (EU jurisdiction); processing in Cloudflare's global network, safeguarded under section 7</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Product analytics (PostHog) receives no player data and is therefore not a sub-processor under this agreement.</p>
+</Legal>

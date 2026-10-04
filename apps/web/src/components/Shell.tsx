@@ -28,6 +28,8 @@ export function Shell({ networkId, children }: { networkId?: string; children: R
         <a href="https://connectionguard.net/legal-notice" className="no-underline hover:text-fg">Legal notice</a>
         <a href="https://connectionguard.net/privacy" className="no-underline hover:text-fg">Privacy</a>
         <a href="https://connectionguard.net/datenschutz" lang="de" className="no-underline hover:text-fg">Datenschutz</a>
+        <a href="https://connectionguard.net/terms" className="no-underline hover:text-fg">Terms</a>
+        <a href="https://connectionguard.net/dpa" className="no-underline hover:text-fg">DPA</a>
       </footer>
     </div>
   );

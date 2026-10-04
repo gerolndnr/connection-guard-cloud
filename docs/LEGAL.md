@@ -4,12 +4,12 @@ Status 2026-10-04: the operator lives in Germany. Drafts are written and in the 
 
 | Text | Where | Status |
 | --- | --- | --- |
-| Impressum (§ 5 DDG, § 18 Abs. 2 MStV) | `apps/site/src/pages/impressum.astro`, English `legal-notice.astro` | Written; needs operator name, c/o address and federal state in `apps/site/src/data/operator.ts` (the production build fails until then) |
-| Datenschutzerklärung | `apps/site/src/pages/datenschutz.astro` (binding), English `privacy.astro` | Written; same operator data |
-| Data processing agreement (AVV) | — | **Missing.** The link page asks operators to accept version `DPA_VERSION`, so it must exist before the dashboard is announced |
-| Terms of service | — | Missing |
+| Impressum (§ 5 DDG, § 18 Abs. 2 MStV) | `apps/site/src/pages/impressum.astro`, English `legal-notice.astro` | Live; operator details in `apps/site/src/data/operator.ts` (the production build fails if they are missing) |
+| Datenschutzerklärung | `apps/site/src/pages/datenschutz.astro` (binding), English `privacy.astro` | Live |
+| Data processing agreement (AVV, Art. 28) | `apps/site/src/pages/avv.astro` (binding), English `dpa.astro` | Written, version 2026-10-04; accepted with the terms when linking a server |
+| Terms of service | `apps/site/src/pages/nutzungsbedingungen.astro` (binding), English `terms.astro` | Written, version 2026-10-04; accepted when linking, referenced at sign-in |
 
-Both legal pages are linked from every website page and from the dashboard footer. Keep `LEGAL_UPDATED` in `operator.ts` current when changing them. Update the privacy policy when adding a processor, cookie or tracking (for example Turnstile, which is not active yet).
+All legal pages are linked from every website page and from the dashboard footer. Keep `LEGAL_UPDATED` in `operator.ts` current when changing them. Terms and AVV share one version: `LEGAL_VERSION` in `operator.ts` must equal `DPA_VERSION` in `apps/api/wrangler.jsonc` (the site build fails otherwise). Raising it makes the next person who links a server accept again; announce sub-processor changes 30 days ahead (AVV section 6). Update the privacy policy when adding a processor, cookie or tracking (for example Turnstile, which is not active yet).
 
 ## Original checklist
 

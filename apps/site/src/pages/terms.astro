@@ -1,0 +1,60 @@
+---
+import Legal from "../layouts/Legal.astro";
+import { OPERATOR, LEGAL_VERSION } from "../data/operator";
+const toc: [string, string][] = [
+  ["scope", "Scope"],
+  ["service", "The service"],
+  ["account", "Account"],
+  ["use", "Your obligations"],
+  ["settings", "Settings on your servers"],
+  ["third-party", "Third-party services"],
+  ["availability", "Availability"],
+  ["liability", "Liability"],
+  ["termination", "Termination"],
+  ["changes", "Changes"],
+  ["final", "Final provisions"],
+];
+---
+<Legal title="Terms of Service | Connection Guard" h1="Terms of service" path="/terms" lang="en"
+  description="Terms of service for the free Connection Guard dashboard at app.connectionguard.net and the plugin's cloud link."
+  alternate={{ lang: "de", path: "/nutzungsbedingungen", label: "Deutsche Fassung (Nutzungsbedingungen)" }} toc={toc}>
+
+  <p><strong>Version {LEGAL_VERSION}.</strong> This is a translation; the German <a href="/nutzungsbedingungen" hreflang="de">Nutzungsbedingungen</a> are legally binding.</p>
+
+  <h2 id="scope">1. Scope</h2>
+  <p>These terms govern the use of the dashboard at app.connectionguard.net and the interface at api.connectionguard.net (together, the "service"), provided by {OPERATOR.name} (see the <a href="/legal-notice">legal notice</a>). The Connection Guard plugin itself is licensed under MIT, and the service's source code under AGPL-3.0; these terms do not limit those licences. The <a href="/dpa">data processing agreement</a> additionally governs the processing of player data from linked servers.</p>
+
+  <h2 id="service">2. The service</h2>
+  <p>The service is free. It shows check results and statistics of linked servers and lets you change selected plugin settings. There is no entitlement to any particular set of features. We develop the service further and may change or discontinue features; we announce significant restrictions in the dashboard in good time. To keep it free to run, the service decides how often servers report and may limit usage.</p>
+
+  <h2 id="account">3. Account</h2>
+  <p>You sign in with Discord. You must be at least 16 years old or have your parents' consent. Keep access to your Discord account secure; actions taken through your account are attributed to you. Members you give access to a network act within their role.</p>
+
+  <h2 id="use">4. Your obligations</h2>
+  <ul>
+    <li>You link only servers you operate or are authorised for.</li>
+    <li>You are the controller under the GDPR for your players' data. You inform your players about the processing and have a legal basis for it.</li>
+    <li>You do not misuse the service: no attacks, no overloading, no circumventing limits and no use of other people's credentials. You do not use the service to break the law or infringe others' rights.</li>
+  </ul>
+
+  <h2 id="settings">5. Settings on your servers</h2>
+  <p>Settings you save in the dashboard are sent to your servers and applied there. You decide which players are refused and are responsible for the rules you choose. Check changes before you enforce them; observe mode shows their effect without refusing anyone. The service can only change the allowed settings and rules and cannot run console commands on your server.</p>
+
+  <h2 id="third-party">6. Third-party services</h2>
+  <p>Detection services such as ProxyCheck, IP-API, IPHub or VPNAPI are used directly by your server, under their own terms and quotas. API keys you enter in the dashboard are sent to your server encrypted and then deleted from our systems. We give no warranty for the results of these services.</p>
+
+  <h2 id="availability">7. Availability</h2>
+  <p>We aim for reliable operation but do not promise any particular availability. Maintenance, faults and events beyond our control can interrupt the service. The plugin checks players independently of the service; an outage never blocks logins on your server.</p>
+
+  <h2 id="liability">8. Liability</h2>
+  <p>The service is free of charge, so we are liable only for intent and gross negligence. We are liable without limitation for injury to life, body or health, under the German Product Liability Act and where we fraudulently concealed a defect. Liability under Art. 82 GDPR is not affected.</p>
+
+  <h2 id="termination">9. Termination and deletion</h2>
+  <p>You can stop at any time: unlink your servers, turn off the cloud link in the plugin, or ask for your account to be deleted by email to <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a>. We may end your use with two weeks' notice, for example if we discontinue the service, and immediately for serious breaches of these terms. Afterwards we delete your data as described in the <a href="/privacy">privacy policy</a>.</p>
+
+  <h2 id="changes">10. Changes to these terms</h2>
+  <p>If we change these terms, they get a new version. They apply to you only once you accept the new version in the dashboard. Until then, we may require acceptance before new links.</p>
+
+  <h2 id="final">11. Final provisions</h2>
+  <p>German law applies, excluding the UN Convention on Contracts for the International Sale of Goods. If you are a consumer, the mandatory provisions of the country where you live remain unaffected. If a provision is invalid, the others remain valid.</p>
+</Legal>

@@ -13,7 +13,7 @@ const errorText: Record<string, string> = {
   unknown_code: "This link is no longer valid. Links last 24 hours and work once. Run /cg cloud link on your server for a fresh one.",
   invalid_code: "That does not look like a link code. Codes look like 7KQM-4P2X.",
   turnstile_failed: "The browser check did not pass. Reload the page and try again.",
-  dpa_outdated: "The data processing terms changed while this page was open. Reload to read the current version.",
+  dpa_outdated: "The terms or the data processing agreement changed while this page was open. Reload to read the current version.",
   forbidden: "You need to be an owner or admin of that network to add servers to it.",
 };
 
@@ -161,7 +161,11 @@ export function LinkPage() {
               </ul>
               <label className="mt-4 flex cursor-pointer items-start gap-3 border-t border-line pt-4">
                 <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 size-4 accent-[var(--accent)]" />
-                <span>I accept the data processing agreement (version {config.data?.dpa_version}) for this server.</span>
+                <span>
+                  I accept the <a href="https://connectionguard.net/terms" target="_blank" rel="noopener" className="underline underline-offset-4">terms of service</a> and
+                  the <a href="https://connectionguard.net/dpa" target="_blank" rel="noopener" className="underline underline-offset-4">data processing agreement</a> (version {config.data?.dpa_version}) for this server.
+                  <span className="mt-1 block text-[0.75rem] text-fg-3">Binding German versions: <a href="https://connectionguard.net/nutzungsbedingungen" target="_blank" rel="noopener" lang="de" className="underline underline-offset-4">Nutzungsbedingungen</a>, <a href="https://connectionguard.net/avv" target="_blank" rel="noopener" lang="de" className="underline underline-offset-4">AVV</a></span>
+                </span>
               </label>
             </fieldset>
 

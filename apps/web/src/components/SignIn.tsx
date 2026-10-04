@@ -25,7 +25,7 @@ export function SignIn({ next }: { next: string }) {
         <DiscordMark /> Sign in with Discord
       </a>
       <p className="text-center text-[0.8125rem] text-fg-3">
-        {config.data?.discord_enabled === false ? "Discord sign-in is not configured on this instance yet." : <>We only read your Discord name and avatar. No email, no servers, no messages. <a href="https://connectionguard.net/privacy" className="underline decoration-line-strong underline-offset-4 hover:text-fg">Privacy policy</a></>}
+        {config.data?.discord_enabled === false ? "Discord sign-in is not configured on this instance yet." : <>We only read your Discord name and avatar. No email, no servers, no messages. By signing in you agree to the <a href="https://connectionguard.net/terms" className="underline decoration-line-strong underline-offset-4 hover:text-fg">terms of service</a>. <a href="https://connectionguard.net/privacy" className="underline decoration-line-strong underline-offset-4 hover:text-fg">Privacy policy</a></>}
       </p>
       {config.data?.dev_login && (
         <form className="flex items-end gap-2 border-t border-line pt-4"

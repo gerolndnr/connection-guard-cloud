@@ -75,7 +75,7 @@ for (const s of servers) {
   const auth = { authorization: `Bearer ${ins.install_id}.${ins.secret}` };
   const claim = await post(`/api/link/${ins.link_code}`, {
     ...(networkId ? { network_id: networkId } : { network_name: "Blockhaven (synthetic demo)" }),
-    server_name: s.name, accept_dpa: true, dpa_version: "2026-10-03", turnstile_token: "dev",
+    server_name: s.name, accept_dpa: true, dpa_version: "2026-10-04", turnstile_token: "dev",
   }, { cookie });
   networkId = claim.json.network_id;
   let seq = 0;

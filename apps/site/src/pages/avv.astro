@@ -1,0 +1,108 @@
+---
+import Legal from "../layouts/Legal.astro";
+import { OPERATOR, LEGAL_VERSION, addressLines } from "../data/operator";
+const address = addressLines("de").join(", ");
+const toc: [string, string][] = [
+  ["praeambel", "Präambel"],
+  ["gegenstand", "Gegenstand und Dauer"],
+  ["daten", "Art der Daten und Betroffene"],
+  ["weisungen", "Weisungen"],
+  ["pflichten", "Pflichten des Auftragsverarbeiters"],
+  ["unterauftrag", "Unterauftragsverarbeiter"],
+  ["drittland", "Drittländer"],
+  ["unterstuetzung", "Unterstützung"],
+  ["loeschung", "Löschung und Rückgabe"],
+  ["kontrolle", "Nachweise und Kontrollen"],
+  ["verantwortlicher", "Pflichten des Verantwortlichen"],
+  ["schluss", "Schlussbestimmungen"],
+  ["anlage-1", "Anlage 1: TOM"],
+  ["anlage-2", "Anlage 2: Unterauftragsverarbeiter"],
+];
+---
+<Legal title="Auftragsverarbeitungsvertrag (AVV) | Connection Guard" h1="Auftragsverarbeitungsvertrag" path="/avv" lang="de"
+  description="Auftragsverarbeitungsvertrag nach Art. 28 DSGVO für Serverbetreiber, die einen Minecraft-Server mit dem Connection-Guard-Dashboard verknüpfen."
+  alternate={{ lang: "en", path: "/dpa", label: "English version" }} toc={toc}>
+
+  <p><strong>Version {LEGAL_VERSION}.</strong> Dieser Vertrag nach Art. 28 Abs. 3 DSGVO gilt zwischen dem Betreiber eines Minecraft-Servers, der den Server mit dem Dashboard verknüpft (<strong>Verantwortlicher</strong>), und {address} (<strong>Auftragsverarbeiter</strong>). Er wird elektronisch geschlossen (Art. 28 Abs. 9 DSGVO), indem der Verantwortliche ihn beim Verknüpfen eines Servers akzeptiert.</p>
+
+  <h2 id="praeambel">1. Präambel</h2>
+  <p>Das Plugin Connection Guard prüft auf dem Server des Verantwortlichen die Verbindungen von Spielern. Verknüpft der Verantwortliche einen Server mit dem Dashboard unter app.connectionguard.net, übermittelt das Plugin die Ergebnisse dieser Prüfungen an den Auftragsverarbeiter, damit der Verantwortliche sie im Dashboard einsehen und seinen Server dort verwalten kann. Für die Verarbeitung der Daten der Spieler ist der Verantwortliche verantwortlich; der Auftragsverarbeiter verarbeitet sie ausschließlich in dessen Auftrag.</p>
+
+  <h2 id="gegenstand">2. Gegenstand, Art, Zweck und Dauer der Verarbeitung</h2>
+  <p><strong>Gegenstand und Zweck:</strong> Bereitstellung des Dashboards für die verknüpften Server des Verantwortlichen. Dazu gehören das Empfangen, Speichern, Auswerten, Anzeigen und Löschen der Prüfergebnisse sowie das Übermitteln der Einstellungen und Befehle, die der Verantwortliche im Dashboard auslöst, an seine Server.</p>
+  <p><strong>Art der Verarbeitung:</strong> Erheben (Empfang vom Plugin), Speichern, Ordnen, Auslesen, Abfragen, Zusammenfassen zu Statistiken, Anzeigen, Übermitteln an den Server des Verantwortlichen, Löschen.</p>
+  <p><strong>Dauer:</strong> solange mindestens ein Server des Verantwortlichen mit dem Dashboard verknüpft ist. Der Vertrag endet für einen Server mit dessen Entknüpfung oder wenn der Verantwortliche die Cloud-Verbindung im Plugin abschaltet, im Übrigen mit Löschung des Kontos.</p>
+
+  <h2 id="daten">3. Art der personenbezogenen Daten und Kategorien betroffener Personen</h2>
+  <p><strong>Betroffene Personen:</strong> Spieler, die sich mit einem verknüpften Server des Verantwortlichen verbinden oder in dessen Regeln und Ausnahmen genannt werden.</p>
+  <p><strong>Datenarten:</strong></p>
+  <ul>
+    <li>Je Anmeldeprüfung: Zeitpunkt, IP-Adresse, verifizierte UUID des Spielers, Ergebnis und Grund, angewandte Regeln sowie die Antworten der Erkennungsdienste (Land, Netzwerk bzw. ASN, Anbieter, Risikowert, Erkennung als VPN oder Proxy).</li>
+    <li>Einträge in Ausnahmen und Zugriffsregeln, die der Verantwortliche festlegt: Spielername, UUID oder IP-Adresse und eine optionale Notiz.</li>
+    <li>Statistiken je Stunde, die aus diesen Daten gebildet werden und keine Einzelpersonen mehr erkennen lassen.</li>
+  </ul>
+  <p>Besondere Kategorien personenbezogener Daten (Art. 9 DSGVO) werden nicht verarbeitet.</p>
+
+  <h2 id="weisungen">4. Weisungen</h2>
+  <p>Der Auftragsverarbeiter verarbeitet die Daten nur auf dokumentierte Weisung des Verantwortlichen (Art. 28 Abs. 3 lit. a DSGVO), es sei denn, er ist durch Unionsrecht oder deutsches Recht dazu verpflichtet; in diesem Fall teilt er dem Verantwortlichen die Rechtspflicht vor der Verarbeitung mit, sofern das Recht dies nicht verbietet. Weisungen sind dieser Vertrag, die Konfiguration des Plugins und alle Einstellungen und Aktionen des Verantwortlichen im Dashboard (zum Beispiel Entknüpfen, Einstellungen, Zugriffsregeln). Weitere Weisungen erteilt der Verantwortliche in Textform an {OPERATOR.privacyEmail}. Hält der Auftragsverarbeiter eine Weisung für rechtswidrig, informiert er den Verantwortlichen unverzüglich.</p>
+
+  <h2 id="pflichten">5. Pflichten des Auftragsverarbeiters</h2>
+  <ul>
+    <li>Er verarbeitet die Daten ausschließlich für die Zwecke dieses Vertrags und nutzt sie nicht für eigene Zwecke. Ausgenommen sind Statistiken ohne Personenbezug zum Betrieb des Dienstes, etwa die Zahl aktiver Server; in diese gehen keine Daten von Spielern ein.</li>
+    <li>Personen, die Zugang zu den Daten haben, sind zur Vertraulichkeit verpflichtet oder unterliegen einer gesetzlichen Verschwiegenheitspflicht (Art. 28 Abs. 3 lit. b DSGVO).</li>
+    <li>Er trifft die technischen und organisatorischen Maßnahmen nach Art. 32 DSGVO aus Anlage 1 und passt sie dem Stand der Technik an, ohne das Schutzniveau zu senken.</li>
+    <li>Er meldet dem Verantwortlichen Verletzungen des Schutzes personenbezogener Daten unverzüglich, nachdem sie ihm bekannt werden (Art. 33 Abs. 2 DSGVO), mit den Angaben, die der Verantwortliche für seine Meldung benötigt. Die Meldung erfolgt durch einen Hinweis im Dashboard und, soweit möglich, auf weiteren Wegen.</li>
+  </ul>
+
+  <h2 id="unterauftrag">6. Unterauftragsverarbeiter</h2>
+  <p>Der Verantwortliche genehmigt allgemein den Einsatz weiterer Auftragsverarbeiter (Art. 28 Abs. 2 DSGVO). Bei Vertragsschluss eingesetzt sind die in Anlage 2 genannten. Der Auftragsverarbeiter verpflichtet sie vertraglich auf ein Schutzniveau, das diesem Vertrag entspricht (Art. 28 Abs. 4 DSGVO). Über beabsichtigte Änderungen informiert er mindestens 30 Tage vorher auf dieser Seite und im Dashboard. Der Verantwortliche kann aus wichtigem datenschutzrechtlichem Grund widersprechen; dann kann er die Verknüpfung beenden, ohne dass ihm Nachteile entstehen.</p>
+
+  <h2 id="drittland">7. Verarbeitung außerhalb der EU</h2>
+  <p>Die Daten werden in der EU gespeichert. Ein Zugriff durch Unterauftragsverarbeiter aus Drittländern, insbesondere den USA, ist nur zulässig, wenn die Voraussetzungen der Art. 44 ff. DSGVO erfüllt sind, etwa durch einen Angemessenheitsbeschluss (EU-U.S. Data Privacy Framework) oder die Standardvertragsklauseln der EU.</p>
+
+  <h2 id="unterstuetzung">8. Unterstützung des Verantwortlichen</h2>
+  <ul>
+    <li><strong>Rechte betroffener Personen:</strong> Das Dashboard ermöglicht dem Verantwortlichen, die Daten eines Spielers zu finden (Suche nach IP-Adresse oder UUID), zu sichten und durch Entknüpfen eines Servers zu löschen. Darüber hinaus unterstützt der Auftragsverarbeiter bei Anträgen nach Art. 12 bis 23 DSGVO. Wendet sich ein Spieler direkt an ihn, verweist er ihn an den Verantwortlichen, soweit er diesen erkennen kann.</li>
+    <li><strong>Art. 32 bis 36 DSGVO:</strong> Er unterstützt den Verantwortlichen bei Sicherheit, Meldungen von Datenschutzverletzungen, Datenschutz-Folgenabschätzungen und vorheriger Konsultation, soweit ihm Informationen dazu vorliegen.</li>
+  </ul>
+
+  <h2 id="loeschung">9. Löschung und Rückgabe</h2>
+  <p>Einträge zu Anmeldeprüfungen werden nach 30 Tagen gelöscht, stündliche Statistiken nach 13 Monaten. Beim Entknüpfen eines Servers werden seine Einträge sofort gelöscht. Nach Vertragsende löscht der Auftragsverarbeiter alle verbleibenden personenbezogenen Daten des Verantwortlichen, sofern keine Pflicht zur Speicherung besteht (Art. 28 Abs. 3 lit. g DSGVO). Eine Kopie kann der Verantwortliche vorher auf Anfrage erhalten.</p>
+
+  <h2 id="kontrolle">10. Nachweise und Kontrollen</h2>
+  <p>Der Auftragsverarbeiter stellt dem Verantwortlichen alle Informationen zur Verfügung, die zum Nachweis der Pflichten aus Art. 28 DSGVO nötig sind, und ermöglicht Überprüfungen (Art. 28 Abs. 3 lit. h DSGVO). Der Quellcode des Dashboards und des Plugins ist öffentlich einsehbar; er zeigt, welche Daten übertragen und wie sie verarbeitet werden. Darüber hinausgehende Überprüfungen sind nach rechtzeitiger Anmeldung in Textform möglich, ohne den Betrieb unverhältnismäßig zu stören.</p>
+
+  <h2 id="verantwortlicher">11. Pflichten des Verantwortlichen</h2>
+  <ul>
+    <li>Er stellt sicher, dass er für die Verarbeitung der Daten seiner Spieler eine Rechtsgrundlage hat und die Spieler nach Art. 13 und 14 DSGVO informiert, etwa in der Datenschutzerklärung seines Servers.</li>
+    <li>Er verknüpft nur Server, die er betreibt oder für die er berechtigt ist.</li>
+    <li>Er informiert den Auftragsverarbeiter unverzüglich, wenn er Fehler oder Unregelmäßigkeiten bei der Verarbeitung feststellt.</li>
+  </ul>
+
+  <h2 id="schluss">12. Schlussbestimmungen</h2>
+  <p>Für die Haftung gilt Art. 82 DSGVO. Im Übrigen gelten die <a href="/nutzungsbedingungen">Nutzungsbedingungen</a>; bei Widersprüchen in Fragen des Datenschutzes geht dieser Vertrag vor. Änderungen dieses Vertrags erhalten eine neue Version, die der Verantwortliche im Dashboard erneut akzeptiert. Es gilt deutsches Recht. Sollte eine Bestimmung unwirksam sein, bleibt der Vertrag im Übrigen wirksam.</p>
+
+  <h2 id="anlage-1">Anlage 1: Technische und organisatorische Maßnahmen (Art. 32 DSGVO)</h2>
+  <ul>
+    <li><strong>Zutritt und physische Sicherheit:</strong> Keine eigenen Server. Betrieb ausschließlich in Rechenzentren des Unterauftragsverarbeiters Cloudflare, die nach ISO 27001 und SOC 2 geprüft sind.</li>
+    <li><strong>Zugang und Zugriff:</strong> Anmeldung am Dashboard nur über Discord. Rollen je Netzwerk (Inhaber, Administrator, Betrachter). Sitzungen laufen nach 30 Tagen ab und werden serverseitig nur als Hash gespeichert. Server authentifizieren sich mit einem Geheimnis, das nur als Hash gespeichert wird. Administrativer Zugang zur Infrastruktur hat nur der Auftragsverarbeiter.</li>
+    <li><strong>Weitergabe:</strong> Übertragungen ausschließlich verschlüsselt (TLS). API-Schlüssel und Webhook-Adressen werden mit AES-GCM verschlüsselt und nach Bestätigung durch den Server gelöscht.</li>
+    <li><strong>Speicherung:</strong> Datenbank mit EU-Jurisdiktion, auf Datenträgern verschlüsselt. Prüfergebnisse werden je Netzwerk zugeordnet gespeichert und nur dessen Mitgliedern angezeigt.</li>
+    <li><strong>Datenminimierung:</strong> Das Plugin überträgt Einzeldaten erst nach dem Verknüpfen. Spielernamen werden in Prüfergebnissen nicht übertragen. Die Produktanalyse filtert IP-Adressen und UUIDs heraus und blendet Bereiche mit Spielerdaten aus.</li>
+    <li><strong>Eingabekontrolle:</strong> Ein Änderungsprotokoll hält fest, wer welche Einstellungen, Regeln oder Verknüpfungen wann geändert hat.</li>
+    <li><strong>Verfügbarkeit:</strong> Verteilte Infrastruktur von Cloudflare. Das Plugin prüft Spieler unabhängig vom Dashboard, ein Ausfall beeinträchtigt die Anmeldung nicht.</li>
+    <li><strong>Trennung und Löschung:</strong> Zugriff ist auf das jeweilige Netzwerk beschränkt. Automatische Löschung nach den Fristen in Abschnitt 9.</li>
+    <li><strong>Überprüfung:</strong> Öffentlicher Quellcode, automatisierte Tests der Schnittstellen und regelmäßige Prüfung der Maßnahmen bei Änderungen am Dienst.</li>
+  </ul>
+
+  <h2 id="anlage-2">Anlage 2: Unterauftragsverarbeiter</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Unternehmen</th><th scope="col">Leistung</th><th scope="col">Ort der Verarbeitung</th></tr></thead>
+      <tbody>
+        <tr><td>Cloudflare, Inc., 101 Townsend Street, San Francisco, CA 94107, USA</td><td>Hosting, Datenbank, Auslieferung, Schutz vor Angriffen</td><td>Datenbank in der EU (EU-Jurisdiktion); Verarbeitung im weltweiten Netz von Cloudflare, abgesichert nach Abschnitt 7</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Die Produktanalyse (PostHog) erhält keine Daten von Spielern und ist daher kein Unterauftragsverarbeiter im Sinne dieses Vertrags.</p>
+</Legal>
