@@ -11,6 +11,7 @@ Everything stays on the Cloudflare **Workers Free** plan. Never enable Workers P
 | D1 | `cg` (`7bbde5b7-6de2-47ed-950d-af22f2ad9030`), EU jurisdiction |
 | KV | `connection-guard-cloud-public` (`c601f9f0de2649419283c89e0be54ec3`) |
 | Secrets | `CONFIG_SECRET_KEY` (set). Still needed: `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` |
+| Website | `connection-guard-site` (static assets, `connectionguard.net`) and `connection-guard-www` (301 from `www.` to the apex) |
 | Optional | Turnstile (`TURNSTILE_SITE_KEY` var plus `TURNSTILE_SECRET` secret), Analytics Engine (`METRICS` binding) |
 
 ## Discord login (required before anyone can sign in)
@@ -46,6 +47,21 @@ cd apps/api
 npx wrangler d1 migrations apply cg --remote --env production
 npx wrangler deploy --env production
 ```
+
+## Website (connectionguard.net)
+
+Astro 7 needs Node 22.12 or newer. The build reads download counts from Modrinth, Spiget, GitHub and Hangar, so rebuild to refresh them.
+
+```bash
+cd apps/site
+pnpm build                       # fetches stats, then builds dist/
+npx wrangler deploy              # connectionguard.net
+cd www && npx wrangler deploy    # www → apex redirect, only needed when it changes
+```
+
+Social images and icons are committed; regenerate them with `node scripts/site-images.mjs` after changing page titles there. Check every page with `node scripts/site-seo-check.mjs` against `astro preview --port 4330`.
+
+After the first deploy: verify the domain in Google Search Console and Bing Webmaster Tools and submit `https://connectionguard.net/sitemap-index.xml`.
 
 ## Before public launch
 

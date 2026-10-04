@@ -1,0 +1,18 @@
+---
+// The notification-first profile from docs/CONFIGURATION.md: a partial example, not a full config.
+interface Props { caption?: string }
+const { caption = "A partial example from the configuration guide. Keep every other generated setting." } = Astro.props;
+---
+<figure>
+  <pre class="mono overflow-x-auto rounded-xl border border-line bg-[#0a0a0a] px-4 py-3.5 text-[0.8125rem] leading-relaxed text-[#ededed]"><span class="text-[#8f8f8f]"># plugins/…/config.yml: warn staff first, block later</span>
+behavior:
+  vpn:
+    kick-player: <span class="text-[#34d399]">false</span>
+    notify-staff: <span class="text-[#34d399]">true</span>
+  geo:
+    kick-player: <span class="text-[#34d399]">false</span>
+    notify-staff: <span class="text-[#34d399]">true</span>
+    type: 'BLACKLIST'
+    list: []</pre>
+  <figcaption class="mt-2 text-[0.8125rem] text-fg-3">{caption}</figcaption>
+</figure>

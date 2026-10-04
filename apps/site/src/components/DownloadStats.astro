@@ -1,0 +1,31 @@
+---
+import stats from "../data/stats.json";
+const sources = Object.values(stats.sources as Record<string, { name: string; url: string; downloads: number; stale: boolean }>).sort((a, b) => b.downloads - a.downloads);
+const total = sources.reduce((n, s) => n + s.downloads, 0);
+const max = Math.max(...sources.map((s) => s.downloads));
+const fmt = new Intl.NumberFormat("en-US");
+const date = new Date(stats.fetchedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+---
+<section aria-labelledby="dl-h" class="card relative overflow-hidden p-6">
+  <div class="flex items-baseline justify-between gap-4">
+    <h2 id="dl-h" class="text-sm font-medium text-fg-2">Downloads so far</h2>
+    {stats.latest && <span class="chip mono">v{stats.latest.version}</span>}
+  </div>
+  <p class="num mt-2 text-5xl font-semibold tracking-[-0.045em]">{fmt.format(total)}</p>
+  <ul class="mt-6 space-y-3.5">
+    {sources.map((s) => (
+      <li>
+        <a href={s.url} class="group block no-underline">
+          <span class="flex items-baseline justify-between text-sm">
+            <span class="text-fg group-hover:underline">{s.name}</span>
+            <span class="num text-fg-2">{fmt.format(s.downloads)}{s.stale && <span class="text-fg-3"> (last known)</span>}</span>
+          </span>
+          <span aria-hidden="true" class="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-subtle">
+            <span class="block h-full rounded-full bg-accent" style={`width:${Math.max(2, (s.downloads / max) * 100)}%`}></span>
+          </span>
+        </a>
+      </li>
+    ))}
+  </ul>
+  <p class="mt-6 border-t border-line pt-3 text-[0.75rem] text-fg-3">Read from each platform's public API on {date}. Downloads are not active servers.</p>
+</section>

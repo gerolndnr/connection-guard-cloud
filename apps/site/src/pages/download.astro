@@ -1,0 +1,112 @@
+---
+import Base from "../layouts/Base.astro";
+import stats from "../data/stats.json";
+import { breadcrumbs, software } from "../lib/seo";
+type Source = { name: string; url: string; downloads: number; stale: boolean };
+const s = stats.sources as Record<string, Source>;
+const v = stats.latest?.version;
+const published = stats.latest?.published
+  ? new Date(stats.latest.published).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+  : null;
+const sources = [
+  { ...s.modrinth, note: "Recommended. Shows every version and its changelog.", primary: true },
+  { ...s.hangar, note: "PaperMC's plugin directory.", primary: false },
+  { ...s.spigot, note: "The classic resource page.", primary: false },
+  { ...s.github, note: "Release files built by CI, with checksums.", primary: false },
+];
+const platforms = [
+  { name: "Paper / Spigot", folder: "plugins/", java: "Java 8 or newer", note: "Built against the 1.8.8 API. Use the Java version your server software needs." },
+  { name: "BungeeCord / Waterfall", folder: "plugins/", java: "Java 8 or newer", note: "Install on the proxy. Backend servers behind it don't need a copy." },
+  { name: "Velocity", folder: "plugins/", java: "Java 17 or newer", note: "Targets the Velocity 3.3 API. Install on the proxy only." },
+];
+const fmt = new Intl.NumberFormat("en-US");
+---
+<Base title="Download Connection Guard: Free Anti-VPN Plugin for Minecraft" path="/download" og="/og/download.png"
+  description="Download the free Connection Guard anti-VPN plugin for Paper, Spigot, BungeeCord and Velocity. One JAR from Modrinth, Hangar, SpigotMC or GitHub."
+  schema={[software(), breadcrumbs([["Download", "/download"]])]}>
+  <section class="border-b border-line">
+    <div class="container-site py-16 sm:py-20">
+      <h1 class="display text-[clamp(2.25rem,5vw,3.5rem)]">Download Connection Guard</h1>
+      <p class="lede mt-5 max-w-2xl">One JAR runs on every supported platform. Pick whichever site you already use; the file is the same everywhere.</p>
+      {v && (
+        <p class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-fg-2">
+          <span class="chip mono">v{v}</span>
+          {published && <span>Released {published}</span>}
+          <a href="https://github.com/gerolndnr/connection-guard/blob/master/CHANGELOG.md" class="font-medium text-fg underline">What changed</a>
+        </p>
+      )}
+    </div>
+  </section>
+
+  <section aria-labelledby="src-h">
+    <div class="container-site py-14 sm:py-16">
+      <h2 id="src-h" class="sr-only">Download sources</h2>
+      <ul class="grid gap-3 sm:grid-cols-2">
+        {sources.map((x) => (
+          <li>
+            <a href={x.url} class={`card group flex h-full items-center justify-between gap-6 p-5 no-underline transition-colors hover:border-line-strong ${x.primary ? "border-[color-mix(in_srgb,var(--accent)_45%,transparent)]" : ""}`}>
+              <span>
+                <span class="flex items-center gap-2 text-base font-semibold tracking-[-0.015em]">
+                  {x.name}
+                  {x.primary && <span class="chip chip-soon h-5 text-xs">Recommended</span>}
+                </span>
+                <span class="mt-1 block text-sm text-fg-2">{x.note.replace("Recommended. ", "")}</span>
+                <span class="num mt-2 block text-[0.75rem] text-fg-3">{fmt.format(x.downloads)} downloads</span>
+              </span>
+              <span aria-hidden="true" class={`btn ${x.primary ? "btn-primary" : "btn-secondary"} shrink-0`}>Open</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section aria-labelledby="req-h" class="border-t border-line">
+    <div class="container-site py-14 sm:py-16">
+      <h2 id="req-h" class="section-title">Where it goes</h2>
+      <div class="mt-8 grid gap-3 md:grid-cols-3">
+        {platforms.map((p) => (
+          <div class="card p-5">
+            <h3 class="text-base font-semibold tracking-[-0.015em]">{p.name}</h3>
+            <dl class="mt-4 space-y-2 text-sm">
+              <div class="flex justify-between gap-4"><dt class="text-fg-2">Folder</dt><dd class="mono">{p.folder}</dd></div>
+              <div class="flex justify-between gap-4"><dt class="text-fg-2">Java</dt><dd>{p.java}</dd></div>
+            </dl>
+            <p class="mt-4 border-t border-line pt-4 text-sm leading-relaxed text-fg-2">{p.note}</p>
+          </div>
+        ))}
+      </div>
+      <p class="mt-4 text-[0.8125rem] text-fg-3">Build targets don't prove every server version was tested. Folia support is unverified.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="inst-h" class="border-t border-line">
+    <div class="container-site grid gap-10 py-14 sm:py-16 lg:grid-cols-2">
+      <div>
+        <h2 id="inst-h" class="section-title">Install</h2>
+        <ol class="mt-8 space-y-5">
+          {[
+            ["Stop the server.", "Or the proxy, on a network."],
+            ["Put the JAR into the plugins folder.", "Remove older Connection Guard JARs first."],
+            ["Start the server.", "The plugin writes its config.yml and starts checking new players. The shipped config refuses VPN hits and blocks CN and RU."],
+            ["Review config.yml.", "Change rules, then run /cg reload; restart after changing detection services or the cache. /cg info <IP> shows what each service reports."],
+          ].map(([t, d], i) => (
+            <li class="flex gap-4">
+              <span aria-hidden="true" class="mono grid size-7 shrink-0 place-items-center rounded-full border border-line-strong text-[0.75rem]">{i + 1}</span>
+              <div><p class="font-medium">{t}</p><p class="mt-0.5 text-sm text-fg-2">{d}</p></div>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div class="card self-start p-6">
+        <h3 class="text-base font-semibold tracking-[-0.015em]">Need help?</h3>
+        <p class="mt-2 text-sm leading-relaxed text-fg-2">Share your plugin, platform and Java versions and what you expected. Remove API keys, webhook URLs and player IPs before posting.</p>
+        <div class="mt-5 flex flex-wrap gap-2">
+          <a href="https://discord.gg/GekQVPqsfS" class="btn btn-secondary no-underline">Discord</a>
+          <a href="https://github.com/gerolndnr/connection-guard/issues" class="btn btn-secondary no-underline">Open an issue</a>
+          <a href="https://github.com/gerolndnr/connection-guard#readme" class="btn btn-ghost no-underline">Read the docs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

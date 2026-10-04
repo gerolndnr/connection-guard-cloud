@@ -1,0 +1,109 @@
+---
+import Guide from "../../layouts/Guide.astro";
+const faq = [
+  { q: "Does prevent-proxy-connections block VPNs?", a: "Not reliably. The setting kicks a player when the network the server sees differs from the one that signed in at Mojang's authentication server. A player who runs the whole game through a VPN signs in and connects from the same VPN address, so the check passes." },
+  { q: "Can an anti-VPN plugin catch every VPN?", a: "No. Plugins ask IP intelligence services whether an address belongs to a VPN, proxy, Tor exit or data center. New ranges, residential proxies and mobile networks can be missed, and a few legitimate addresses can be flagged. Treat a flag as strong evidence, not proof." },
+  { q: "Do I need an API key?", a: "Not to start. Connection Guard's default VPN service, ProxyCheck, works without a key. A free registered ProxyCheck account raises the daily allowance; on 2 October 2026 its free plan advertised 1,000 queries per day. Check each service's current plans before you rely on them." },
+  { q: "Will blocking VPNs lock out real players?", a: "Some legitimate players use VPNs for privacy, at school or at work. Start by alerting staff instead of kicking, write a kick message that says how to ask for an exemption, and exempt trusted players by UUID." },
+  { q: "Where do I install the plugin on a network?", a: "On the proxy (Velocity or BungeeCord) that receives player connections. The proxy sees the real address, and one installation covers every backend server." },
+  { q: "What happens if the detection service is down?", a: "If not enough services answer positively, the connection proceeds, subject to your country rules and other plugins. A missing answer never counts as a VPN, and incomplete results aren't cached, so the next login tries again." },
+];
+const toc: [string, string][] = [
+  ["why", "Why servers block VPNs"],
+  ["prevent-proxy-connections", "Is prevent-proxy-connections enough?"],
+  ["how-it-works", "How anti-VPN plugins work"],
+  ["setup", "Step by step"],
+  ["kick-message", "Write a fair kick message"],
+  ["quota", "Quotas and caching"],
+  ["outages", "When a service is down"],
+  ["faq", "FAQ"],
+];
+---
+<Guide
+  title="How to Block VPNs on a Minecraft Server (2026 Guide)"
+  h1="How to block VPNs on a Minecraft server"
+  description="Block VPN and proxy players on your Minecraft server without locking out real players: why prevent-proxy-connections fails, plus a step-by-step setup."
+  lede="Banned players come back on a VPN in seconds. Here is what actually stops them, what doesn't, and how to set it up without kicking your regulars."
+  path="/guides/block-vpn-minecraft-server"
+  og="/og/guide-vpn.png"
+  published="2026-10-04"
+  modified="2026-10-04"
+  minutes={8}
+  toc={toc}
+  faq={faq}
+>
+  <h2 id="why">Why servers block VPNs</h2>
+  <p>A ban is only as strong as the address it's tied to. When a banned player can switch to a VPN or proxy and create a new account, every ban, mute and alt check becomes a speed bump. Server owners block VPNs mainly to:</p>
+  <ul>
+    <li><strong>Make bans stick.</strong> Ban evasion through alt accounts often runs through VPNs, proxies or cheap data-center servers.</li>
+    <li><strong>Slow down bot and alt waves.</strong> Join floods often come from data-center ranges that detection services already know.</li>
+    <li><strong>Keep community rules meaningful,</strong> like one account per player in events or economies.</li>
+  </ul>
+  <p>There's a cost: some honest players use a VPN for privacy, at school or on work networks. A good setup blocks the abuse and gives those players a way in. That's why this guide starts with alerts and only then turns on kicks.</p>
+
+  <h2 id="prevent-proxy-connections">Is <code>prevent-proxy-connections</code> enough?</h2>
+  <p>Vanilla <code>server.properties</code> has a setting called <code>prevent-proxy-connections</code> (off by default). The Minecraft Wiki describes it as kicking players whose network, as seen by your server, differs from the one Mojang's authentication server saw.</p>
+  <p>That catches a narrow case: a player who signs in through one network and connects through another. <strong>A player who runs the whole game through a VPN signs in and connects from the same VPN address, so the check passes.</strong> It also can't tell you which country a player connects from, and it can't alert staff instead of kicking.</p>
+  <div class="callout"><p>Use <code>prevent-proxy-connections</code> as a small extra if you like, not as your VPN protection.</p></div>
+
+  <h2 id="how-it-works">How anti-VPN plugins work</h2>
+  <p>An anti-VPN plugin checks the player's IP address during login, before they join the world:</p>
+  <ol>
+    <li>The plugin asks one or more <strong>IP intelligence services</strong> about the address. These services track which ranges belong to VPN providers, public proxies, Tor exit nodes and hosting companies.</li>
+    <li>Each service answers whether the address looks like a VPN or proxy, often with its country, network and a risk score.</li>
+    <li>The plugin applies your rules: refuse the connection, alert staff, post to Discord, or let the player in.</li>
+    <li>The answer is <strong>cached</strong>, so the next login from the same address costs no lookup and no time.</li>
+  </ol>
+  <p>No service knows every address. Fresh VPN ranges, residential proxies and mobile networks can slip through, and occasionally a legitimate address gets flagged. That's why it helps to choose your services deliberately, and to let several services vote when one isn't enough.</p>
+
+  <h2 id="setup">Step by step with Connection Guard</h2>
+  <p>Connection Guard is a free, open-source anti-VPN plugin that runs on Paper, Spigot, BungeeCord and Velocity from one JAR. The steps are the same everywhere; only the install location differs.</p>
+
+  <h3 id="install">1. Install it in the right place</h3>
+  <p>On a single server, put the JAR into that server's <code>plugins</code> folder. On a network, install it <strong>only on the proxy</strong> that players connect to. The proxy sees their real address and one installation protects every backend. Platform notes: <a href="/paper-anti-vpn">Paper and Spigot</a>, <a href="/bungeecord-anti-vpn">BungeeCord and Waterfall</a>, <a href="/velocity-anti-vpn">Velocity</a>.</p>
+
+  <h3 id="services">2. Choose your detection services</h3>
+  <p>Out of the box, Connection Guard checks VPNs with <strong>ProxyCheck</strong> and looks up countries with <strong>IP-API</strong>. You can also enable IPHub, VPNAPI, or any REST API you configure yourself.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Service</th><th scope="col">Used for</th><th scope="col">Good to know</th></tr></thead>
+      <tbody>
+        <tr><td>ProxyCheck</td><td>VPN/proxy and country</td><td>Default VPN service. Works without a key; a free account raises the daily allowance.</td></tr>
+        <tr><td>IP-API</td><td>VPN/proxy and country</td><td>Default country service. The free endpoint is non-commercial, uses HTTP and allows 45 requests per minute.</td></tr>
+        <tr><td>IPHub</td><td>VPN/proxy</td><td>Needs an API key.</td></tr>
+        <tr><td>VPNAPI</td><td>VPN/proxy</td><td>Needs an API key.</td></tr>
+        <tr><td>Custom</td><td>VPN/proxy</td><td>Any GET or POST API; you map the response fields.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Limits and terms change, so check each service's own pages before going live. If you enable several VPN services, <code>required-positive-flags</code> sets how many must agree before a player is flagged.</p>
+
+  <h3 id="observe">3. Watch before you block</h3>
+  <p>The shipped config already kicks VPN players and blocks connections from China and Russia. If you'd rather see who would be affected first, switch kicks off and staff alerts on:</p>
+  <pre><code>behavior:
+  vpn:
+    kick-player: false
+    notify-staff: true
+  geo:
+    kick-player: false
+    notify-staff: true
+    type: 'BLACKLIST'
+    list: []</code></pre>
+  <p>This is a partial example: change these fields in the generated <code>config.yml</code> and keep everything else. Staff with <code>connectionguard.notify.vpn</code> and <code>connectionguard.notify.geo</code> now see an alert whenever a rule matches. Run <code>/cg reload</code> after changing these settings; after changing services or the cache, restart.</p>
+
+  <h3 id="inspect">4. Look at real results</h3>
+  <p>Give it a few days. When an alert looks wrong, run <code>/cg info &lt;IP or player&gt;</code> to see exactly what each service reported. If a service keeps flagging addresses you trust, add another service and raise <code>required-positive-flags</code>, or exempt specific players.</p>
+
+  <h3 id="enforce">5. Turn on blocking</h3>
+  <p>When you're happy with what you see, set <code>behavior.vpn.kick-player: true</code>. Add exemptions for trusted players under <code>behavior.vpn.exemptions</code> by UUID or IP address; with LuckPerms you can exempt by permission instead.</p>
+
+  <h2 id="kick-message">Write a fair kick message</h2>
+  <p>The kick screen is the only thing a refused player sees. A good message names the rule and says how to get help, for example: <em>"VPNs and proxies aren't allowed on this server. Turn yours off, or ask for an exemption on our Discord."</em> Edit it in the generated <code>translation/en.yml</code>, and never put keys or internal details in player-facing text.</p>
+
+  <h2 id="quota">Quotas and caching</h2>
+  <p>Every first-time address costs one lookup per enabled VPN service, plus one country lookup. As an illustration rather than a measurement: 100 new addresses with one VPN and one country service can mean 200 requests, and both may draw from the same account if you use one provider for both.</p>
+  <p>Caching keeps that in check. By default Connection Guard remembers VPN answers for 24 hours and country answers for 72 hours, in SQLite or, on larger networks, Redis. Clearing the cache with <code>/cg clear</code> makes everyone look new again, so use it sparingly.</p>
+
+  <h2 id="outages">When a detection service is down</h2>
+  <p>Services have outages and rate limits. Connection Guard never treats a missing answer as a VPN: if not enough services answer positively, the player gets in, subject to your country rules and other plugins. Incomplete results aren't cached, so the next login asks again. If you need a stricter policy, use two services so one outage doesn't leave you blind.</p>
+</Guide>

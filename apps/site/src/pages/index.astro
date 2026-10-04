@@ -1,0 +1,185 @@
+---
+import Base from "../layouts/Base.astro";
+import DownloadStats from "../components/DownloadStats.astro";
+import Compare from "../components/Compare.astro";
+import { DashboardPreview } from "../components/DashboardPreview.tsx";
+import stats from "../data/stats.json";
+import Faq from "../components/Faq.astro";
+import { PLATFORMS } from "../data/platforms";
+import { faq as faqSchema, software } from "../lib/seo";
+const faq = [
+  { q: "What is Connection Guard?", a: "Connection Guard is a free, open-source anti-VPN plugin for Minecraft servers. It checks players' IP addresses at login for VPNs, proxies and country rules, and then refuses them, alerts staff or posts to Discord, as you choose." },
+  { q: "Is Connection Guard free?", a: "Yes. It's MIT licensed and needs no Connection Guard account. The detection services it uses have their own free plans and limits; the default VPN service, ProxyCheck, works without a key." },
+  { q: "Which server software does it support?", a: "Paper, Spigot and compatible servers (Java 8 or newer), BungeeCord and Waterfall (Java 8 or newer) and Velocity (Java 17 or newer), all from one JAR. On a network, install it on the proxy." },
+  { q: "Isn't prevent-proxy-connections in server.properties enough?", a: "No. It only kicks players whose network differs from the one that signed in at Mojang. A player who runs the whole game through a VPN passes it. An anti-VPN plugin checks the address itself." },
+  { q: "Will it slow down logins?", a: "A new address is checked once during login. Answers are cached (24 hours for VPN results and 72 hours for countries by default), so repeat logins from the same address need no lookup." },
+  { q: "Can it block countries?", a: "Yes. Use a blocklist to refuse listed countries or an allowlist to accept only listed countries, each with its own action and message." },
+];
+const steps = [
+  { n: "1", title: "Download one JAR", body: "The same file runs on Paper, Spigot, BungeeCord and Velocity. Java 8 or newer; Velocity needs Java 17.", soon: false },
+  { n: "2", title: "Drop it into plugins and restart", body: "New players are checked from their first login. Answers are cached, so a returning player from the same address costs no lookup.", soon: false },
+  { n: "3", title: "Choose your rules", body: "Pick detection services, countries and what happens on a hit: in config.yml today, in a two-minute setup assistant from 0.5.", soon: true },
+  { n: "4", title: "See who was refused, and why", body: "Staff alerts in chat and Discord webhooks today. From 0.5, a decision log that explains every verdict in one sentence.", soon: true },
+];
+---
+<Base title="Connection Guard: Free Anti-VPN Plugin for Minecraft Servers" path="/"
+  description="Block VPNs, proxies and countries on your Minecraft server. Free, open-source anti-VPN plugin for Paper, Spigot, BungeeCord and Velocity. No account needed."
+  schema={[software(), faqSchema(faq)]}>
+
+  <!-- Announcement: be clear about what is released today. -->
+  <div class="border-b border-line bg-surface">
+    <p class="container-site flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-2.5 text-center text-[0.8125rem] text-fg-2">
+      <span class="chip chip-soon h-5 text-xs">Coming in 0.5</span>
+      A free dashboard and a two-minute setup assistant.
+      <a href="#dashboard" class="font-medium text-fg no-underline hover:underline">See the preview →</a>
+    </p>
+  </div>
+
+  <section class="relative overflow-hidden">
+    <div class="container-site relative grid items-center gap-12 py-16 sm:py-24 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-16">
+      <div>
+        <h1 class="display text-[clamp(2.5rem,5.2vw,3.75rem)]">Keep VPN alts off your Minecraft server.</h1>
+        <p class="lede mt-6 max-w-xl">Connection Guard is a free, open-source anti-VPN plugin with country rules for Paper, Spigot, BungeeCord and Velocity. You choose the detection services and how strict to be.</p>
+        <div class="mt-9 flex flex-wrap gap-3">
+          <a href="/download" class="btn btn-primary btn-lg no-underline">
+            Download free
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0 5-5m-5 5-5-5M5 20h14"/></svg>
+          </a>
+          <a href="#compare" class="btn btn-secondary btn-lg no-underline">How it compares</a>
+        </div>
+        <ul class="mt-9 flex flex-wrap gap-x-6 gap-y-2 text-[0.8125rem] text-fg-2">
+          {["MIT licensed", "No account needed", "Paper, Spigot, BungeeCord, Velocity"].map((t) => (
+            <li class="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="size-3.5 text-accent" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{t}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <DownloadStats />
+    </div>
+  </section>
+
+  <section id="compare" class="scroll-mt-28 md:scroll-mt-20 border-t border-line">
+    <div class="container-site py-20 sm:py-28">
+      <div class="max-w-2xl">
+        <h2 class="section-title">How it compares</h2>
+        <p class="lede mt-4">The questions operators ask before installing anything that touches every login, answered with things you can check.</p>
+      </div>
+      <div class="mt-10"><Compare /></div>
+    </div>
+  </section>
+
+  <!-- The dashboard band is always dark: the product shown as it is used at night. -->
+  <section id="dashboard" class="dark scroll-mt-28 md:scroll-mt-20 border-y border-line bg-page text-fg">
+    <div class="container-site py-20 sm:py-28">
+      <div class="flex flex-wrap items-end justify-between gap-6">
+        <div class="max-w-2xl">
+          <h2 class="section-title flex flex-wrap items-center gap-x-3 gap-y-2">Every decision, explained. <span class="chip chip-soon text-xs">0.5</span></h2>
+          <p class="lede mt-4">Optional and free from 0.5: link a server with one click from its console, and see who was checked, who was refused, and the reason behind each verdict. Settings change in plain language, without a restart.</p>
+        </div>
+        <ul class="grid gap-2 text-sm text-fg-2">
+          <li>Logins never wait on the dashboard</li>
+          <li>Off with one line: <code class="rounded bg-subtle px-1.5 py-0.5 text-fg">cloud.enabled: false</code></li>
+          <li>Open source, data stored in the EU</li>
+        </ul>
+      </div>
+      <div class="mt-12 min-h-[38rem]"><DashboardPreview client:only="react" /></div>
+    </div>
+  </section>
+
+  <section id="setup" class="scroll-mt-28 md:scroll-mt-20 border-b border-line">
+    <div class="container-site grid gap-12 py-20 sm:py-28 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
+      <div>
+        <h2 class="section-title">Protected in four steps.</h2>
+        <p class="lede mt-4">No account, no external service you have to trust with your server. If a detection service is down, your rules decide, and players are never stuck waiting.</p>
+        <figure class="mt-8">
+          <pre class="mono whitespace-pre-wrap break-words rounded-xl border border-line bg-[#0a0a0a] px-4 py-3.5 text-[0.75rem] leading-relaxed text-[#a1a1a1]"><span class="text-[#8f8f8f]">[12:04:51 INFO] </span>[connection-guard] Enabled Connection Guard v{stats.latest?.version ?? "0.4"}
+<span class="text-[#8f8f8f]">[12:04:51 INFO] </span>[connection-guard] VPN check: ProxyCheck · country check: IP-API
+<span class="text-[#8f8f8f]">[12:05:07 INFO] </span>[connection-guard] <span class="text-[#34d399]">Link this server to your dashboard: https://app.connectionguard.net/link/7KQM-4P2X</span></pre>
+          <figcaption class="mt-2 text-[0.75rem] text-fg-3">Illustrative console output. The dashboard link appears from 0.5.</figcaption>
+        </figure>
+      </div>
+      <ol class="relative space-y-8 before:absolute before:bottom-2 before:left-[0.9375rem] before:top-2 before:w-px before:bg-line">
+        {steps.map((s) => (
+          <li class="relative flex gap-5">
+            <span aria-hidden="true" class="mono relative z-10 grid size-8 shrink-0 place-items-center rounded-full border border-line-strong bg-page text-[0.8125rem] font-medium">{s.n}</span>
+            <div class="pt-1">
+              <h3 class="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-[-0.02em]">{s.title}{s.soon && <span class="chip chip-soon h-5 text-xs">0.5</span>}</h3>
+              <p class="mt-1.5 max-w-prose leading-relaxed text-fg-2">{s.body}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section id="platforms" aria-labelledby="plat-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site py-20 sm:py-28">
+      <div class="max-w-2xl">
+        <h2 id="plat-h" class="section-title">One JAR, every platform.</h2>
+        <p class="lede mt-4">On a network, install it once on the proxy. On a single server, drop it into plugins.</p>
+      </div>
+      <ul class="mt-10 grid gap-4 md:grid-cols-3">
+        {PLATFORMS.map((p) => (
+          <li>
+            <a href={p.path} class="card group flex h-full flex-col p-6 no-underline transition-colors hover:border-line-strong">
+              <span class="text-lg font-semibold tracking-[-0.02em]">{p.h1}</span>
+              <span class="mt-2 leading-relaxed text-fg-2">{p.facts.map(([k, v]) => `${k}: ${v}`).slice(0, 2).join(" · ")}</span>
+              <span class="mt-5 text-sm font-medium group-hover:underline">Setup and FAQ →</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section id="open-source" aria-labelledby="oss-h" class="scroll-mt-28 md:scroll-mt-20">
+    <div class="container-site py-20 sm:py-28">
+      <div class="max-w-2xl">
+        <h2 id="oss-h" class="section-title">Open source, all the way down.</h2>
+        <p class="lede mt-4">Read exactly what runs on your server and what the dashboard stores. Fork it, audit it, self-host it.</p>
+      </div>
+      <div class="mt-10 grid gap-4 md:grid-cols-2">
+        {[
+          { name: "connection-guard", license: "MIT", body: "The plugin: detection, country rules, caching, failure policies and the optional cloud link.", href: "https://github.com/gerolndnr/connection-guard" },
+          { name: "connection-guard-cloud", license: "AGPL-3.0", body: "The dashboard and its API on Cloudflare Workers. Self-hostable; point the plugin at your own copy.", href: "https://github.com/gerolndnr/connection-guard-cloud" },
+        ].map((r) => (
+          <a href={r.href} class="card group flex flex-col p-6 no-underline transition-colors hover:border-line-strong">
+            <span class="flex items-center justify-between gap-3">
+              <span class="mono text-[0.9375rem] font-medium">gerolndnr/{r.name}</span>
+              <span class="chip">{r.license}</span>
+            </span>
+            <span class="mt-3 leading-relaxed text-fg-2">{r.body}</span>
+            <span class="mt-5 text-sm font-medium text-fg group-hover:underline">View source →</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="border-t border-line">
+    <div class="container-site grid gap-12 py-20 sm:py-28 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)]">
+      <Faq items={faq} />
+      <aside class="lg:pt-2">
+        <h2 class="text-sm font-medium text-fg-2">Guides</h2>
+        <ul class="mt-4 space-y-2">
+          <li><a href="/guides/block-vpn-minecraft-server" class="card block p-4 font-medium no-underline transition-colors hover:border-line-strong">How to block VPNs on a Minecraft server</a></li>
+          <li><a href="/guides/block-countries-minecraft-server" class="card block p-4 font-medium no-underline transition-colors hover:border-line-strong">How to block countries on a Minecraft server</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  <section class="border-t border-line bg-surface">
+    <div class="container-site flex flex-col items-start justify-between gap-8 py-16 sm:flex-row sm:items-center">
+      <div>
+        <h2 class="section-title">Your server, your rules.</h2>
+        <p class="lede mt-2">Free forever. Questions? The community is on Discord.</p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <a href="/download" class="btn btn-primary btn-lg no-underline">Download free</a>
+        <a href="https://discord.gg/GekQVPqsfS" class="btn btn-secondary btn-lg no-underline">Join the Discord</a>
+      </div>
+    </div>
+  </section>
+</Base>

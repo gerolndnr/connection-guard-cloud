@@ -1,0 +1,52 @@
+/* The site shares the dashboard's design system (DESIGN.md) and adds Persuade-scale type. */
+@import "../../../web/src/styles.css";
+@source "../../../web/src";
+
+@layer components {
+  .container-site { width: 100%; max-width: 72rem; margin-inline: auto; padding-inline: 1.25rem; }
+  @media (min-width: 640px) { .container-site { padding-inline: 2rem; } }
+  .display { font-weight: 600; letter-spacing: -0.04em; line-height: 1.02; text-wrap: balance; }
+  .section-title { font-size: clamp(1.75rem, 3.2vw, 2.5rem); font-weight: 600; letter-spacing: -0.035em; line-height: 1.1; text-wrap: balance; }
+  .lede { max-width: 36rem; font-size: 1.0625rem; line-height: 1.6; color: var(--fg-2); text-wrap: pretty; }
+  .btn-lg { height: 2.75rem; padding: 0 1.25rem; font-size: 0.9375rem; border-radius: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 0.375rem; height: 1.5rem; padding: 0 0.625rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; border: 1px solid var(--line); color: var(--fg-2); background: var(--surface); white-space: nowrap; }
+  .chip-soon { color: var(--accent-text); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: var(--accent-soft); }
+}
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* Long-form text (privacy). */
+@layer components {
+  .prose-cg h2 { font-size: 1.375rem; font-weight: 600; letter-spacing: -0.025em; }
+  .prose-cg > section > p, .prose-cg > section > ul { max-width: 40rem; margin-top: 0.875rem; font-size: 1rem; line-height: 1.7; color: var(--fg-2); }
+  .prose-cg > section > ul { list-style: disc; padding-left: 1.25rem; }
+  .prose-cg li + li { margin-top: 0.375rem; }
+  .prose-cg a { color: var(--fg); text-decoration: underline; }
+}
+
+/* Guides (Read mode): comfortable measure, clear rhythm. */
+@layer components {
+  .prose-guide { max-width: 40rem; }
+  .prose-guide p, .prose-guide ul, .prose-guide ol { max-width: 36rem; }
+  .prose-guide > * + * { margin-top: 1.25rem; }
+  .prose-guide h2 { margin-top: 3.5rem; font-size: 1.625rem; font-weight: 600; letter-spacing: -0.03em; line-height: 1.2; scroll-margin-top: 7rem; text-wrap: balance; }
+  .prose-guide h2:first-child { margin-top: 0; }
+  .prose-guide h3 { margin-top: 2.25rem; font-size: 1.1875rem; font-weight: 600; letter-spacing: -0.02em; scroll-margin-top: 7rem; }
+  .prose-guide h2 + *, .prose-guide h3 + * { margin-top: 0.875rem; }
+  .prose-guide p, .prose-guide li { font-size: 1.0625rem; line-height: 1.75; color: var(--fg-2); text-wrap: pretty; }
+  .prose-guide strong { color: var(--fg); font-weight: 600; }
+  .prose-guide a { color: var(--fg); text-decoration: underline; }
+  .prose-guide ul { list-style: disc; padding-left: 1.25rem; }
+  .prose-guide ol { list-style: decimal; padding-left: 1.4rem; }
+  .prose-guide li + li { margin-top: 0.5rem; }
+  .prose-guide li::marker { color: var(--fg-3); }
+  .prose-guide :not(pre) > code { padding: 0.1rem 0.35rem; border-radius: 4px; background: var(--subtle); color: var(--fg); font-size: 0.875em; }
+  .prose-guide pre { overflow-x: auto; padding: 0.875rem 1rem; border: 1px solid var(--line); border-radius: 12px; background: #0a0a0a; color: #ededed; font-size: 0.8125rem; line-height: 1.7; }
+  .prose-guide .callout { padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: 8px; background: var(--accent-soft); }
+  .prose-guide .callout p { font-size: 1rem; }
+  .prose-guide table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+  .prose-guide th { text-align: left; font-weight: 600; padding: 0.625rem 0.75rem; border-bottom: 1px solid var(--line-strong); }
+  .prose-guide td { padding: 0.625rem 0.75rem; border-bottom: 1px solid var(--line); color: var(--fg-2); vertical-align: top; }
+  .prose-guide .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .prose-guide .table-wrap tr:last-child td { border-bottom: 0; }
+}

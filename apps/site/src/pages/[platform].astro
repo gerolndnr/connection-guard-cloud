@@ -1,0 +1,114 @@
+---
+import Base from "../layouts/Base.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import Faq from "../components/Faq.astro";
+import ConfigSnippet from "../components/ConfigSnippet.astro";
+import { PLATFORMS, type Platform } from "../data/platforms";
+import { breadcrumbs, faq, software } from "../lib/seo";
+
+export function getStaticPaths() {
+  return PLATFORMS.map((p) => ({ params: { platform: p.path.slice(1) }, props: { p } }));
+}
+const { p } = Astro.props as { p: Platform };
+const proxy = p.slug !== "paper";
+const where = proxy ? "the proxy's" : "the server's";
+const features = [
+  ["VPN and proxy checks", "ProxyCheck, IP-API, IPHub, VPNAPI or your own REST API. With several services, choose how many must agree."],
+  ["Country rules", "A blocklist or an allowlist of countries, with its own action and message."],
+  ["Your response", "Refuse the connection, alert staff in chat, post to a Discord webhook or run a console command."],
+  ["Caching", "Answers are kept in SQLite or Redis, so repeat logins from the same address don't spend your lookup quota."],
+  ["Exemptions", "Let trusted players or addresses through by UUID, IP or LuckPerms permission."],
+  ["Inspect any address", "/cg info shows what each service reported, so you can see why a player was flagged."],
+];
+const steps: [string, string][] = [
+  ["Download the JAR", "The same file runs on every platform: Modrinth, Hangar, SpigotMC or GitHub."],
+  [`Put it into ${where} plugins folder`, proxy ? "Only on the proxy. Remove older Connection Guard JARs first." : "Remove older Connection Guard JARs first."],
+  [`Start the ${proxy ? "proxy" : "server"} and review config.yml`, "The shipped config already refuses VPN and proxy hits and blocks CN and RU. Change it now if that isn't your policy."],
+  ["Watch before you block (optional)", "Turn kicks off and staff alerts on for a few days, as shown here, then set kick-player back to true."],
+  ["Check an address", "Run the command below to see what each service reports for an address."],
+];
+const others = PLATFORMS.filter((o) => o.slug !== p.slug);
+---
+<Base title={p.title} description={p.description} path={p.path} og={`/og/${p.slug}.png`}
+  schema={[software(), breadcrumbs([[p.name, p.path]]), faq(p.faq)]}>
+  <section class="border-b border-line">
+    <div class="container-site py-12 sm:py-16">
+      <Breadcrumbs items={[[p.name, p.path]]} />
+      <h1 class="display mt-6 text-[clamp(2.25rem,5vw,3.5rem)]">{p.h1}</h1>
+      <p class="lede mt-5">{p.lede}</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="/download" class="btn btn-primary btn-lg no-underline">Download free</a>
+        <a href="#setup" class="btn btn-secondary btn-lg no-underline">Set it up</a>
+      </div>
+      <dl class="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-4">
+        {p.facts.map(([k, v]) => (
+          <div class="bg-surface px-5 py-4">
+            <dt class="text-[0.8125rem] text-fg-3">{k}</dt>
+            <dd class="mt-1 font-medium">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section aria-labelledby="where-h" class="border-b border-line">
+    <div class="container-site grid gap-10 py-16 sm:py-20 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+      <h2 id="where-h" class="section-title">{p.whereTitle}</h2>
+      <ul class="space-y-5">
+        {p.where.map((t) => (
+          <li class="flex gap-3 leading-relaxed text-fg-2">
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="mt-1 size-4 shrink-0 text-accent" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <span class="max-w-[36rem]">{t}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section id="setup" aria-labelledby="setup-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site grid gap-12 py-16 sm:py-20 lg:grid-cols-2 lg:gap-16">
+      <div>
+        <h2 id="setup-h" class="section-title">Set up on {p.name}</h2>
+        <ol class="mt-8 space-y-6">
+          {steps.map(([t, d], i) => (
+            <li class="flex gap-4">
+              <span aria-hidden="true" class="mono grid size-7 shrink-0 place-items-center rounded-full border border-line-strong text-xs">{i + 1}</span>
+              <div><h3 class="font-semibold tracking-[-0.01em]">{t}</h3><p class="mt-1 leading-relaxed text-fg-2">{d}</p>
+                {i === steps.length - 1 && <code class="mt-2 inline-block rounded bg-subtle px-2 py-1 text-fg">{p.console}</code>}</div>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div class="lg:pt-16">
+        <ConfigSnippet />
+        <p class="mt-6 text-sm leading-relaxed text-fg-2">
+          New to anti-VPN plugins? Read <a href="/guides/block-vpn-minecraft-server" class="text-fg underline">how to block VPNs on a Minecraft server</a>{" "}
+          and <a href="/guides/block-countries-minecraft-server" class="text-fg underline">how country rules work</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="feat-h" class="border-b border-line">
+    <div class="container-site py-16 sm:py-20">
+      <h2 id="feat-h" class="section-title">What you control</h2>
+      <dl class="mt-10 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+        {features.map(([t, d]) => (
+          <div><dt class="font-semibold tracking-[-0.01em]">{t}</dt><dd class="mt-1.5 leading-relaxed text-fg-2">{d}</dd></div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <div class="container-site grid gap-16 py-16 sm:py-20 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)]">
+    <Faq items={p.faq} title={`${p.name} questions`} />
+    <aside aria-labelledby="other-h" class="lg:pt-2">
+      <h2 id="other-h" class="text-sm font-medium text-fg-2">Other platforms</h2>
+      <ul class="mt-4 space-y-2">
+        {others.map((o) => (
+          <li><a href={o.path} class="card flex items-center justify-between p-4 font-medium no-underline transition-colors hover:border-line-strong">{o.h1}<span aria-hidden="true" class="text-fg-3">→</span></a></li>
+        ))}
+      </ul>
+    </aside>
+  </div>
+</Base>

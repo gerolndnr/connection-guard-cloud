@@ -1,0 +1,90 @@
+---
+import Guide from "../../layouts/Guide.astro";
+const faq = [
+  { q: "How do I block a country on my Minecraft server?", a: "Install an anti-VPN or geo-blocking plugin such as Connection Guard, set behavior.geo.type to 'BLACKLIST', list the countries as two-letter ISO codes (for example 'CN'), set kick-player to true and reload." },
+  { q: "What's the difference between a blocklist and an allowlist?", a: "A blocklist refuses players from the countries you list and lets everyone else in. An allowlist only lets players in from the countries you list. In Connection Guard, BLACKLIST is the blocklist and WHITELIST is the allowlist; an empty allowlist refuses everyone." },
+  { q: "How accurate is country detection?", a: "Good at the country level for most home connections, but not perfect. Mobile networks, corporate networks and VPNs can place a player in the wrong country, so combine country rules with VPN checks and keep an exemption path." },
+  { q: "Does blocking a country also block VPN users?", a: "No. A VPN makes a player appear in the VPN server's country. To stop players from hopping around a country rule with a VPN, turn on VPN checks as well." },
+  { q: "Which country codes does Connection Guard use?", a: "Two-letter ISO 3166-1 alpha-2 codes, the same ones used in domain names: DE for Germany, US for the United States, BR for Brazil, and so on." },
+];
+const toc: [string, string][] = [
+  ["when", "When country rules make sense"],
+  ["block-vs-allow", "Blocklist or allowlist"],
+  ["setup", "Set it up"],
+  ["accuracy", "How accurate is it?"],
+  ["players", "Keep it fair for players"],
+  ["faq", "FAQ"],
+];
+---
+<Guide
+  title="How to Block Countries on a Minecraft Server (Geo-Blocking Guide)"
+  h1="How to block countries on a Minecraft server"
+  description="Block or allow players by country on Paper, Spigot, BungeeCord or Velocity: blocklist vs. allowlist, the exact config, and how accurate geolocation is."
+  lede="Country rules are a blunt tool. Used deliberately, they keep a regional community regional and cut down on abuse waves. Here's how to set them up properly."
+  path="/guides/block-countries-minecraft-server"
+  og="/og/guide-countries.png"
+  published="2026-10-04"
+  modified="2026-10-04"
+  minutes={6}
+  toc={toc}
+  faq={faq}
+>
+  <h2 id="when">When country rules make sense</h2>
+  <p>Country rules decide who may join based on where their connection appears to come from. They fit when:</p>
+  <ul>
+    <li><strong>Your community is regional,</strong> for example a German-speaking server that moderates only in German.</li>
+    <li><strong>Abuse keeps coming from the same places,</strong> such as repeated bot waves you can't moderate.</li>
+    <li><strong>Latency matters</strong> and you'd rather not accept players who'd play at 300 ms.</li>
+  </ul>
+  <p>A country match is a policy decision, not proof that someone is malicious. Travelers, expats and players on unusual networks will be affected too, so decide what you want and tell players how to get help.</p>
+
+  <h2 id="block-vs-allow">Blocklist or allowlist</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Mode</th><th scope="col">Who gets refused</th><th scope="col">Use it when</th></tr></thead>
+      <tbody>
+        <tr><td><code>BLACKLIST</code></td><td>Players from the listed countries</td><td>You want to keep out a few specific countries.</td></tr>
+        <tr><td><code>WHITELIST</code></td><td>Players from every country <strong>not</strong> listed</td><td>Your server is for a small set of countries.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Careful with an empty allowlist: it matches every country and refuses everyone.</p>
+
+  <h2 id="setup">Set it up with Connection Guard</h2>
+  <p>Connection Guard handles VPN checks and country rules in one free plugin for <a href="/paper-anti-vpn">Paper and Spigot</a>, <a href="/bungeecord-anti-vpn">BungeeCord</a> and <a href="/velocity-anti-vpn">Velocity</a>. On a network, install it on the proxy.</p>
+  <h3 id="config">1. Choose the countries</h3>
+  <p>Country rules live under <code>behavior.geo</code> in the generated <code>config.yml</code>. Use two-letter ISO country codes. The shipped config blocks <code>CN</code> and <code>RU</code>; replace that list with your own policy:</p>
+  <pre><code>behavior:
+  geo:
+    kick-player: true
+    notify-staff: true
+    type: 'BLACKLIST'    # or 'WHITELIST'
+    list:
+      - CN
+      - RU</code></pre>
+  <p>This is a partial example: keep the other generated settings. Want to watch first? Set <code>kick-player: false</code> and staff with <code>connectionguard.notify.geo</code> get an alert instead. You can also post matches to a Discord webhook under <code>send-webhook</code>.</p>
+  <h3 id="service">2. Pick the country lookup service</h3>
+  <p>The default country service is <strong>IP-API</strong>. Its free endpoint is for non-commercial use, uses HTTP and allows 45 requests per minute. For a commercial server or more traffic, switch to ProxyCheck:</p>
+  <pre><code>provider:
+  geo:
+    service: 'ProxyCheck'</code></pre>
+  <p>Restart after changing the service. Country answers are cached for 72 hours by default, so returning players don't cost a lookup.</p>
+  <h3 id="test">3. Test it</h3>
+  <p>Run <code>/cg info &lt;IP or player&gt;</code> to see which country each service reports for an address. Then check one ordinary connection and one that should match before you rely on it.</p>
+
+  <h2 id="accuracy">How accurate is country detection?</h2>
+  <p>IP geolocation is usually right about the country for home broadband, but it's an estimate built from registry data and network measurements. Expect mistakes with:</p>
+  <ul>
+    <li><strong>Mobile networks,</strong> which can route traffic through another country.</li>
+    <li><strong>Company and school networks</strong> with a central internet exit.</li>
+    <li><strong>VPNs and proxies,</strong> which show the VPN server's country. Pair country rules with <a href="/guides/block-vpn-minecraft-server">VPN checks</a> so a rule can't be skipped with one click.</li>
+  </ul>
+  <p>If a lookup fails, Connection Guard makes no country decision for that login rather than guessing.</p>
+
+  <h2 id="players">Keep it fair for players</h2>
+  <ul>
+    <li><strong>Say why.</strong> Edit the geo kick message in <code>translation/en.yml</code> to name the rule and how to appeal.</li>
+    <li><strong>Exempt people you trust.</strong> Add their UUID or IP under <code>behavior.geo.exemptions</code>, or exempt by LuckPerms permission with <code>use-permission-exemption: true</code>.</li>
+    <li><strong>Review now and then.</strong> Abuse patterns change; a country you blocked last year may now be part of your community.</li>
+  </ul>
+</Guide>

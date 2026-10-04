@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://connectionguard.net/sitemap-index.xml

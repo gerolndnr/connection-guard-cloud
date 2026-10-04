@@ -1,0 +1,8 @@
+// Redirects www to the apex so search engines see one canonical host. Runs only for www requests.
+{
+  "$schema": "../../api/node_modules/wrangler/config-schema.json",
+  "name": "connection-guard-www",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-15",
+  "routes": [{ "pattern": "www.connectionguard.net", "custom_domain": true }]
+}

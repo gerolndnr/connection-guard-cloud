@@ -13,3 +13,6 @@ test-results/
 .impeccable/direction-payload.json
 apps/web/.impeccable/live/
 .impeccable/brief-body.md
+.impeccable/site-brief-body.md
+.impeccable/site-surface-payload.json
+.impeccable/questions/

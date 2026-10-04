@@ -1,53 +1,318 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-03T12:00:00Z",
+  "generatedAt": "2026-10-04T12:00:00Z",
   "title": "Design System: Connection Guard Cloud",
   "extensions": {
     "colorMeta": {
-      "emerald": { "role": "primary", "displayName": "Signal Emerald", "canonical": "#059669", "theme": "light", "tonalRamp": ["#022c22", "#064e3b", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0", "#ecfdf5"] },
-      "emerald-deep": { "role": "primary", "displayName": "Deep Emerald", "canonical": "#047857", "theme": "light", "tonalRamp": ["#022c22", "#064e3b", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0", "#ecfdf5"] },
-      "emerald-wash": { "role": "primary", "displayName": "Emerald Wash", "canonical": "#ecfdf5", "theme": "light" },
-      "emerald-dark": { "role": "primary", "displayName": "Signal Emerald (dark)", "canonical": "#10b981", "theme": "dark", "tonalRamp": ["#022c22", "#064e3b", "#047857", "#059669", "#10b981", "#34d399", "#a7f3d0", "#ecfdf5"] },
-      "emerald-dark-text": { "role": "primary", "displayName": "Emerald Text (dark)", "canonical": "#34d399", "theme": "dark" },
-      "emerald-dark-ink": { "role": "primary", "displayName": "Emerald Ink (dark primary button text)", "canonical": "#04130d", "theme": "dark" },
-      "page": { "role": "neutral", "displayName": "Page Gray", "canonical": "#fafafa", "theme": "light", "tonalRamp": ["#09090b", "#27272a", "#52525b", "#71717a", "#a1a1aa", "#d4d4d8", "#f4f4f5", "#fafafa"] },
-      "surface": { "role": "neutral", "displayName": "Surface White", "canonical": "#ffffff", "theme": "light" },
-      "subtle": { "role": "neutral", "displayName": "Subtle Zinc", "canonical": "#f4f4f5", "theme": "light" },
-      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "#ebebeb", "theme": "light" },
-      "line-strong": { "role": "neutral", "displayName": "Strong Hairline", "canonical": "#d4d4d8", "theme": "light" },
-      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#0a0a0a", "theme": "light" },
-      "ink-2": { "role": "neutral", "displayName": "Ink 2", "canonical": "#52525b", "theme": "light" },
-      "ink-3": { "role": "neutral", "displayName": "Ink 3", "canonical": "#71717a", "theme": "light" },
-      "page-dark": { "role": "neutral", "displayName": "Pure Black", "canonical": "#000000", "theme": "dark", "tonalRamp": ["#000000", "#0a0a0a", "#161616", "#1f1f1f", "#2e2e2e", "#8f8f8f", "#a1a1a1", "#ededed"] },
-      "surface-dark": { "role": "neutral", "displayName": "Surface (dark)", "canonical": "#0a0a0a", "theme": "dark" },
-      "subtle-dark": { "role": "neutral", "displayName": "Subtle (dark)", "canonical": "#161616", "theme": "dark" },
-      "line-dark": { "role": "neutral", "displayName": "Hairline (dark)", "canonical": "#1f1f1f", "theme": "dark" },
-      "line-strong-dark": { "role": "neutral", "displayName": "Strong Hairline (dark)", "canonical": "#2e2e2e", "theme": "dark" },
-      "ink-dark": { "role": "neutral", "displayName": "Ink (dark)", "canonical": "#ededed", "theme": "dark" },
-      "ink-2-dark": { "role": "neutral", "displayName": "Ink 2 (dark)", "canonical": "#a1a1a1", "theme": "dark" },
-      "ink-3-dark": { "role": "neutral", "displayName": "Ink 3 (dark)", "canonical": "#8f8f8f", "theme": "dark" },
-      "refused": { "role": "state", "displayName": "Refused Red", "canonical": "#dc2626", "theme": "light", "tonalRamp": ["#450a0a", "#7f1d1d", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fecaca", "#fef2f2"] },
-      "refused-text": { "role": "state", "displayName": "Refused Text", "canonical": "#b91c1c", "theme": "light" },
-      "refused-wash": { "role": "state", "displayName": "Refused Wash", "canonical": "#fef2f2", "theme": "light" },
-      "refused-dark": { "role": "state", "displayName": "Refused Red (dark)", "canonical": "#e5484d", "theme": "dark", "darkWash": "rgb(229 72 77 / 0.13)" },
-      "refused-dark-text": { "role": "state", "displayName": "Refused Text (dark)", "canonical": "#ff6369", "theme": "dark" },
-      "caution": { "role": "state", "displayName": "Caution Amber", "canonical": "#d97706", "theme": "light", "tonalRamp": ["#451a03", "#78350f", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fde68a", "#fffbeb"] },
-      "caution-text": { "role": "state", "displayName": "Caution Text", "canonical": "#b45309", "theme": "light" },
-      "caution-wash": { "role": "state", "displayName": "Caution Wash", "canonical": "#fffbeb", "theme": "light" },
-      "caution-dark": { "role": "state", "displayName": "Caution Amber (dark)", "canonical": "#f5a524", "theme": "dark", "darkWash": "rgb(245 165 36 / 0.12)" },
-      "caution-dark-text": { "role": "state", "displayName": "Caution Text (dark)", "canonical": "#f5b84a", "theme": "dark" },
-      "discord-blurple": { "role": "third-party", "displayName": "Discord Blurple", "canonical": "#5865f2", "note": "Sign in with Discord button only." },
-      "discord-blurple-hover": { "role": "third-party", "displayName": "Discord Blurple Hover", "canonical": "#4752c4" }
+      "emerald": {
+        "role": "primary",
+        "displayName": "Signal Emerald",
+        "canonical": "#059669",
+        "theme": "light",
+        "tonalRamp": [
+          "#022c22",
+          "#064e3b",
+          "#047857",
+          "#059669",
+          "#10b981",
+          "#34d399",
+          "#a7f3d0",
+          "#ecfdf5"
+        ]
+      },
+      "emerald-deep": {
+        "role": "primary",
+        "displayName": "Deep Emerald",
+        "canonical": "#047857",
+        "theme": "light",
+        "tonalRamp": [
+          "#022c22",
+          "#064e3b",
+          "#047857",
+          "#059669",
+          "#10b981",
+          "#34d399",
+          "#a7f3d0",
+          "#ecfdf5"
+        ]
+      },
+      "emerald-wash": {
+        "role": "primary",
+        "displayName": "Emerald Wash",
+        "canonical": "#ecfdf5",
+        "theme": "light"
+      },
+      "emerald-dark": {
+        "role": "primary",
+        "displayName": "Signal Emerald (dark)",
+        "canonical": "#10b981",
+        "theme": "dark",
+        "tonalRamp": [
+          "#022c22",
+          "#064e3b",
+          "#047857",
+          "#059669",
+          "#10b981",
+          "#34d399",
+          "#a7f3d0",
+          "#ecfdf5"
+        ]
+      },
+      "emerald-dark-text": {
+        "role": "primary",
+        "displayName": "Emerald Text (dark)",
+        "canonical": "#34d399",
+        "theme": "dark"
+      },
+      "emerald-dark-ink": {
+        "role": "primary",
+        "displayName": "Emerald Ink (dark primary button text)",
+        "canonical": "#04130d",
+        "theme": "dark"
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "Page Gray",
+        "canonical": "#fafafa",
+        "theme": "light",
+        "tonalRamp": [
+          "#09090b",
+          "#27272a",
+          "#52525b",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#f4f4f5",
+          "#fafafa"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface White",
+        "canonical": "#ffffff",
+        "theme": "light"
+      },
+      "subtle": {
+        "role": "neutral",
+        "displayName": "Subtle Zinc",
+        "canonical": "#f4f4f5",
+        "theme": "light"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#ebebeb",
+        "theme": "light"
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Strong Hairline",
+        "canonical": "#d4d4d8",
+        "theme": "light"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#0a0a0a",
+        "theme": "light"
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2",
+        "canonical": "#52525b",
+        "theme": "light"
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Ink 3",
+        "canonical": "#71717a",
+        "theme": "light"
+      },
+      "page-dark": {
+        "role": "neutral",
+        "displayName": "Pure Black",
+        "canonical": "#000000",
+        "theme": "dark",
+        "tonalRamp": [
+          "#000000",
+          "#0a0a0a",
+          "#161616",
+          "#1f1f1f",
+          "#2e2e2e",
+          "#8f8f8f",
+          "#a1a1a1",
+          "#ededed"
+        ]
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "Surface (dark)",
+        "canonical": "#0a0a0a",
+        "theme": "dark"
+      },
+      "subtle-dark": {
+        "role": "neutral",
+        "displayName": "Subtle (dark)",
+        "canonical": "#161616",
+        "theme": "dark"
+      },
+      "line-dark": {
+        "role": "neutral",
+        "displayName": "Hairline (dark)",
+        "canonical": "#1f1f1f",
+        "theme": "dark"
+      },
+      "line-strong-dark": {
+        "role": "neutral",
+        "displayName": "Strong Hairline (dark)",
+        "canonical": "#2e2e2e",
+        "theme": "dark"
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Ink (dark)",
+        "canonical": "#ededed",
+        "theme": "dark"
+      },
+      "ink-2-dark": {
+        "role": "neutral",
+        "displayName": "Ink 2 (dark)",
+        "canonical": "#a1a1a1",
+        "theme": "dark"
+      },
+      "ink-3-dark": {
+        "role": "neutral",
+        "displayName": "Ink 3 (dark)",
+        "canonical": "#8f8f8f",
+        "theme": "dark"
+      },
+      "refused": {
+        "role": "state",
+        "displayName": "Refused Red",
+        "canonical": "#dc2626",
+        "theme": "light",
+        "tonalRamp": [
+          "#450a0a",
+          "#7f1d1d",
+          "#b91c1c",
+          "#dc2626",
+          "#ef4444",
+          "#f87171",
+          "#fecaca",
+          "#fef2f2"
+        ]
+      },
+      "refused-text": {
+        "role": "state",
+        "displayName": "Refused Text",
+        "canonical": "#b91c1c",
+        "theme": "light"
+      },
+      "refused-wash": {
+        "role": "state",
+        "displayName": "Refused Wash",
+        "canonical": "#fef2f2",
+        "theme": "light"
+      },
+      "refused-dark": {
+        "role": "state",
+        "displayName": "Refused Red (dark)",
+        "canonical": "#e5484d",
+        "theme": "dark",
+        "darkWash": "rgb(229 72 77 / 0.13)"
+      },
+      "refused-dark-text": {
+        "role": "state",
+        "displayName": "Refused Text (dark)",
+        "canonical": "#ff6369",
+        "theme": "dark"
+      },
+      "caution": {
+        "role": "state",
+        "displayName": "Caution Amber",
+        "canonical": "#d97706",
+        "theme": "light",
+        "tonalRamp": [
+          "#451a03",
+          "#78350f",
+          "#b45309",
+          "#d97706",
+          "#f59e0b",
+          "#fbbf24",
+          "#fde68a",
+          "#fffbeb"
+        ]
+      },
+      "caution-text": {
+        "role": "state",
+        "displayName": "Caution Text",
+        "canonical": "#b45309",
+        "theme": "light"
+      },
+      "caution-wash": {
+        "role": "state",
+        "displayName": "Caution Wash",
+        "canonical": "#fffbeb",
+        "theme": "light"
+      },
+      "caution-dark": {
+        "role": "state",
+        "displayName": "Caution Amber (dark)",
+        "canonical": "#f5a524",
+        "theme": "dark",
+        "darkWash": "rgb(245 165 36 / 0.12)"
+      },
+      "caution-dark-text": {
+        "role": "state",
+        "displayName": "Caution Text (dark)",
+        "canonical": "#f5b84a",
+        "theme": "dark"
+      },
+      "discord-blurple": {
+        "role": "third-party",
+        "displayName": "Discord Blurple",
+        "canonical": "#5865f2",
+        "note": "Sign in with Discord button only."
+      },
+      "discord-blurple-hover": {
+        "role": "third-party",
+        "displayName": "Discord Blurple Hover",
+        "canonical": "#4752c4"
+      }
     },
     "typographyMeta": {
-      "headline": { "displayName": "Headline", "purpose": "Page titles and sign-in card titles." },
-      "metric": { "displayName": "Metric", "purpose": "KPI values; Geist Sans with tabular-nums, never mono." },
-      "title": { "displayName": "Title", "purpose": "Card headers, sheet section headings, row primaries." },
-      "wordmark": { "displayName": "Wordmark", "purpose": "\"Connection Guard\" in the top bar; the only brand mark." },
-      "body": { "displayName": "Body", "purpose": "Running text and table cells; ss01 on globally." },
-      "label": { "displayName": "Label", "purpose": "KPI labels, table headers, tabs, segmented items." },
-      "caption": { "displayName": "Caption", "purpose": "Deltas, quota lines, footnotes, badge text." },
-      "mono": { "displayName": "Mono", "purpose": "IPs, UUIDs, versions, rule IDs, link codes, config snippets only." }
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles and sign-in card titles."
+      },
+      "metric": {
+        "displayName": "Metric",
+        "purpose": "KPI values; Geist Sans with tabular-nums, never mono."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card headers, sheet section headings, row primaries."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "\"Connection Guard\" in the top bar; the only brand mark."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text and table cells; ss01 on globally."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "KPI labels, table headers, tabs, segmented items."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Deltas, quota lines, footnotes, badge text."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "IPs, UUIDs, versions, rule IDs, link codes, config snippets only."
+      }
     },
     "themes": {
       "strategy": "class",
@@ -56,17 +321,53 @@
       "toggle": "System / light / dark; three icon pills from sm, single cycling ghost button on mobile."
     },
     "shadows": [
-      { "name": "pop-light", "value": "0 8px 24px -8px rgb(0 0 0 / 0.16), 0 2px 6px -2px rgb(0 0 0 / 0.08)", "purpose": "Chart tooltip and desktop why sheet, light theme." },
-      { "name": "pop-dark", "value": "0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px var(--line-strong)", "purpose": "Same floating layers in dark; the ring carries the edge on black." },
-      { "name": "segment-lift", "value": "0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px var(--line)", "purpose": "Pressed segmented-control item." },
-      { "name": "focus-ring-input", "value": "0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)", "purpose": "Focused input, with emerald stroke." }
+      {
+        "name": "pop-light",
+        "value": "0 8px 24px -8px rgb(0 0 0 / 0.16), 0 2px 6px -2px rgb(0 0 0 / 0.08)",
+        "purpose": "Chart tooltip and desktop why sheet, light theme."
+      },
+      {
+        "name": "pop-dark",
+        "value": "0 12px 32px -8px rgb(0 0 0 / 0.7), 0 0 0 1px var(--line-strong)",
+        "purpose": "Same floating layers in dark; the ring carries the edge on black."
+      },
+      {
+        "name": "segment-lift",
+        "value": "0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px var(--line)",
+        "purpose": "Pressed segmented-control item."
+      },
+      {
+        "name": "focus-ring-input",
+        "value": "0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)",
+        "purpose": "Focused input, with emerald stroke."
+      }
     ],
     "motion": [
-      { "name": "state-transition", "value": "150ms ease-out", "purpose": "Color, border and shadow changes on buttons, inputs, rows, tabs." },
-      { "name": "row-in", "value": "1.6s cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "New decision row fades from a 12% emerald wash; the one authored moment." },
-      { "name": "sheet-in", "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Why sheet slides 16px in from the right with fade." },
-      { "name": "shimmer", "value": "1.4s ease-in-out infinite", "purpose": "Skeleton sheen." },
-      { "name": "reduced-motion", "value": "prefers-reduced-motion: reduce", "purpose": "Disables row-in, sheet-in, shimmer and the healthy-dot ping." }
+      {
+        "name": "state-transition",
+        "value": "150ms ease-out",
+        "purpose": "Color, border and shadow changes on buttons, inputs, rows, tabs."
+      },
+      {
+        "name": "row-in",
+        "value": "1.6s cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "New decision row fades from a 12% emerald wash; the one authored moment."
+      },
+      {
+        "name": "sheet-in",
+        "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Why sheet slides 16px in from the right with fade."
+      },
+      {
+        "name": "shimmer",
+        "value": "1.4s ease-in-out infinite",
+        "purpose": "Skeleton sheen."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "Disables row-in, sheet-in, shimmer and the healthy-dot ping."
+      }
     ],
     "chartEncoding": {
       "admitted": "solid emerald (var(--accent))",
@@ -76,10 +377,61 @@
       "cvd": "Emerald/red pair validated for color-vision deficiency in both themes (finish review); legend and fixed order back it up."
     },
     "breakpoints": [
-      { "name": "sm", "value": "640px" },
-      { "name": "md", "value": "768px" },
-      { "name": "lg", "value": "1024px", "note": "Right rail appears; why sheet becomes a non-modal side panel." }
-    ]
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "note": "Right rail appears; why sheet becomes a non-modal side panel."
+      }
+    ],
+    "site": {
+      "target": "apps/site (connectionguard.net)",
+      "stylesheet": "apps/site/src/styles/site.css imports apps/web/src/styles.css",
+      "container": {
+        "maxWidth": "72rem",
+        "paddingInline": "1.25rem; 2rem from sm"
+      },
+      "type": {
+        "display": "clamp(2.5rem, 5.2vw, 3.75rem) home; up to 3.5rem download, 3.25rem privacy",
+        "sectionTitle": "clamp(1.75rem, 3.2vw, 2.5rem)",
+        "lede": "1.0625rem / 1.6, max 62ch",
+        "prose": "1rem / 1.7, max 40rem"
+      },
+      "sectionPadding": {
+        "home": "80px, 112px from sm",
+        "inner": "56-64px"
+      },
+      "darkBand": {
+        "selector": "#dashboard",
+        "classes": "dark border-y bg-page",
+        "note": "Only forced-dark section."
+      },
+      "nav": {
+        "background": "opaque surface, bottom hairline",
+        "height": "56px",
+        "compactRowBelowMd": "40px scrolling link row"
+      },
+      "frameRadius": "16px (comparison table, preview window)",
+      "compareMarks": {
+        "yes": "emerald check",
+        "no": "ink-3 dash",
+        "varies": "ink-3 tilde",
+        "ownColumn": "emerald wash 60%"
+      },
+      "removed": [
+        "hairline grid backgrounds",
+        "wide diffuse shadows",
+        "kicker chips above headings",
+        "amber for neutral facts"
+      ]
+    }
   },
   "components": [
     {
@@ -153,6 +505,30 @@
       "description": "44px hairline rows: mono IP, verdict badge, reason, tabular time.",
       "html": "<table class=\"ds-table\"><thead><tr><th>Connection</th><th>Verdict</th><th>Reason</th><th class=\"r\">Time</th></tr></thead><tbody><tr><td><span class=\"ds-mono\">84.212.26.223</span> <span class=\"ds-meta\">Proxy</span></td><td><span class=\"ds-pill-no\">Refused</span></td><td class=\"ds-reason-no\">Country not allowed</td><td class=\"r ds-time\">44 min ago</td></tr></tbody></table>",
       "css": ".ds-table { width: 36rem; border-collapse: collapse; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; color: #0a0a0a; background: #ffffff; } .ds-table th { text-align: left; font-weight: 500; font-size: 0.8125rem; color: #52525b; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ebebeb; } .ds-table td { padding: 0 0.75rem; height: 2.75rem; border-bottom: 1px solid #ebebeb; } .ds-table tbody tr { cursor: pointer; transition: background-color 150ms; } .ds-table tbody tr:hover { background: rgb(244 244 245 / 0.7); } .ds-table .r { text-align: right; } .ds-mono { font-family: \"Geist Mono Variable\", ui-monospace, Menlo, monospace; font-size: 0.92em; font-weight: 500; } .ds-meta { font-size: 0.8125rem; color: #71717a; } .ds-pill-no { display: inline-flex; align-items: center; height: 1.375rem; padding: 0 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; color: #b91c1c; background: #fef2f2; } .ds-reason-no { color: #b91c1c; } .ds-time { font-size: 0.8125rem; color: #71717a; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Large Button",
+      "kind": "button",
+      "refersTo": "button-primary-lg",
+      "description": "Site-only page-level call to action (Download free). 44px, 8px corners, 0.9375rem; secondary uses the same size.",
+      "html": "<a class=\"ds-btn ds-btn-primary ds-btn-lg\">Download free</a>",
+      "css": ".ds-btn-lg { height: 2.75rem; padding: 0 1.25rem; font-size: 0.9375rem; border-radius: 8px; }"
+    },
+    {
+      "name": "Chip",
+      "kind": "badge",
+      "refersTo": "chip",
+      "description": "Site factual tag: license, version (mono), Recommended. Never a kicker above a heading.",
+      "html": "<span class=\"ds-chip\">MIT</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 0.375rem; height: 1.5rem; padding: 0 0.625rem; border-radius: 999px; font-family: \"Geist Variable\", ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; border: 1px solid #ebebeb; color: #52525b; background: #ffffff; white-space: nowrap; } .dark .ds-chip { border-color: #1f1f1f; color: #a1a1a1; background: #0a0a0a; }"
+    },
+    {
+      "name": "Soon Chip",
+      "kind": "badge",
+      "refersTo": "chip-soon",
+      "description": "Marks features not in the current release; text is \"0.5\".",
+      "html": "<span class=\"ds-chip ds-chip-soon\">0.5</span>",
+      "css": ".ds-chip-soon { color: #047857; border-color: color-mix(in srgb, #059669 35%, transparent); background: #ecfdf5; } .dark .ds-chip-soon { color: #34d399; border-color: color-mix(in srgb, #10b981 35%, transparent); background: rgb(16 185 129 / 0.12); }"
     }
   ],
   "narrative": {
@@ -166,14 +542,61 @@
       "Light and dark themes with equal care, applied before first paint."
     ],
     "rules": [
-      { "name": "The One Brand Color Rule", "body": "Emerald is the only brand color. Everything that is not a state is grayscale. Discord blurple is a third-party sign-in exception, never a palette member.", "section": "colors" },
-      { "name": "The Ground Split Rule", "body": "Cards are one step lighter than the page: #ffffff on #fafafa in light, #0a0a0a on #000000 in dark. Do not put cards on a same-tone ground.", "section": "colors" },
-      { "name": "The Never Color Alone Rule", "body": "A state color always comes with an icon, a label or a texture: verdict badges carry an icon and a word, chart segments have a legend and a fixed stacking order, and would-refuse is hatched.", "section": "colors" },
-      { "name": "The Tabular Sans Rule", "body": "Numbers in tables, KPIs, chart axes, tooltips and counters use Geist Sans with tabular-nums. Mono is not a number font.", "section": "typography" },
-      { "name": "The Copyable String Rule", "body": "Geist Mono is only for identifiers and config: IPs, UUIDs, versions, rule IDs, link codes and YAML or command snippets.", "section": "typography" },
-      { "name": "The Floating Only Rule", "body": "Cards, tables and buttons never cast shadows. A shadow means the layer floats above the page.", "section": "elevation" },
-      { "name": "The Hatch Is State Rule", "body": "Would-refuse is a hypothetical state, so in charts it is told apart by texture as well as hue: amber hatch, never a flat fill. Admitted is emerald and refused is red, a pairing validated for color-vision deficiency in both themes in the finish review.", "section": "components" },
-      { "name": "The One Authored Moment Rule", "body": "Motion is limited to the new-row arrival, the sheet slide-in, skeleton sheen and the healthy ping, and all of it stops under `prefers-reduced-motion`. Everything else is a 150ms color transition.", "section": "components" }
+      {
+        "name": "The One Brand Color Rule",
+        "body": "Emerald is the only brand color. Everything that is not a state is grayscale. Discord blurple is a third-party sign-in exception, never a palette member.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ground Split Rule",
+        "body": "Cards are one step lighter than the page: #ffffff on #fafafa in light, #0a0a0a on #000000 in dark. Do not put cards on a same-tone ground.",
+        "section": "colors"
+      },
+      {
+        "name": "The Never Color Alone Rule",
+        "body": "A state color always comes with an icon, a label or a texture: verdict badges carry an icon and a word, chart segments have a legend and a fixed stacking order, and would-refuse is hatched.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Sans Rule",
+        "body": "Numbers in tables, KPIs, chart axes, tooltips and counters use Geist Sans with tabular-nums. Mono is not a number font.",
+        "section": "typography"
+      },
+      {
+        "name": "The Copyable String Rule",
+        "body": "Geist Mono is only for identifiers and config: IPs, UUIDs, versions, rule IDs, link codes and YAML or command snippets.",
+        "section": "typography"
+      },
+      {
+        "name": "The Floating Only Rule",
+        "body": "Cards, tables and buttons never cast shadows. A shadow means the layer floats above the page.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Hatch Is State Rule",
+        "body": "Would-refuse is a hypothetical state, so in charts it is told apart by texture as well as hue: amber hatch, never a flat fill. Admitted is emerald and refused is red, a pairing validated for color-vision deficiency in both themes in the finish review.",
+        "section": "components"
+      },
+      {
+        "name": "The One Authored Moment Rule",
+        "body": "Motion is limited to the new-row arrival, the sheet slide-in, skeleton sheen and the healthy ping, and all of it stops under `prefers-reduced-motion`. Everything else is a 150ms color transition.",
+        "section": "components"
+      },
+      {
+        "name": "The One Dark Band Rule",
+        "body": "On the marketing site exactly one full-bleed band is forced dark in both themes: the dashboard preview. No other section inverts.",
+        "section": "site"
+      },
+      {
+        "name": "The Categories Not Competitors Rule",
+        "body": "The comparison names categories (typical paid plugin, typical hosted service), never products, and dates the review. Yes is an emerald check, no an ink-3 dash, varies an ink-3 tilde; below md each question becomes a stacked card.",
+        "section": "site"
+      },
+      {
+        "name": "The Labeled Evidence Rule",
+        "body": "Every proof says what it is: the preview carries an Example data pill, download counts are build-time API reads printed with their date, the console block is captioned illustrative.",
+        "section": "site"
+      }
     ],
     "dos": [
       "Do put #ffffff cards on a #fafafa page in light, and #0a0a0a cards on a #000000 page in dark.",
@@ -191,7 +614,11 @@
       "Don't introduce a brand blue or a second accent. Discord blurple stays on the Discord sign-in button only.",
       "Don't put shadows on cards, tables or buttons; only tooltips and the side sheet float.",
       "Don't draw would-refuse as a flat amber fill in charts.",
-      "Don't set KPI or table numbers in mono."
+      "Don't set KPI or table numbers in mono.",
+      "Don't put decorative hairline grid backgrounds behind site sections.",
+      "Don't put wide diffuse shadows on site cards, frames or the preview.",
+      "Don't put kicker chips or eyebrow labels above headings; chips only mark facts.",
+      "Don't use amber for neutral facts; it stays on would-refuse, observe mode and attention."
     ]
   }
 }

@@ -1,0 +1,40 @@
+---
+import Base from "../../layouts/Base.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import { PLATFORMS } from "../../data/platforms";
+import { breadcrumbs } from "../../lib/seo";
+const guides = [
+  { href: "/guides/block-vpn-minecraft-server", title: "How to block VPNs on a Minecraft server", body: "Why prevent-proxy-connections isn't enough, how anti-VPN plugins decide, and a setup that doesn't lock out real players.", minutes: 8 },
+  { href: "/guides/block-countries-minecraft-server", title: "How to block countries on a Minecraft server", body: "Blocklists vs. allowlists, the exact config, how accurate IP geolocation is, and how to stay fair.", minutes: 6 },
+];
+---
+<Base title="Minecraft Server Security Guides | Connection Guard"
+  description="Practical guides for Minecraft server owners: block VPNs and proxies, set up country rules, and avoid false positives on Paper, Spigot, BungeeCord and Velocity."
+  path="/guides" og="/og/guides.png" schema={[breadcrumbs([["Guides", "/guides"]])]}>
+  <section class="border-b border-line">
+    <div class="container-site py-12 sm:py-16">
+      <Breadcrumbs items={[["Guides", "/guides"]]} />
+      <h1 class="display mt-6 text-[clamp(2.25rem,5vw,3.25rem)]">Guides for server owners</h1>
+      <p class="lede mt-5">Practical, honest answers about VPNs, proxies and country rules on Minecraft servers.</p>
+    </div>
+  </section>
+  <section class="container-site py-12 sm:py-16">
+    <ul class="grid gap-4 md:grid-cols-2">
+      {guides.map((g) => (
+        <li>
+          <a href={g.href} class="card group flex h-full flex-col p-6 no-underline transition-colors hover:border-line-strong">
+            <h2 class="text-xl font-semibold tracking-[-0.025em]">{g.title}</h2>
+            <p class="mt-2 leading-relaxed text-fg-2">{g.body}</p>
+            <span class="mt-5 text-sm text-fg-3">{g.minutes} min read</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <h2 class="mt-16 text-sm font-medium text-fg-2">Setup by platform</h2>
+    <ul class="mt-4 grid gap-2 sm:grid-cols-3">
+      {PLATFORMS.map((p) => (
+        <li><a href={p.path} class="card flex items-center justify-between p-4 font-medium no-underline transition-colors hover:border-line-strong">{p.h1}<span aria-hidden="true" class="text-fg-3">→</span></a></li>
+      ))}
+    </ul>
+  </section>
+</Base>

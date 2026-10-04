@@ -79,11 +79,34 @@ typography:
     fontFamily: "Geist Mono Variable, ui-monospace, SF Mono, Menlo, monospace"
     fontSize: "0.92em"
     fontWeight: 400
+  site-display:
+    fontFamily: "Geist Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(2.5rem, 5.2vw, 3.75rem)"
+    fontWeight: 600
+    lineHeight: 1.02
+    letterSpacing: "-0.04em"
+  site-section-title:
+    fontFamily: "Geist Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.75rem, 3.2vw, 2.5rem)"
+    fontWeight: 600
+    lineHeight: 1.1
+    letterSpacing: "-0.035em"
+  site-lede:
+    fontFamily: "Geist Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1.0625rem"
+    fontWeight: 400
+    lineHeight: 1.6
+  site-prose:
+    fontFamily: "Geist Variable, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.7
 rounded:
   inline: "4px"
   control: "6px"
   card: "8px"
   sheet: "12px"
+  frame: "16px"
   pill: "999px"
 spacing:
   hairline: "1px"
@@ -95,6 +118,7 @@ spacing:
   2xl: "24px"
   page-x: "24px"
   container: "1200px"
+  site-container: "72rem"
 components:
   button-primary:
     backgroundColor: "{colors.emerald-deep}"
@@ -176,6 +200,26 @@ components:
   table-row:
     height: "44px"
     padding: "0 12px"
+  button-primary-lg:
+    backgroundColor: "{colors.emerald-deep}"
+    textColor: "{colors.surface}"
+    rounded: "{rounded.card}"
+    padding: "0 20px"
+    height: "44px"
+  chip:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.pill}"
+    typography: "{typography.caption}"
+    padding: "0 10px"
+    height: "24px"
+  chip-soon:
+    backgroundColor: "{colors.emerald-wash}"
+    textColor: "{colors.emerald-deep}"
+    rounded: "{rounded.pill}"
+    typography: "{typography.caption}"
+    padding: "0 10px"
+    height: "20px"
 ---
 
 # Design System: Connection Guard Cloud
@@ -347,3 +391,45 @@ Stacked columns per hour or day, up to 24px wide, with a 4px rounded top. Bottom
 - **Don't** put shadows on cards, tables or buttons; only tooltips and the side sheet float.
 - **Don't** draw would-refuse as a flat amber fill in charts.
 - **Don't** set KPI or table numbers in mono.
+
+## Marketing Site (apps/site)
+
+connectionguard.net is the Persuade surface of the same system: it imports the dashboard stylesheet unchanged (palette, Geist, hairlines, buttons, cards, badges, both themes) and adds only the larger type, a wider-feeling page rhythm, and a few site components. Everything above still applies; this section records only what the site adds or does differently.
+
+### Typography
+- **Site Display** (`site-display`, balanced wrap): the home headline. Inner pages use the same weight and tracking at a smaller clamp (up to 3.5rem on download, 3.25rem on privacy).
+- **Section Title** (`site-section-title`, balanced wrap): every section heading on the home and download pages.
+- **Lede** (`site-lede`, `ink-2`, max 62ch, pretty wrap): the one sentence under a headline or section title.
+- **Prose** (`site-prose`, `ink-2`, max 40rem): long-form paragraphs and lists on the privacy page, with 1.375rem/600 subheads and underlined `ink` links.
+
+### Layout
+Content sits in a 72rem container (`site-container`) with 20px side padding, 32px from `sm`. Sections are full-width bands divided by 1px hairlines, with 80px vertical padding (112px from `sm`) on the home page and 56-64px on inner pages. Section anchors carry a scroll margin that clears the taller mobile header. Smooth anchor scrolling turns off under reduced motion.
+
+**The One Dark Band Rule.** Exactly one full-bleed band is forced dark in both themes: the dashboard preview (`#dashboard`, the `.dark` class on the section, `page-dark` ground, hairlines top and bottom). It shows the product as it is used at night. No other section inverts.
+
+### Navigation
+A sticky, opaque `surface` header with a bottom hairline (not the dashboard's translucent blur): 56px row with the wordmark, inline links from `md`, then GitHub (from `sm`), the theme toggle and a primary Download button. Below `md` a second 40px row holds the same links plus GitHub as a horizontally scrolling 0.8125rem link row, so nothing hides behind a menu.
+
+### Components
+- **Large Button** (`button-primary-lg`, and the secondary at the same size): 44px tall, 8px corners, 0.9375rem. Used only for the page-level calls to action (Download free, How it compares, Join the Discord). The nav keeps the standard 36px button.
+- **Chip** (`chip`): a 24px pill with a 1px `line` stroke on `surface`, `ink-2` caption text. Holds factual tags: license, version (in mono), "Recommended".
+- **Soon Chip** (`chip-soon`): the same pill on `emerald-wash` with `emerald-deep` text and a 35% emerald stroke, 20px tall where inline. Its text is "0.5" (or "Coming in 0.5" in the announcement bar) and it marks every feature not in the current release: comparison rows, setup steps, the dashboard heading.
+- **Frame** (`rounded.frame`): the comparison table and the dashboard preview window sit in 16px-cornered, hairline-stroked frames, one step rounder than cards because they hold cards or tables.
+- **Download Stats Card**: a standard card with the dated total as a 3rem tabular number, one emerald meter per platform, and a footer line naming the source and date.
+
+### Comparison Table
+**The Categories Not Competitors Rule.** Columns are Connection Guard, a typical paid plugin and a typical hosted service; no product is named, and a footnote dates the review.
+- **Marks:** yes is an emerald check, no is an `ink-3` dash, varies is an `ink-3` tilde; each mark carries a screen-reader word and a visible legend sits below the table. Only "yes" gets color.
+- **Our column:** tinted with emerald wash at 60% and set in `ink` at 500 weight; the others are `ink-2`.
+- **Proof links:** a row whose answer is shown elsewhere on the site gets a quiet `ink-3` "See it →" link to that section.
+- **Small screens:** below `md` the table becomes one stacked card per question, with all three answers listed, so the comparison survives instead of scrolling sideways.
+
+### Honesty
+**The Labeled Evidence Rule.** Every piece of proof says what it is. The dashboard preview runs the real dashboard components on generated data and carries an "Example data" pill in its window chrome. Download counts are read from each platform's public API at build time and printed with the date and "Downloads are not active servers"; a count that failed to refresh says "(last known)". The illustrative console block is captioned as illustrative. No testimonials and no invented numbers.
+
+### Removed on purpose
+These were built, reviewed and taken out; do not bring them back on any site surface:
+- Decorative hairline grid backgrounds behind sections.
+- Wide diffuse shadows on cards, frames or the preview. The site follows the Floating Only Rule.
+- Small kicker chips or eyebrow labels above headings. A chip only ever marks a fact (license, version, "0.5").
+- Amber for neutral facts. Amber stays on would-refuse, observe mode and attention.

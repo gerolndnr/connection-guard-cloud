@@ -1,0 +1,55 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base title="Privacy: What Connection Guard Sends and Stores" path="/privacy" og="/og/privacy.png"
+  description="What this website, the Connection Guard plugin and its optional dashboard send and store, in plain language. This site sets no cookies and loads no trackers.">
+  <article class="container-site max-w-3xl py-16 sm:py-20">
+    <h1 class="display text-[clamp(2.25rem,5vw,3.25rem)]">Privacy, in plain language</h1>
+    <p class="lede mt-5">This page explains what is sent where. The formal privacy policy for the dashboard will be published before the dashboard leaves preview.</p>
+
+    <div class="prose-cg mt-12 space-y-12">
+      <section>
+        <h2>This website</h2>
+        <p>connectionguard.net sets no cookies, uses no analytics and loads nothing from third parties. Your theme choice (light or dark) is kept in your browser's local storage and never leaves it. Download counts are read from Modrinth, SpigotMC, Hangar and GitHub when the site is built, not from your browser.</p>
+      </section>
+
+      <section>
+        <h2>The plugin (0.4.x, current release)</h2>
+        <p>The plugin sends a player's IP address only to the detection services you enable in <code>config.yml</code>, such as ProxyCheck or IP-API. Their own privacy terms apply. Nothing is sent to connectionguard.net.</p>
+      </section>
+
+      <section>
+        <h2>The optional dashboard (from 0.5)</h2>
+        <p>From 0.5, the plugin can link to the free dashboard at app.connectionguard.net. Logins never wait on it, and it turns off with <code>cloud.enabled: false</code>, <code>/cg cloud disable</code> or the environment variable <code>CONNECTIONGUARD_CLOUD=false</code>. Off means no request to connectionguard.net at all.</p>
+        <dl class="mt-6 divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">
+          {[
+            { state: "Off", sent: "Nothing.", never: null },
+            { state: "On, not linked (default from 0.5)", sent: "An anonymous install ID, platform and versions, the protection mode, totals per interval (checks, refusals, cache hits, response times, counts per country and reason) and detection service health.", never: "Player IPs, UUIDs, names, API keys, webhook URLs." },
+            { state: "Linked, terms accepted", sent: "Additionally one entry per check: time, IP, verified UUID, verdict and reason, and what each service answered (country, network, provider, risk).", never: "API keys, player names, console commands." },
+          ].map((r) => (
+            <div class="grid gap-x-6 gap-y-2 p-4 text-sm leading-relaxed sm:grid-cols-[11rem_minmax(0,1fr)] sm:p-5">
+              <dt class="font-semibold text-fg">{r.state}</dt>
+              <dd class="max-w-[36rem] space-y-1.5">
+                <p class="text-fg-2"><span class="font-medium text-fg">Sent: </span>{r.sent}</p>
+                {r.never && <p class="text-fg-2"><span class="font-medium text-fg">Never sent: </span>{r.never}</p>}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <ul>
+          <li>Entries are kept for 30 days, hourly totals for 13 months. Unlinked installs that stop reporting are deleted after 30 days.</li>
+          <li>Data is stored in the EU, on Cloudflare.</li>
+          <li>API keys entered in the dashboard are stored encrypted until your server confirms them, then deleted from the dashboard.</li>
+          <li>You sign in with Discord. The dashboard reads only your Discord user ID, name and avatar.</li>
+          <li>The server operator decides about their players' data. The dashboard processes it only to show it to them.</li>
+        </ul>
+        <p>The exact wire format is public in <a href="https://github.com/gerolndnr/connection-guard-cloud/tree/main/packages/protocol">packages/protocol</a>.</p>
+      </section>
+
+      <section>
+        <h2>Questions</h2>
+        <p>Ask on <a href="https://discord.gg/GekQVPqsfS">Discord</a> or <a href="https://github.com/gerolndnr/connection-guard-cloud/issues">open an issue</a>.</p>
+      </section>
+    </div>
+  </article>
+</Base>

@@ -1,0 +1,11 @@
+// connectionguard.net: static marketing site, Workers Static Assets only (no Worker code, no cost).
+// www is served by ./www (a 301 to the apex).
+{
+  "$schema": "../api/node_modules/wrangler/config-schema.json",
+  "name": "connection-guard-site",
+  "compatibility_date": "2026-08-15",
+  "assets": { "directory": "./dist", "not_found_handling": "404-page", "html_handling": "drop-trailing-slash" },
+  "routes": [
+    { "pattern": "connectionguard.net", "custom_domain": true }
+  ]
+}

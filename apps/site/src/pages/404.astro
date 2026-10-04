@@ -1,0 +1,14 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base title="Page not found | Connection Guard" path="/404" description="This page doesn't exist." noindex>
+  <section class="container-site flex min-h-[60vh] flex-col items-start justify-center py-20">
+    <h1 class="display text-[clamp(2.25rem,5vw,3.25rem)]">404: this page doesn't exist.</h1>
+    <p class="lede mt-4">The link may be old, or the page moved.</p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/" class="btn btn-primary btn-lg no-underline">Back to home</a>
+      <a href="/download" class="btn btn-secondary btn-lg no-underline">Download</a>
+      <a href="/guides" class="btn btn-ghost btn-lg no-underline">Guides</a>
+    </div>
+  </section>
+</Base>

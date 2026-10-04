@@ -1,0 +1,19 @@
+---
+import type { Faq } from "../data/platforms";
+interface Props { items: Faq[]; title?: string; id?: string }
+const { items, title = "Questions", id = "faq" } = Astro.props;
+---
+<section id={id} aria-labelledby={`${id}-h`} class="scroll-mt-28 md:scroll-mt-20">
+  <h2 id={`${id}-h`} class="section-title">{title}</h2>
+  <div class="mt-8 divide-y divide-line border-y border-line">
+    {items.map((i) => (
+      <details class="group py-1">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-6 py-4 text-base font-medium tracking-[-0.01em] [&::-webkit-details-marker]:hidden">
+          {i.q}
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 shrink-0 text-fg-3 transition-transform group-open:rotate-45" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        </summary>
+        <p class="max-w-[36rem] pb-5 leading-relaxed text-fg-2">{i.a}</p>
+      </details>
+    ))}
+  </div>
+</section>
