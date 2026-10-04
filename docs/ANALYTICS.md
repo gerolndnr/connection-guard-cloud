@@ -36,7 +36,7 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | Event | Properties |
 | --- | --- |
 | `$pageview`, `$pageleave`, `$autocapture`, `$dead_click`, `$web_vitals`, `$exception` | standard |
-| `cta_clicked` | `cta` (download, compare, dashboard), `location` (nav, hero, closing, platform_*, guide_end, announcement), `page` |
+| `cta_clicked` | `cta` (download, compare, dashboard), `location` (nav, nav_compact, hero, closing, platform_*, guide_end, announcement), `page` |
 | `download_clicked` | `destination` (modrinth, hangar, spigotmc, github), `location` (download_page, hero_stats, footer), `page` |
 | `support_clicked` | `channel` (discord, github), `location` |
 | `install_guide_opened` | `platform` (velocity, bungeecord, paper), on platform pages |
