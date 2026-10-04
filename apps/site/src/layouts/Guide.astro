@@ -4,6 +4,7 @@ import Breadcrumbs from "../components/Breadcrumbs.astro";
 import Faq from "../components/Faq.astro";
 import type { Faq as FaqItem } from "../data/platforms";
 import { article, breadcrumbs, faq as faqSchema } from "../lib/seo";
+import { GUIDES_VERIFIED_FOR } from "../data/release";
 interface Props {
   title: string;
   h1: string;
@@ -29,7 +30,7 @@ const schema = [article({ title: p.h1, description: p.description, path: p.path,
       <h1 class="display mt-6 max-w-4xl text-[clamp(2.25rem,5vw,3.25rem)]">{p.h1}</h1>
       <p class="lede mt-5">{p.lede}</p>
       <p class="mt-6 text-[0.8125rem] text-fg-3">
-        Updated <time datetime={p.modified}>{fmt(p.modified)}</time> · {p.minutes} min read · For Connection Guard {"0.4.11"}
+        Updated <time datetime={p.modified}>{fmt(p.modified)}</time> · {p.minutes} min read · For Connection Guard {GUIDES_VERIFIED_FOR}
       </p>
     </div>
   </header>

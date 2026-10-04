@@ -22,8 +22,8 @@ const toc: [string, string][] = [
   <h2 id="kurzfassung">Kurzfassung</h2>
   <ul>
     <li><strong>Diese Website</strong> setzt keine Cookies. Besuche werden mit PostHog (EU) im cookielosen Modus gezählt: Es entsteht kein Profil, und Sie können an einem anderen Tag nicht wiedererkannt werden.</li>
-    <li><strong>Das Plugin</strong> (aktuelle Version 0.4.x) sendet IP-Adressen von Spielern nur an die Erkennungsdienste, die der Serverbetreiber aktiviert. An connectionguard.net geht nichts.</li>
-    <li><strong>Das optionale Dashboard</strong> (ab Plugin 0.5) nutzt die Anmeldung mit Discord, ein notwendiges Sitzungs-Cookie und eine abschaltbare Nutzungsanalyse. Spielerdaten verknüpfter Server verarbeiten wir nur im Auftrag des Serverbetreibers.</li>
+    <li><strong>Das Plugin</strong> sendet IP-Adressen von Spielern an die Erkennungsdienste, die der Serverbetreiber aktiviert. Seit Version 0.5 ist seine <strong>Cloud-Verbindung zu connectionguard.net standardmäßig aktiv</strong>: Solange ein Server nicht verknüpft ist, sendet sie nur anonyme Installations-, Zustands- und Summendaten, keine IP-Adressen, UUIDs oder Namen von Spielern. Serverbetreiber können sie vollständig abschalten (<a href="#plugin">Abschnitt 4</a>).</li>
+    <li><strong>Das Dashboard</strong> nutzt die Anmeldung mit Discord, ein notwendiges Sitzungs-Cookie und eine abschaltbare Nutzungsanalyse. Sobald ein Betreiber einen Server verknüpft, erhält es zusätzlich jede Anmeldeprüfung mit IP-Adresse und verifizierter UUID des Spielers; diese Daten verarbeiten wir nur im Auftrag des Serverbetreibers.</li>
     <li>Die Daten werden in der EU gespeichert. Wir verkaufen keine Daten und nutzen sie nicht für Werbung.</li>
   </ul>
 
@@ -87,8 +87,8 @@ const toc: [string, string][] = [
   <h3 id="protokolle">3.5 Server-Protokolle</h3>
   <p>Das Dashboard und seine Schnittstelle laufen auf Cloudflare Workers. Zur Fehleranalyse speichert Cloudflare Anfrageprotokolle, die Ihre IP-Adresse enthalten können, für bis zu drei Tage. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (sicherer und zuverlässiger Betrieb).</p>
 
-  <h2 id="plugin">4. Cloud-Verbindung des Plugins (api.connectionguard.net, ab Plugin 0.5)</h2>
-  <p>Ab Version 0.5 kann sich das Plugin mit dem Dashboard verbinden. Die Anmeldung von Spielern wartet nie auf diese Verbindung. Serverbetreiber schalten sie vollständig ab mit <code>cloud.enabled: false</code>, <code>/cg cloud disable</code> oder der Umgebungsvariable <code>CONNECTIONGUARD_CLOUD=false</code>; dann erreicht uns keine Anfrage mehr.</p>
+  <h2 id="plugin">4. Cloud-Verbindung des Plugins (api.connectionguard.net)</h2>
+  <p>Seit Version 0.5 verbindet sich das Plugin standardmäßig mit dem Dashboard. Die Anmeldung von Spielern wartet nie auf diese Verbindung. Serverbetreiber schalten sie vollständig ab mit <code>cloud.enabled: false</code>, <code>/cg cloud disable</code> oder der Umgebungsvariable <code>CONNECTIONGUARD_CLOUD=false</code>; dann erreicht uns keine Anfrage mehr.</p>
 
   <h3 id="nicht-verknuepft">4.1 Nicht mit einem Konto verknüpfte Server (Standard)</h3>
   <p>Das Plugin sendet eine anonyme Installations-ID, Plattform und Versionen, den Schutzmodus, Summen je Zeitraum (Prüfungen, Ablehnungen, Cache-Treffer, Antwortzeiten, Anzahl je Land und Grund) und den Zustand der Erkennungsdienste. Es sendet keine IP-Adressen, UUIDs oder Namen von Spielern und keine API-Schlüssel oder Webhook-Adressen. Wir nutzen diese Daten, um den Dienst zu betreiben, Kapazitäten zu planen und aktive Server zu zählen.</p>

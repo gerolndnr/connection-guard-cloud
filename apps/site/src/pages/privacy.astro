@@ -22,8 +22,8 @@ const toc: [string, string][] = [
   <h2 id="summary">Summary</h2>
   <ul>
     <li><strong>This website</strong> sets no cookies. Visits are counted with PostHog (EU) in cookieless mode: no profile is created, and you cannot be recognized on another day.</li>
-    <li><strong>The plugin</strong> (current release 0.4.x) sends player IP addresses only to the detection services the server operator enables. Nothing goes to connectionguard.net.</li>
-    <li><strong>The optional dashboard</strong> (from plugin 0.5) uses Discord sign-in, one necessary session cookie and usage analytics you can switch off. Player data from linked servers is processed only on behalf of the server operator.</li>
+    <li><strong>The plugin</strong> sends player IP addresses to the detection services the server operator enables. Since version 0.5 its <strong>cloud link to connectionguard.net is on by default</strong>: until a server is linked it sends only anonymous install, health and total figures, no player IPs, UUIDs or names. Server operators can turn it off completely (<a href="#plugin">section 4</a>).</li>
+    <li><strong>The dashboard</strong> uses Discord sign-in, one necessary session cookie and usage analytics you can switch off. Once an operator links a server, it also receives each login check with the player's IP address and verified UUID; we process that only on behalf of the server operator.</li>
     <li>Data is stored in the EU. We do not sell data, and we do not use it for advertising.</li>
   </ul>
 
@@ -87,8 +87,8 @@ const toc: [string, string][] = [
   <h3 id="logs">3.5 Server logs</h3>
   <p>The dashboard and its interface run on Cloudflare Workers. For error analysis, Cloudflare keeps request logs, which can include your IP address, for up to three days. Legal basis: Art. 6(1)(f) GDPR (secure and reliable operation).</p>
 
-  <h2 id="plugin">4. The plugin's cloud link (api.connectionguard.net, from plugin 0.5)</h2>
-  <p>From version 0.5, the plugin can connect to the dashboard. Players' logins never wait on this connection. Server operators turn it off completely with <code>cloud.enabled: false</code>, <code>/cg cloud disable</code> or the environment variable <code>CONNECTIONGUARD_CLOUD=false</code>; then no request reaches us.</p>
+  <h2 id="plugin">4. The plugin's cloud link (api.connectionguard.net)</h2>
+  <p>Since version 0.5 the plugin connects to the dashboard by default. Players' logins never wait on this connection. Server operators turn it off completely with <code>cloud.enabled: false</code>, <code>/cg cloud disable</code> or the environment variable <code>CONNECTIONGUARD_CLOUD=false</code>; then no request reaches us.</p>
 
   <h3 id="unlinked">4.1 Servers not linked to an account (default)</h3>
   <p>The plugin sends an anonymous install ID, the platform and versions, the protection mode, totals per interval (checks, refusals, cache hits, response times, counts per country and reason) and the health of the detection services. It sends no player IP addresses, UUIDs or names, and no API keys or webhook addresses. We use this to run the service, plan capacity and count active servers.</p>
