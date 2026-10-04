@@ -76,7 +76,7 @@ const fmt = new Intl.NumberFormat("en-US");
           </div>
         ))}
       </div>
-      <p class="mt-4 text-[0.8125rem] text-fg-3">Build targets don't prove every server version was tested. Folia support is unverified.</p>
+      <p class="mt-4 text-[0.8125rem] text-fg-3">Build targets don't prove every server version was tested. 0.5.0 passed native login/rule fixtures on Folia 1.21.11 and startup, help, reload and shutdown checks on Folia 26.2 build 7 with Java 25. These checks do not prove every server version or authenticated-account scenario.</p>
     </div>
   </section>
 
@@ -88,8 +88,8 @@ const fmt = new Intl.NumberFormat("en-US");
           {[
             ["Stop the server.", "Or the proxy, on a network."],
             ["Put the JAR into the plugins folder.", "Remove older Connection Guard JARs first."],
-            ["Start the server.", "The plugin writes its config.yml and starts checking new players. The shipped config refuses VPN hits and blocks CN and RU."],
-            ["Review config.yml.", "Change rules, then run /cg reload; restart after changing detection services or the cache. /cg info <IP> shows what each service reports."],
+            ["Start the server.", "New 0.5.0 installs start in OBSERVE with an empty country blocklist. Existing configs without operation.mode keep ENFORCE. Review decisions before enabling enforcement."],
+            ["Review config.yml.", "Run /cg doctor and /cg explain <IP> to inspect your setup and decisions. Set operation.mode to ENFORCE when ready, then /cg reload. Cache connection changes require a restart; rejected settings leave the previous configuration active."],
           ].map(([t, d], i) => (
             <li class="flex gap-4">
               <span aria-hidden="true" class="mono grid size-7 shrink-0 place-items-center rounded-full border border-line-strong text-[0.75rem]">{i + 1}</span>

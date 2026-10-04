@@ -6,7 +6,7 @@ const faq = [
   { q: "Do I need an API key?", a: "Not to start. Connection Guard's default VPN service, ProxyCheck, works without a key. A free registered ProxyCheck account raises the daily allowance; on 2 October 2026 its free plan advertised 1,000 queries per day. Check each service's current plans before you rely on them." },
   { q: "Will blocking VPNs lock out real players?", a: "Some legitimate players use VPNs for privacy, at school or at work. Start by alerting staff instead of kicking, write a kick message that says how to ask for an exemption, and exempt trusted players by UUID." },
   { q: "Where do I install the plugin on a network?", a: "On the proxy (Velocity or BungeeCord) that receives player connections. The proxy sees the real address, and one installation covers every backend server." },
-  { q: "What happens if the detection service is down?", a: "If not enough services answer positively, the connection proceeds, subject to your country rules and other plugins. A missing answer never counts as a VPN, and incomplete results aren't cached, so the next login tries again." },
+  { q: "What happens if the detection service is down?", a: "Unavailable evidence is UNKNOWN. Your scoped OPEN, OBSERVE or CLOSED failure policy controls the response; global OBSERVE suppresses Connection Guard enforcement. Country rules and other plugins also apply." },
 ];
 const toc: [string, string][] = [
   ["why", "Why servers block VPNs"],
@@ -52,7 +52,7 @@ const toc: [string, string][] = [
     <li>The plugin asks one or more <strong>IP intelligence services</strong> about the address. These services track which ranges belong to VPN providers, public proxies, Tor exit nodes and hosting companies.</li>
     <li>Each service answers whether the address looks like a VPN or proxy, often with its country, network and a risk score.</li>
     <li>The plugin applies your rules: refuse the connection, alert staff, post to Discord, or let the player in.</li>
-    <li>The answer is <strong>cached</strong>, so the next login from the same address costs no lookup and no time.</li>
+    <li>With caching enabled, <strong>unexpired answers can be reused</strong> for the same address, reducing repeated lookups.</li>
   </ol>
   <p>No service knows every address. Fresh VPN ranges, residential proxies and mobile networks can slip through, and occasionally a legitimate address gets flagged. That's why it helps to choose your services deliberately, and to let several services vote when one isn't enough.</p>
 
@@ -63,7 +63,7 @@ const toc: [string, string][] = [
   <p>On a single server, put the JAR into that server's <code>plugins</code> folder. On a network, install it <strong>only on the proxy</strong> that players connect to. The proxy sees their real address and one installation protects every backend. Platform notes: <a href="/paper-anti-vpn">Paper and Spigot</a>, <a href="/bungeecord-anti-vpn">BungeeCord and Waterfall</a>, <a href="/velocity-anti-vpn">Velocity</a>.</p>
 
   <h3 id="services">2. Choose your detection services</h3>
-  <p>Out of the box, Connection Guard checks VPNs with <strong>ProxyCheck</strong> and looks up countries with <strong>IP-API</strong>. You can also enable IPHub, VPNAPI, or any REST API you configure yourself.</p>
+  <p>Out of the box, Connection Guard checks VPNs with <strong>ProxyCheck</strong> and looks up countries with <strong>IP-API</strong>. You can also enable IPHub, VPNAPI, IPQualityScore, or a REST API you configure yourself.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th scope="col">Service</th><th scope="col">Used for</th><th scope="col">Good to know</th></tr></thead>
@@ -79,8 +79,10 @@ const toc: [string, string][] = [
   <p>Limits and terms change, so check each service's own pages before going live. If you enable several VPN services, <code>required-positive-flags</code> sets how many must agree before a player is flagged.</p>
 
   <h3 id="observe">3. Watch before you block</h3>
-  <p>The shipped config already kicks VPN players and blocks connections from China and Russia. If you'd rather see who would be affected first, switch kicks off and staff alerts on:</p>
-  <pre><code>behavior:
+  <p>New 0.5.0 installs start in OBSERVE with an empty country blocklist. Existing files without operation.mode retain ENFORCE. To review decisions before blocking, use OBSERVE and staff notifications:</p>
+  <pre><code>operation:
+  mode: 'OBSERVE'
+behavior:
   vpn:
     kick-player: false
     notify-staff: true
@@ -89,13 +91,13 @@ const toc: [string, string][] = [
     notify-staff: true
     type: 'BLACKLIST'
     list: []</code></pre>
-  <p>This is a partial example: change these fields in the generated <code>config.yml</code> and keep everything else. Staff with <code>connectionguard.notify.vpn</code> and <code>connectionguard.notify.geo</code> now see an alert whenever a rule matches. Run <code>/cg reload</code> after changing these settings; after changing services or the cache, restart.</p>
+  <p>This is a partial example: change these fields in the generated <code>config.yml</code> and keep everything else. Staff with <code>connectionguard.notify.vpn</code> and <code>connectionguard.notify.geo</code> now see an alert whenever a rule matches. Run <code>/cg reload</code> after changing these settings; cache connection changes require a restart. Rejected settings leave the previous configuration active.</p>
 
   <h3 id="inspect">4. Look at real results</h3>
   <p>Give it a few days. When an alert looks wrong, run <code>/cg info &lt;IP or player&gt;</code> to see exactly what each service reported. If a service keeps flagging addresses you trust, add another service and raise <code>required-positive-flags</code>, or exempt specific players.</p>
 
   <h3 id="enforce">5. Turn on blocking</h3>
-  <p>When you're happy with what you see, set <code>behavior.vpn.kick-player: true</code>. Add exemptions for trusted players under <code>behavior.vpn.exemptions</code> by UUID or IP address; with LuckPerms you can exempt by permission instead.</p>
+  <p>When you're happy with what you see, set <code>operation.mode: ENFORCE</code> and <code>behavior.vpn.kick-player: true</code>, then run <code>/cg reload</code>. Add exemptions for trusted players under <code>behavior.vpn.exemptions</code> by UUID or IP address; with LuckPerms you can exempt by permission instead.</p>
 
   <h2 id="kick-message">Write a fair kick message</h2>
   <p>The kick screen is the only thing a refused player sees. A good message names the rule and says how to get help, for example: <em>"VPNs and proxies aren't allowed on this server. Turn yours off, or ask for an exemption on our Discord."</em> Edit it in the generated <code>translation/en.yml</code>, and never put keys or internal details in player-facing text.</p>
@@ -105,5 +107,5 @@ const toc: [string, string][] = [
   <p>Caching keeps that in check. By default Connection Guard remembers VPN answers for 24 hours and country answers for 72 hours, in SQLite or, on larger networks, Redis. Clearing the cache with <code>/cg clear</code> makes everyone look new again, so use it sparingly.</p>
 
   <h2 id="outages">When a detection service is down</h2>
-  <p>Services have outages and rate limits. Connection Guard never treats a missing answer as a VPN: if not enough services answer positively, the player gets in, subject to your country rules and other plugins. Incomplete results aren't cached, so the next login asks again. If you need a stricter policy, use two services so one outage doesn't leave you blind.</p>
+  <p>Services have outages and rate limits. Connection Guard records unavailable evidence as UNKNOWN. Your scoped <code>failure-policy</code> selects OPEN, OBSERVE or CLOSED; global OBSERVE suppresses Connection Guard enforcement. Review the provider failure guide before selecting CLOSED. Country rules and other plugins still apply.</p>
 </Guide>

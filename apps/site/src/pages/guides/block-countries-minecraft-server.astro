@@ -1,7 +1,7 @@
 ---
 import Guide from "../../layouts/Guide.astro";
 const faq = [
-  { q: "How do I block a country on my Minecraft server?", a: "Install an anti-VPN or geo-blocking plugin such as Connection Guard, set behavior.geo.type to 'BLACKLIST', list the countries as two-letter ISO codes (for example 'CN'), set kick-player to true and reload." },
+  { q: "How do I block a country on my Minecraft server?", a: "Install an anti-VPN or geo-blocking plugin such as Connection Guard, set behavior.geo.type to 'BLACKLIST', list the countries as two-letter ISO codes (for example 'CN'), set operation.mode to ENFORCE when ready, set kick-player to true and reload." },
   { q: "What's the difference between a blocklist and an allowlist?", a: "A blocklist refuses players from the countries you list and lets everyone else in. An allowlist only lets players in from the countries you list. In Connection Guard, BLACKLIST is the blocklist and WHITELIST is the allowlist; an empty allowlist refuses everyone." },
   { q: "How accurate is country detection?", a: "Good at the country level for most home connections, but not perfect. Mobile networks, corporate networks and VPNs can place a player in the wrong country, so combine country rules with VPN checks and keep an exemption path." },
   { q: "Does blocking a country also block VPN users?", a: "No. A VPN makes a player appear in the VPN server's country. To stop players from hopping around a country rule with a VPN, turn on VPN checks as well." },
@@ -53,7 +53,7 @@ const toc: [string, string][] = [
   <h2 id="setup">Set it up with Connection Guard</h2>
   <p>Connection Guard handles VPN checks and country rules in one free plugin for <a href="/paper-anti-vpn">Paper and Spigot</a>, <a href="/bungeecord-anti-vpn">BungeeCord</a> and <a href="/velocity-anti-vpn">Velocity</a>. On a network, install it on the proxy.</p>
   <h3 id="config">1. Choose the countries</h3>
-  <p>Country rules live under <code>behavior.geo</code> in the generated <code>config.yml</code>. Use two-letter ISO country codes. The shipped config blocks <code>CN</code> and <code>RU</code>; replace that list with your own policy:</p>
+  <p>Country rules live under <code>behavior.geo</code> in the generated <code>config.yml</code>. Use two-letter ISO country codes. New 0.5.0 installs start in OBSERVE with an empty country blocklist. Choose your own policy; these country codes are examples, not defaults:</p>
   <pre><code>behavior:
   geo:
     kick-player: true
@@ -62,13 +62,13 @@ const toc: [string, string][] = [
     list:
       - CN
       - RU</code></pre>
-  <p>This is a partial example: keep the other generated settings. Want to watch first? Set <code>kick-player: false</code> and staff with <code>connectionguard.notify.geo</code> get an alert instead. You can also post matches to a Discord webhook under <code>send-webhook</code>.</p>
+  <p>This is a partial example: keep the other generated settings. Set <code>operation.mode: ENFORCE</code> only after reviewing decisions. To watch first, keep OBSERVE and set <code>notify-staff: true</code> and staff with <code>connectionguard.notify.geo</code> get an alert instead. You can also post matches to a Discord webhook under <code>send-webhook</code>.</p>
   <h3 id="service">2. Pick the country lookup service</h3>
   <p>The default country service is <strong>IP-API</strong>. Its free endpoint is for non-commercial use, uses HTTP and allows 45 requests per minute. For a commercial server or more traffic, switch to ProxyCheck:</p>
   <pre><code>provider:
   geo:
     service: 'ProxyCheck'</code></pre>
-  <p>Restart after changing the service. Country answers are cached for 72 hours by default, so returning players don't cost a lookup.</p>
+  <p>Run <code>/cg reload</code> after selecting the service. Cache connection changes require a restart. With caching enabled, unexpired country answers can be reused for the same address (72 hours by default).</p>
   <h3 id="test">3. Test it</h3>
   <p>Run <code>/cg info &lt;IP or player&gt;</code> to see which country each service reports for an address. Then check one ordinary connection and one that should match before you rely on it.</p>
 
@@ -79,7 +79,7 @@ const toc: [string, string][] = [
     <li><strong>Company and school networks</strong> with a central internet exit.</li>
     <li><strong>VPNs and proxies,</strong> which show the VPN server's country. Pair country rules with <a href="/guides/block-vpn-minecraft-server">VPN checks</a> so a rule can't be skipped with one click.</li>
   </ul>
-  <p>If a lookup fails, Connection Guard makes no country decision for that login rather than guessing.</p>
+  <p>If a lookup fails, the evidence is UNKNOWN. Your scoped OPEN, OBSERVE or CLOSED failure policy controls the response; global OBSERVE suppresses Connection Guard enforcement.</p>
 
   <h2 id="players">Keep it fair for players</h2>
   <ul>
