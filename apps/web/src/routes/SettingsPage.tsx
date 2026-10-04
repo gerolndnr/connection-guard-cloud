@@ -8,17 +8,12 @@ import { Shell } from "../components/Shell.tsx";
 import { StatusDot } from "../components/Badge.tsx";
 import { Choice, CountryPicker, Row, Section, SecretField, Segmented, Switch, TagInput, type SecretEdit } from "../components/Form.tsx";
 import { ago, num, platformName, serverName } from "../format.ts";
+import { PROVIDERS } from "../providers.ts";
 
 type Values = Record<string, boolean | number | string | string[]>;
 type Secrets = Record<string, SecretEdit>;
 type SecretState = { set: boolean; hint: string | null };
 
-const PROVIDERS = [
-  { key: "proxycheck", name: "ProxyCheck", body: "Free: 100 checks a day, 1,000 with a free API key.", keyPath: "provider.vpn.proxycheck.api-key", keyRequired: false, signup: "https://proxycheck.io/" },
-  { key: "ip-api", name: "IP-API", body: "Free, no key, 45 checks a minute. Non-commercial use only.", keyPath: null, keyRequired: false, signup: null },
-  { key: "iphub", name: "IPHub", body: "Free key with 1,000 checks a day.", keyPath: "provider.vpn.iphub.api-key", keyRequired: true, signup: "https://iphub.info/" },
-  { key: "vpnapi", name: "VPNAPI", body: "Free key with 1,000 checks a day.", keyPath: "provider.vpn.vpnapi.api-key", keyRequired: true, signup: "https://vpnapi.io/" },
-] as const;
 
 const FAILURE: { value: "OPEN" | "CLOSED" | "OBSERVE"; title: string; body: string }[] = [
   { value: "OPEN", title: "Let in", body: "Recommended. Players are not locked out while a service is down." },

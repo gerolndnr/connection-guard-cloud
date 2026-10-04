@@ -37,9 +37,14 @@ try {
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${outDir}/setup-1b.png` });
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByText(/Keep the protection from running dry/).waitFor();
-  await page.screenshot({ path: `${outDir}/setup-2.png` });
-  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.getByText("Which services should check players?").waitFor();
+  await page.getByRole("checkbox", { name: /^IPHub/ }).click();
+  const blocked = await page.getByRole("button", { name: "Continue" }).isDisabled();
+  log("IPHub without a key blocks Continue: " + blocked);
+  await page.getByPlaceholder("Paste your IPHub API key").fill("e2e-iphub-key-4242");
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${outDir}/setup-2.png`, fullPage: true });
+  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByText("Start gently?").waitFor();
   await page.screenshot({ path: `${outDir}/setup-3.png` });
   await page.getByRole("button", { name: /Finish setup/ }).click();
@@ -48,6 +53,9 @@ try {
   await page.screenshot({ path: `${outDir}/setup-4-applying.png` });
   await page.getByText("You're protected").waitFor({ timeout: 120_000 });
   log("server applied the settings");
+  const installId = new URL(page.url()).searchParams.get("server");
+  const cfg = await (await page.request.get(`${base}/api/installs/${installId}/config`)).json();
+  log(`server reports: iphub=${cfg.effective["provider.vpn.iphub.enabled"]} key=${JSON.stringify(cfg.effective["provider.vpn.iphub.api-key"])} votes=${cfg.effective["required-positive-flags"]}`);
   await page.screenshot({ path: `${outDir}/setup-4-applied.png` });
   await page.getByRole("button", { name: /Try it out/ }).click();
   await page.getByText(/Try it: join/).waitFor();

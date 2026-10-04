@@ -78,3 +78,20 @@ describe("attention notes", () => {
     expect(first!.installId).toBe("ins_aaaaaaaaaaaaaaaaaaaaaaaa");
   });
 });
+
+import { PROVIDERS, dailyCapacity, isValidKey } from "../providers.ts";
+
+describe("provider selection", () => {
+  const p = (k: string) => PROVIDERS.find((x) => x.key === k)!;
+  it("is limited by the smallest daily cap, since every service checks every new IP", () => {
+    expect(dailyCapacity([{ info: p("proxycheck"), hasKey: false }])).toMatchObject({ limit: 100, keyless: true });
+    expect(dailyCapacity([{ info: p("proxycheck"), hasKey: true }, { info: p("iphub"), hasKey: true }])).toMatchObject({ limit: 1000 });
+    expect(dailyCapacity([{ info: p("proxycheck"), hasKey: false }, { info: p("iphub"), hasKey: true }])!.by.key).toBe("proxycheck");
+    expect(dailyCapacity([{ info: p("ip-api"), hasKey: false }])).toBeNull();
+  });
+  it("accepts only plausible keys", () => {
+    expect(isValidKey("abc123-DEF_4")).toBe(true);
+    expect(isValidKey("has space")).toBe(false);
+    expect(isValidKey("")).toBe(false);
+  });
+});

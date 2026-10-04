@@ -9,10 +9,11 @@ import { VerdictBadge } from "../components/Badge.tsx";
 import { CountryPicker, Switch } from "../components/Form.tsx";
 import { clock, explain, isPrivateIp, ms, num, serverName, verdict } from "../format.ts";
 import { isConfigured, lookupsPerDay } from "../setup.ts";
+import { PROVIDERS, dailyCapacity, isValidKey, type ProviderInfo } from "../providers.ts";
 
 type CountryMode = "off" | "block" | "allow";
-type Step = "goals" | "key" | "mode" | "apply" | "verify";
-const STEPS: Step[] = ["goals", "key", "mode"];
+type Step = "goals" | "providers" | "mode" | "apply" | "verify";
+const STEPS: Step[] = ["goals", "providers", "mode"];
 
 function Progress({ step }: { step: Step }) {
   const i = Math.min(STEPS.indexOf(step) === -1 ? 3 : STEPS.indexOf(step), 3);
@@ -94,7 +95,10 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
   const [vpn, setVpn] = useState(true);
   const [countryMode, setCountryMode] = useState<CountryMode>("off");
   const [countries, setCountries] = useState<string[]>([]);
-  const [key, setKey] = useState("");
+  // Services: prefilled from the server; ProxyCheck alone on a fresh install.
+  const [selected, setSelected] = useState<Record<string, boolean>>({ proxycheck: true });
+  const [keys, setKeys] = useState<Record<string, string>>({});
+  const [votes, setVotes] = useState(1);
   const [mode, setMode] = useState<"OBSERVE" | "ENFORCE">("OBSERVE");
   const [version, setVersion] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -107,29 +111,37 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     setCountries(list);
     setCountryMode(snapshot["behavior.geo.type"] === "WHITELIST" ? "allow" : list.length ? "block" : "off");
     setMode((snapshot["operation.mode"] as "OBSERVE" | "ENFORCE") ?? "OBSERVE");
+    const fromServer = Object.fromEntries(PROVIDERS.map((p) => [p.key, snapshot[`provider.vpn.${p.key}.enabled`] === true]));
+    if (Object.values(fromServer).some(Boolean)) setSelected(fromServer);
+    setVotes(Number(snapshot["required-positive-flags"] ?? 1));
   }, [snapshot]);
 
   const perDay = stats.data ? lookupsPerDay(stats.data.totals.lookups, install) : null;
-  const hasKey = Boolean((snapshot?.["provider.vpn.proxycheck.api-key"] as { set: boolean } | undefined)?.set);
+  const keyOnServer = (p: ProviderInfo) => p.keyPath ? (snapshot?.[p.keyPath] as { set: boolean; hint: string | null } | undefined) : undefined;
+  const chosen = PROVIDERS.filter((p) => selected[p.key]);
+  const typedKey = (p: ProviderInfo) => (keys[p.key] ?? "").trim();
+  const willHaveKey = (p: ProviderInfo) => typedKey(p).length > 0 || Boolean(keyOnServer(p)?.set);
+  const providerErrors = Object.fromEntries(chosen.flatMap((p) => {
+    if (typedKey(p) && !isValidKey(typedKey(p))) return [[p.key, "That does not look like an API key. Keys contain only letters, digits and dashes."]];
+    if (p.keyRequired && !willHaveKey(p)) return [[p.key, `${p.name} only works with an API key.`]];
+    return [];
+  })) as Record<string, string>;
+  const providersOk = chosen.length > 0 && Object.keys(providerErrors).length === 0;
 
   const apply = async () => {
     setStep("apply"); setError(null);
-    const enabled = (p: string) => snapshot?.[`provider.vpn.${p}.enabled`] === true;
-    const providers = vpn ? ["proxycheck", ...["ip-api", "iphub", "vpnapi"].filter(enabled)] : [];
+    const on = vpn ? chosen : [];
     const values: Record<string, unknown> = {
       "operation.mode": mode,
-      "provider.vpn.proxycheck.enabled": vpn,
-      "provider.vpn.ip-api.enabled": vpn && enabled("ip-api"),
-      "provider.vpn.iphub.enabled": vpn && enabled("iphub"),
-      "provider.vpn.vpnapi.enabled": vpn && enabled("vpnapi"),
       "behavior.geo.type": countryMode === "allow" ? "WHITELIST" : "BLACKLIST",
       "behavior.geo.list": countryMode === "off" ? [] : countries,
     };
-    const votes = Number(snapshot?.["required-positive-flags"] ?? 1);
-    if (providers.length > 0 && votes > providers.length) values["required-positive-flags"] = providers.length;
+    for (const p of PROVIDERS) values[`provider.vpn.${p.key}.enabled`] = on.includes(p);
+    if (on.length > 0) values["required-positive-flags"] = Math.min(Math.max(1, votes), on.length);
+    const secrets = Object.fromEntries(on.filter((p) => p.keyPath && typedKey(p)).map((p) => [p.keyPath!, typedKey(p)]));
     if (countryMode !== "off" && snapshot?.["provider.geo.service"] === "Disabled") values["provider.geo.service"] = "IP-API";
     try {
-      const res = await api.saveConfig(install.id, { values, secrets: key ? { "provider.vpn.proxycheck.api-key": key } : {}, apply_to: "server" });
+      const res = await api.saveConfig(install.id, { values, secrets, apply_to: "server" });
       setVersion(res.versions[install.id] ?? null);
     } catch (err) {
       setError(err instanceof ApiError && err.issues.length ? err.issues.map((i) => i.message).join(" ") : "Saving failed. Check your connection and try again.");
@@ -169,7 +181,7 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     return (
       <>{connecting}
         <StepFrame step="goals" title="What should Connection Guard keep out?" lead={<>Choose what to check when a player joins <span className="font-medium text-fg">{name}</span>. You can change this any time.</>}
-          onNext={() => setStep("key")} nextDisabled={countryMode === "allow" && countries.length === 0}
+          onNext={() => setStep(vpn ? "providers" : "mode")} nextDisabled={countryMode === "allow" && countries.length === 0}
           footnote={<Link to="/n/$networkId" params={{ networkId }} className="text-fg-3 no-underline hover:text-fg">Skip setup</Link>}>
           <div className="space-y-3">
             <OptionCard checked={vpn} onToggle={() => setVpn(!vpn)} icon={<ShieldCheck className="size-4.5" />}
@@ -190,42 +202,69 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     );
   }
 
-  if (step === "key") {
-    const skip = !vpn;
+  if (step === "providers") {
+    const capacity = dailyCapacity(chosen.map((p) => ({ info: p, hasKey: willHaveKey(p) })));
+    const short = capacity !== null && perDay !== null && capacity.limit < perDay * 1.2;
     return (
       <>{connecting}
-        <StepFrame step="key" title={skip ? "No API key needed" : "Keep the protection from running dry"}
-          lead={skip ? "VPN checks are off, so there is no daily limit to worry about." : (
-            <>ProxyCheck answers <span className="font-medium text-fg">100 lookups a day</span> without a key and <span className="font-medium text-fg">1,000</span> with a free one. When the limit is reached, players are let in unchecked.</>
+        <StepFrame step="providers" title="Which services should check players?"
+          lead="Each new IP address is checked by every service you pick. Returning players are answered from the cache, so most logins cost nothing."
+          onBack={() => setStep("goals")} onNext={() => setStep("mode")} nextDisabled={!providersOk}>
+          <div className="space-y-3">
+            {PROVIDERS.map((p) => {
+              const on = Boolean(selected[p.key]);
+              const server = keyOnServer(p);
+              return (
+                <OptionCard key={p.key} checked={on} onToggle={() => setSelected({ ...selected, [p.key]: !on })}
+                  icon={p.keyPath ? <KeyRound className="size-4.5" /> : <ShieldCheck className="size-4.5" />}
+                  title={`${p.name}${p.key === "proxycheck" ? " (recommended)" : ""}`} body={p.body}>
+                  {p.keyPath ? (
+                    <div>
+                      <label className="block">
+                        <span className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 text-[0.8125rem]">
+                          <span className="font-medium">{p.name} API key{p.keyRequired ? "" : " (optional)"}</span>
+                          {p.signup && <a href={p.signup} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-fg-2 hover:text-fg">Get a free key <ExternalLink className="size-3" /></a>}
+                        </span>
+                        <input className="input mono" type="password" autoComplete="off" spellCheck={false}
+                          placeholder={server?.set ? `Already set (…${server.hint ?? ""}). Paste a new key to replace it.` : `Paste your ${p.name} API key`}
+                          value={keys[p.key] ?? ""} onChange={(e) => setKeys({ ...keys, [p.key]: e.target.value.trim() })} />
+                      </label>
+                      {providerErrors[p.key]
+                        ? <p className="mt-1.5 text-[0.8125rem] text-danger-text">{providerErrors[p.key]}</p>
+                        : <p className="mt-1.5 text-[0.75rem] text-fg-3">{server?.set && !typedKey(p) ? "The server keeps its current key." : "Sent to your server once, then deleted from the cloud."}</p>}
+                    </div>
+                  ) : (
+                    <p className="text-[0.8125rem] text-fg-2">No key needed. Allowed for non-commercial servers only.</p>
+                  )}
+                </OptionCard>
+              );
+            })}
+          </div>
+
+          {chosen.length === 0 && <p className="mt-4 text-[0.8125rem] text-warn-text">Pick at least one service, or turn off VPN checks in the previous step.</p>}
+
+          {chosen.length >= 2 && (
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line px-4 py-3">
+              <div className="min-w-0">
+                <p className="font-medium">Treat a player as VPN when</p>
+                <p className="text-[0.8125rem] text-fg-2">One is the strictest. More agreeing services means fewer false alarms.</p>
+              </div>
+              <select className="input w-auto pr-8" value={Math.min(votes, chosen.length)} onChange={(e) => setVotes(Number(e.target.value))} aria-label="Services that must agree">
+                {chosen.map((_, i) => <option key={i} value={i + 1}>{i + 1} of {chosen.length} {i === 0 ? "agrees" : "agree"}</option>)}
+              </select>
+            </div>
           )}
-          onBack={() => setStep("goals")} onNext={() => setStep("mode")} nextLabel={skip || key || hasKey ? "Continue" : "Continue without a key"}>
-          {!skip && (
-            <div className="card divide-y divide-line">
-              <div className="flex items-center gap-4 px-5 py-4">
-                <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-lg border border-line bg-subtle text-fg-2"><KeyRound className="size-4.5" /></span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{perDay !== null ? <>{name} needs about <span className="num">{num(perDay)}</span> lookups a day</> : "How many lookups will you need?"}</p>
-                  <p className="text-[0.8125rem] text-fg-2">{perDay !== null ? (perDay > 80 ? "That is close to or above the free limit without a key." : "That fits the free limit for now; a key gives room to grow.") : "Every new IP address costs one lookup; returning players are answered from the cache."}</p>
-                </div>
-              </div>
-              <div className="px-5 py-4">
-                {hasKey && !key ? (
-                  <p className="flex items-center gap-2 text-[0.8125rem] text-fg-2"><CircleCheck aria-hidden className="size-4 text-accent" /> This server already has a ProxyCheck key. Paste a new one only to replace it.</p>
-                ) : (
-                  <ol className="mb-4 space-y-1.5 text-[0.8125rem] text-fg-2">
-                    <li>1. Create a free account at <a href="https://proxycheck.io/dashboard/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-fg">proxycheck.io <ExternalLink className="size-3" /></a></li>
-                    <li>2. Copy the API key from your dashboard there</li>
-                    <li>3. Paste it here</li>
-                  </ol>
-                )}
-                <label className="block">
-                  <span className="sr-only">ProxyCheck API key</span>
-                  <input className="input mono" type="password" autoComplete="off" spellCheck={false} placeholder="Paste your ProxyCheck API key" value={key}
-                    onChange={(e) => setKey(e.target.value.trim())} />
-                </label>
-                {key && !/^[A-Za-z0-9._:-]{1,256}$/.test(key) && <p className="mt-1.5 text-[0.8125rem] text-danger-text">That does not look like an API key. Keys contain only letters, digits and dashes.</p>}
-                <p className="mt-2 text-[0.75rem] text-fg-3">Sent to your server once, then deleted from the cloud. Only the last four characters stay visible.</p>
-              </div>
+
+          {capacity && (
+            <div className={`mt-5 flex gap-3 rounded-lg border px-4 py-3 ${short ? "border-warn/40 bg-warn-soft" : "border-line bg-subtle"}`}>
+              <KeyRound aria-hidden className={`mt-0.5 size-4 shrink-0 ${short ? "text-warn" : "text-fg-3"}`} />
+              <p className="text-[0.8125rem] leading-relaxed text-fg-2">
+                Your selection allows about <span className="num font-medium text-fg">{num(capacity.limit)}</span> new IP addresses a day,
+                limited by {capacity.by.name}{capacity.keyless && capacity.by.keyPath ? " without a key" : ""}.
+                {perDay !== null && <> {name} needs about <span className="num font-medium text-fg">{num(perDay)}</span>.</>}
+                {short && capacity.keyless && " Add a free key to stay covered."}
+                {" "}When the limit is reached, players are let in unchecked.
+              </p>
             </div>
           )}
         </StepFrame>
@@ -237,7 +276,7 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     return (
       <>{connecting}
         <StepFrame step="mode" title="Start gently?" lead="Watching first shows you what would happen, so you can catch surprises before a real player is locked out."
-          onBack={() => setStep("key")} onNext={apply} nextLabel="Finish setup" nextDisabled={Boolean(key && !/^[A-Za-z0-9._:-]{1,256}$/.test(key))}>
+          onBack={() => setStep(vpn ? "providers" : "goals")} onNext={apply} nextLabel="Finish setup" nextDisabled={vpn && !providersOk}>
           <div role="radiogroup" aria-label="Protection mode" className="space-y-3">
             <OptionCard role="radio" checked={mode === "OBSERVE"} onToggle={() => setMode("OBSERVE")} icon={<Sparkles className="size-4.5" />}
               title="Watch first (recommended)" body="Everyone gets in. You see who would have been refused, and we suggest switching once it looks right." />
