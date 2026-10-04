@@ -1,6 +1,6 @@
 ---
 import Legal from "../layouts/Legal.astro";
-import { OPERATOR, addressLines } from "../data/operator";
+import { AUTHORITIES_URL, OPERATOR, addressLines } from "../data/operator";
 const address = addressLines("de");
 const toc: [string, string][] = [
   ["kurzfassung", "Kurzfassung"],
@@ -16,7 +16,7 @@ const toc: [string, string][] = [
 ];
 ---
 <Legal title="Datenschutzerklärung | Connection Guard" h1="Datenschutzerklärung" path="/datenschutz" lang="de"
-  description="Wie connectionguard.net, das Connection-Guard-Dashboard und die optionale Cloud-Verbindung des Plugins personenbezogene Daten verarbeiten, auf welcher Rechtsgrundlage und wie lange."
+  description="Wie connectionguard.net, das Dashboard und die Cloud-Verbindung des Plugins personenbezogene Daten verarbeiten: Zweck, Rechtsgrundlage, Speicherdauer."
   alternate={{ lang: "en", path: "/privacy", label: "English version" }} toc={toc}>
 
   <h2 id="kurzfassung">Kurzfassung</h2>
@@ -122,7 +122,7 @@ const toc: [string, string][] = [
   <div class="callout">
     <p><strong>Widerspruchsrecht (Art. 21 DSGVO):</strong> Soweit wir Daten auf Grundlage berechtigter Interessen verarbeiten (Art. 6 Abs. 1 lit. f DSGVO), können Sie aus Gründen, die sich aus Ihrer besonderen Situation ergeben, jederzeit widersprechen. Für die Nutzungsanalyse im Dashboard genügt der Schalter „Share usage data“.</p>
   </div>
-  <p>Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO). Für uns zuständig ist: {OPERATOR.authority.url ? <a href={OPERATOR.authority.url}>{OPERATOR.authority.name}</a> : "[missing]"}.</p>
+  <p>Sie haben außerdem das Recht, sich bei einer Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO), insbesondere in dem Mitgliedstaat Ihres Aufenthaltsorts, Ihres Arbeitsplatzes oder des Orts des mutmaßlichen Verstoßes. Eine Übersicht der deutschen Aufsichtsbehörden finden Sie beim <a href={AUTHORITIES_URL}>Bundesbeauftragten für den Datenschutz</a>.</p>
 
   <h2 id="aenderungen">10. Änderungen</h2>
   <p>Wir passen diese Datenschutzerklärung an, wenn sich unsere Dienste oder die Rechtslage ändern. Das Datum oben zeigt die aktuelle Fassung. Eine englische Übersetzung finden Sie unter <a href="/privacy" hreflang="en">Privacy policy</a>; maßgeblich ist die deutsche Fassung.</p>

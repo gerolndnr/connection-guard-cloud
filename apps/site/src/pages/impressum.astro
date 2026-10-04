@@ -3,8 +3,8 @@ import Legal from "../layouts/Legal.astro";
 import { OPERATOR, addressLines } from "../data/operator";
 const address = addressLines("de");
 ---
-<Legal title="Impressum | Connection Guard" h1="Impressum" path="/impressum" lang="de"
-  description="Anbieterkennzeichnung für connectionguard.net und app.connectionguard.net nach § 5 DDG und § 18 Abs. 2 MStV."
+<Legal title="Impressum (Anbieterkennzeichnung) | Connection Guard" h1="Impressum" path="/impressum" lang="de"
+  description="Impressum von Connection Guard: Anbieterkennzeichnung für connectionguard.net und app.connectionguard.net nach § 5 DDG und § 18 Abs. 2 MStV."
   alternate={{ lang: "en", path: "/legal-notice", label: "English version" }}>
   <h2 id="anbieter">Angaben gemäß § 5 DDG</h2>
   <p>{address.map((l, i) => <>{l}{i < address.length - 1 && <br />}</>)}</p>

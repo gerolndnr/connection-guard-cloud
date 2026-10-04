@@ -3,24 +3,24 @@
 // Every field must be filled in: `assertOperator()` fails the production build otherwise, so a placeholder can
 // never go live.
 export const OPERATOR = {
-  name: "",
-  careOf: "", // e.g. "c/o Example Impressum Service"
-  street: "",
-  postalCity: "", // e.g. "10115 Berlin"
+  name: "Gero Lindner",
+  careOf: "c/o SourceArt · VM-00003645",
+  street: "Fritz-Thiele-Straße 3",
+  postalCity: "28279 Bremen-Obervieland",
   countryDe: "Deutschland",
   countryEn: "Germany",
   email: "legal@connectionguard.net",
   privacyEmail: "privacy@connectionguard.net",
-  /** Data protection authority of the operator's federal state (Art. 77 GDPR). */
-  authority: { name: "", url: "" },
 };
+
+/** Official list of German data protection authorities (Art. 77 GDPR names no single one for data subjects). */
+export const AUTHORITIES_URL = "https://www.bfdi.bund.de/DE/Service/Anschriften/Laender/Laender-node.html";
 
 export const LEGAL_UPDATED = "2026-10-04";
 
 export function assertOperator() {
   const missing = [
     ["name", OPERATOR.name], ["careOf", OPERATOR.careOf], ["street", OPERATOR.street], ["postalCity", OPERATOR.postalCity],
-    ["authority.name", OPERATOR.authority.name], ["authority.url", OPERATOR.authority.url],
   ].filter(([, v]) => !v).map(([k]) => k);
   if (missing.length && import.meta.env.PROD) {
     throw new Error(`Legal pages need operator details in src/data/operator.ts: ${missing.join(", ")}`);

@@ -1,6 +1,6 @@
 ---
 import Legal from "../layouts/Legal.astro";
-import { OPERATOR, addressLines } from "../data/operator";
+import { AUTHORITIES_URL, OPERATOR, addressLines } from "../data/operator";
 const address = addressLines("en");
 const toc: [string, string][] = [
   ["summary", "Summary"],
@@ -122,7 +122,7 @@ const toc: [string, string][] = [
   <div class="callout">
     <p><strong>Right to object (Art. 21 GDPR):</strong> where we process data based on legitimate interests (Art. 6(1)(f) GDPR), you can object at any time on grounds relating to your particular situation. For the dashboard's usage analytics, the "Share usage data" switch is enough.</p>
   </div>
-  <p>You also have the right to lodge a complaint with a data protection supervisory authority (Art. 77 GDPR). The authority responsible for us is: {OPERATOR.authority.url ? <a href={OPERATOR.authority.url}>{OPERATOR.authority.name}</a> : "[missing]"}.</p>
+  <p>You also have the right to lodge a complaint with a data protection supervisory authority (Art. 77 GDPR), in particular in the EU member state where you live, work or where the alleged infringement took place. The German authorities are listed by the <a href={AUTHORITIES_URL}>Federal Commissioner for Data Protection</a>.</p>
 
   <h2 id="changes">10. Changes</h2>
   <p>We update this policy when our services or the law change. The date at the top shows the current version. The German version of this policy is legally binding: <a href="/datenschutz" hreflang="de">Datenschutzerklärung</a>.</p>
