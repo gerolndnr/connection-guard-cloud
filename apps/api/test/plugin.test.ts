@@ -69,8 +69,9 @@ describe("POST /v1/sync", () => {
     expect((await claim(await login(), ins.link_code!)).status).toBe(201);
     const external = { ...decisionEvent, id: crypto.randomUUID(), outcome: "DENY", reason: "EXTERNAL_POLICY", flags: ["EXTERNAL_POLICY"] };
     const future = { ...decisionEvent, id: crypto.randomUUID(), reason: "SOMETHING_NEWER" };
+    // Deliberately outside this version's types: what a newer plugin could send.
     await syncOk(ins, { seq: 1, events: [external, future],
-      counters: { ...syncRequest.counters, reasons: { EXTERNAL_POLICY: 1, SOMETHING_NEWER: 1 } } });
+      counters: { ...syncRequest.counters, reasons: { EXTERNAL_POLICY: 1, SOMETHING_NEWER: 1 } } } as unknown as Parameters<typeof syncOk>[1]);
     const batch = await env.DB.prepare("SELECT event_count, denied_count FROM event_batches WHERE install_id = ?").bind(ins.install_id).first();
     expect(batch).toEqual({ event_count: 1, denied_count: 1 });
     const rollup = await env.DB.prepare("SELECT reasons_json FROM rollups_hourly WHERE install_id = ?").bind(ins.install_id).first<{ reasons_json: string }>();
