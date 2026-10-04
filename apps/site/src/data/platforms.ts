@@ -17,7 +17,7 @@ export type Platform = {
 
 const shared: Faq[] = [
   { q: "Is Connection Guard free?", a: "Yes. The plugin is free and open source under the MIT license, and no Connection Guard account is needed. The detection services you choose have their own free plans and limits." },
-  { q: "Will it slow down logins?", a: "A new IP address is checked once during login with the services you enabled. The answer is cached (VPN results for 24 hours and country results for 72 hours by default), so the next login from the same address needs no lookup." },
+  { q: "Will it slow down logins?", a: "A new IP address is checked once during login with the services you enabled. With caching enabled, unexpired answers can be reused for the same address (VPN results for 24 hours and country results for 72 hours by default), reducing repeat lookups." },
   { q: "Can I warn staff instead of kicking players?", a: "Yes. Set kick-player to false and notify-staff to true for VPN or country rules. Staff with connectionguard.notify.vpn or connectionguard.notify.geo then see an alert, and you can also post to a Discord webhook." },
   { q: "Can I let specific players through?", a: "Yes. Add their UUID or IP address under behavior.vpn.exemptions and behavior.geo.exemptions. Permission-based exemptions use LuckPerms and need the matching use-permission-exemption switch." },
 ];
@@ -80,12 +80,12 @@ export const PLATFORMS: Platform[] = [
     where: [
       "On a single Paper or Spigot server, install Connection Guard in that server's plugins folder.",
       "Running a network behind BungeeCord or Velocity? Install it on the proxy instead. The proxy sees the real player address and one installation covers every backend.",
-      "The plugin builds against the Spigot 1.8.8 API and the current release was tested on Paper 1.21.11. Build targets don't prove every version was tested, and Folia support is unverified.",
+      "The plugin builds against the Spigot 1.8.8 API. 0.5.0 has native login/rule fixtures on Paper and Folia 1.21.11, plus startup, help, reload and shutdown checks on Paper 26.3 build 151 and Folia 26.2 build 7 with Java 25. Build targets do not prove every intermediate version was tested.",
     ],
     console: "/cg info 203.0.113.7",
     faq: [
-      { q: "Which Minecraft versions are supported?", a: "The Spigot adapter builds against the Spigot 1.8.8 API, and release 0.4.11 was tested on Paper 1.21.11 with Java 21. That doesn't prove every version in between was tested, so check on a test server first." },
-      { q: "Does it work on Folia?", a: "Folia support is unverified. Test carefully before relying on it." },
+      { q: "Which Minecraft versions are supported?", a: "The 0.5.0 listings reach Minecraft 26.3. Native login/rule fixtures cover Paper/Folia 1.21.11 with Java 21; additional startup, help, reload and shutdown checks cover Paper 26.3 and Folia 26.2 with Java 25. This does not prove every intermediate version or authenticated-account scenario." },
+      { q: "Does it work on Folia?", a: "0.5.0 passed native login/rule fixtures on Folia 1.21.11 and startup, help, reload and shutdown checks on Folia 26.2 build 7 with Java 25. These checks do not prove every server version or authenticated-account scenario." },
       ...shared,
     ],
   },

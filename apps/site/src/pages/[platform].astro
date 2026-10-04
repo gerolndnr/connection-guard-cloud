@@ -13,18 +13,18 @@ const { p } = Astro.props as { p: Platform };
 const proxy = p.slug !== "paper";
 const where = proxy ? "the proxy's" : "the server's";
 const features = [
-  ["VPN and proxy checks", "ProxyCheck, IP-API, IPHub, VPNAPI or your own REST API. With several services, choose how many must agree."],
+  ["VPN and proxy checks", "ProxyCheck, IP-API, IPHub, VPNAPI, IPQualityScore or your own REST API. With several services, choose how many must agree."],
   ["Country rules", "A blocklist or an allowlist of countries, with its own action and message."],
   ["Your response", "Refuse the connection, alert staff in chat, post to a Discord webhook or run a console command."],
-  ["Caching", "Answers are kept in SQLite or Redis, so repeat logins from the same address don't spend your lookup quota."],
+  ["Caching", "With caching enabled, unexpired SQLite or Redis results can be reused for the same address, reducing repeat lookups."],
   ["Exemptions", "Let trusted players or addresses through by UUID, IP or LuckPerms permission."],
   ["Inspect any address", "/cg info shows what each service reported, so you can see why a player was flagged."],
 ];
 const steps: [string, string][] = [
   ["Download the JAR", "The same file runs on every platform: Modrinth, Hangar, SpigotMC or GitHub."],
   [`Put it into ${where} plugins folder`, proxy ? "Only on the proxy. Remove older Connection Guard JARs first." : "Remove older Connection Guard JARs first."],
-  [`Start the ${proxy ? "proxy" : "server"} and review config.yml`, "The shipped config already refuses VPN and proxy hits and blocks CN and RU. Change it now if that isn't your policy."],
-  ["Watch before you block (optional)", "Turn kicks off and staff alerts on for a few days, as shown here, then set kick-player back to true."],
+  [`Start the ${proxy ? "proxy" : "server"} and review config.yml`, "New 0.5.0 installs start in OBSERVE with an empty country blocklist. Existing configs without operation.mode retain ENFORCE."],
+  ["Watch before you block", "Keep operation.mode at OBSERVE while you review decisions. Choose country rules and actions, then switch to ENFORCE when ready."],
   ["Check an address", "Run the command below to see what each service reports for an address."],
 ];
 const others = PLATFORMS.filter((o) => o.slug !== p.slug);
