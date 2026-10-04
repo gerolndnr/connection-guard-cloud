@@ -9,7 +9,7 @@ export const PROFILES = {
   modrinth: "https://modrinth.com/plugin/connectionguard",
   spigot: "https://www.spigotmc.org/resources/121509/",
   hangar: "https://hangar.papermc.io/gerolndnr/connection-guard",
-  discord: "https://discord.gg/GekQVPqsfS",
+  discord: "https://discord.gg/8q4HFCh2RK",
 };
 
 const org = {
