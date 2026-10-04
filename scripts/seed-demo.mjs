@@ -20,7 +20,8 @@ const countries = [["DE", 30], ["US", 18], ["GB", 9], ["PL", 8], ["NL", 7], ["FR
 const isps = { DE: "Deutsche Telekom AG", US: "Comcast Cable", GB: "BT Group", PL: "Orange Polska", NL: "KPN B.V.", FR: "Orange S.A.", BR: "Claro S.A.", SE: "Telia Company", CZ: "O2 Czech Republic", RU: "Rostelecom" };
 const vpnHosts = [["NL", "M247 Europe SRL (synthetic)", 9009], ["US", "DigitalOcean, LLC (synthetic)", 14061], ["DE", "Hetzner Online GmbH (synthetic)", 24940]];
 const weighted = () => { let r = rand() * 92; for (const [cc, w] of countries) { if ((r -= w) <= 0) return cc; } return "DE"; };
-const ip = () => `${pick([84, 91, 176, 185, 31, 77, 93, 109])}.${Math.floor(rand() * 255)}.${Math.floor(rand() * 255)}.${Math.floor(rand() * 254) + 1}`;
+// Documentation ranges only (RFC 5737), so screenshots never show an address that belongs to someone.
+const ip = () => `${pick(["192.0.2", "198.51.100", "203.0.113"])}.${Math.floor(rand() * 254) + 1}`;
 
 function event(at, platform, mode, vpnRate) {
   const vpn = rand() < vpnRate;
