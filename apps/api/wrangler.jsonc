@@ -51,7 +51,7 @@
         "DPA_VERSION": "2026-10-03",
         // PostHog project token (public). Empty keeps product analytics off; see docs/ANALYTICS.md.
         "POSTHOG_KEY": "phc_zG73iBb7Ss45EkrRE72dqEDamuxs9rCoyEBCJnooCaCe",
-        "POSTHOG_HOST": "https://eu.i.posthog.com"
+        "POSTHOG_HOST": "https://t.connectionguard.net"
       },
       "d1_databases": [
         // Created with: wrangler d1 create cg --jurisdiction eu

@@ -17,7 +17,7 @@ const decode = (req) => {
   if (text.startsWith("data=")) text = Buffer.from(decodeURIComponent(text.slice(5)), "base64").toString();
   try { const j = JSON.parse(text); return Array.isArray(j) ? j : j.batch ?? [j]; } catch { return []; }
 };
-await ctx.route(/posthog\.com/, async (route) => {
+await ctx.route(/posthog\.com|t\.connectionguard\.net/, async (route) => {
   const req = route.request();
   if (req.method() === "POST" && !/\/flags\//.test(req.url())) events.push(...decode(req).filter((e) => e?.event));
   if (/\/(flags|decide)\//.test(req.url())) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ featureFlags: {}, sessionRecording: false, supportedCompression: ["gzip-js"] }) });

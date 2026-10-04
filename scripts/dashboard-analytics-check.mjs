@@ -18,7 +18,7 @@ const decode = (buf) => {
   if (text.startsWith("data=")) text = Buffer.from(decodeURIComponent(text.slice(5)), "base64").toString();
   return text;
 };
-await ctx.route(/posthog\.com/, async (route) => {
+await ctx.route(/posthog\.com|t\.connectionguard\.net/, async (route) => {
   const req = route.request(); const url = req.url();
   // Remote config as the PostHog project would send it with session replay switched on.
   if (/\/array\/[^/]+\/config(\.js)?$/.test(url)) {

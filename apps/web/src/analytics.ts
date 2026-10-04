@@ -65,6 +65,8 @@ export async function startAnalytics(cfg: StartConfig) {
     respect_dnt: true,
     before_send: beforeSend,
     session_recording: { maskAllInputs: true, maskTextSelector: "*", blockSelector: ".ph-no-capture" },
+    // Console output can carry addresses from API errors; the project-wide console capture stays off here.
+    enable_recording_console_log: false,
   });
   posthog.register({ surface: "dashboard" });
   ph = posthog;

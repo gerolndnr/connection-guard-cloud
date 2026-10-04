@@ -78,10 +78,12 @@ The activation funnel: `plugin_installed` → `server_linked` → `setup_finishe
 1. Create a project in **PostHog EU** (eu.posthog.com).
 2. Under Project settings → Web analytics, enable **Cookieless server hash mode**. The website needs it; without it, its events are dropped.
 3. Under Session replay, enable recordings. The masking lives in the client config and needs no change in PostHog.
-4. Optional, and it keeps ad blockers from dropping events: under Settings → Managed reverse proxy, add `e.connectionguard.net`. Create the CNAME it shows in Cloudflare DNS as **DNS only** (grey cloud), then use `https://e.connectionguard.net` as the host below.
+4. Managed reverse proxy (keeps ad blockers from dropping events): **`t.connectionguard.net`**, CNAME in Cloudflare DNS as **DNS only**. It is the host for all three surfaces.
 5. Put the project token (`phc_…`, public by design) in two places:
-   - `apps/api/wrangler.jsonc` → `env.production.vars.POSTHOG_KEY` (and `POSTHOG_HOST` if you use the proxy). The dashboard reads it from `/api/config`.
-   - `apps/site/.env.production` → `PUBLIC_POSTHOG_KEY=phc_…` (and `PUBLIC_POSTHOG_HOST`).
+   - `apps/api/wrangler.jsonc` → `env.production.vars.POSTHOG_KEY` and `POSTHOG_HOST`. The dashboard reads both from `/api/config`.
+   - `apps/site/.env.production` → `PUBLIC_POSTHOG_KEY` and `PUBLIC_POSTHOG_HOST`.
+
+Current production: project **Connection Guard** (EU, ID 293337), host `https://t.connectionguard.net`, cookieless server hash mode on, session replay on (console logs off in the dashboard client).
 6. Deploy the API and rebuild and deploy the site (see `DEPLOY.md`).
 
 ## Reading the data with Claude Code
