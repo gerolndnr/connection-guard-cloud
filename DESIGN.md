@@ -405,7 +405,7 @@ connectionguard.net is the Persuade surface of the same system: it imports the d
 ### Layout
 Content sits in a 72rem container (`site-container`) with 20px side padding, 32px from `sm`. Sections are full-width bands divided by 1px hairlines, with 80px vertical padding (112px from `sm`) on the home page and 56-64px on inner pages. Section anchors carry a scroll margin that clears the taller mobile header. Smooth anchor scrolling turns off under reduced motion.
 
-**The One Dark Band Rule.** Exactly one full-bleed band is forced dark in both themes: the dashboard preview (`#dashboard`, the `.dark` class on the section, `page-dark` ground, hairlines top and bottom). It shows the product as it is used at night. No other section inverts.
+**The Preview Stage Rule.** Exactly one full-bleed band sits on a different ground than the page: the dashboard preview (`#dashboard`, `subtle` in light, `surface` in dark, hairlines top and bottom). It follows the theme; a band forced dark in light mode read as a black slab and was dropped (Gero, 2026-10-04). No other section changes ground. Chips reset letter-spacing so they survive inside tight display headings.
 
 ### Navigation
 A sticky, opaque `surface` header with a bottom hairline (not the dashboard's translucent blur): 56px row with the wordmark, inline links from `md`, then GitHub (from `sm`), the theme toggle and a primary Download button. Below `md` a second 40px row holds the same links plus GitHub as a horizontally scrolling 0.8125rem link row, so nothing hides behind a menu.

@@ -583,8 +583,8 @@
         "section": "components"
       },
       {
-        "name": "The One Dark Band Rule",
-        "body": "On the marketing site exactly one full-bleed band is forced dark in both themes: the dashboard preview. No other section inverts.",
+        "name": "The Preview Stage Rule",
+        "body": "On the marketing site exactly one full-bleed band sits on a different ground than the page: the dashboard preview, subtle in light and surface in dark. It follows the theme; a band forced dark in light mode was rejected. No other section changes ground.",
         "section": "site"
       },
       {

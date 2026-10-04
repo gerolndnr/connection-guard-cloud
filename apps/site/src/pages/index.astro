@@ -69,8 +69,8 @@ const steps = [
     </div>
   </section>
 
-  <!-- The dashboard band is always dark: the product shown as it is used at night. -->
-  <section id="dashboard" class="dark scroll-mt-28 md:scroll-mt-20 border-y border-line bg-page text-fg">
+  <!-- The dashboard band follows the theme and sits one step off the page ground, so it reads as its own stage. -->
+  <section id="dashboard" class="scroll-mt-28 md:scroll-mt-20 border-y border-line bg-subtle text-fg dark:bg-surface">
     <div class="container-site py-20 sm:py-28">
       <div class="flex flex-wrap items-end justify-between gap-6">
         <div class="max-w-2xl">
@@ -79,7 +79,7 @@ const steps = [
         </div>
         <ul class="grid gap-2 text-sm text-fg-2">
           <li>Logins never wait on the dashboard</li>
-          <li>Off with one line: <code class="rounded bg-subtle px-1.5 py-0.5 text-fg">cloud.enabled: false</code></li>
+          <li>Off with one line: <code class="rounded border border-line bg-surface px-1.5 py-0.5 text-fg">cloud.enabled: false</code></li>
           <li>Open source, data stored in the EU</li>
         </ul>
       </div>
