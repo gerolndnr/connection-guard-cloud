@@ -20,8 +20,9 @@ export function TopNav({ me, networkId }: { me?: Me | undefined; networkId?: str
   const net = useQuery({ queryKey: ["network", networkId], queryFn: () => api.network(networkId!), enabled: Boolean(networkId) });
   const installs = net.data?.installs ?? [];
   const keep = search.server ? { server: search.server } : {};
-  const tab = "relative px-3 py-3 text-[0.8125rem] font-medium text-fg-2 no-underline transition-colors hover:text-fg";
-  const active = { className: "!text-fg after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-fg", "aria-current": "page" as const };
+  // Five tabs fit a 360 px phone with the tighter padding; the row scrolls instead of widening the page if not.
+  const tab = "relative shrink-0 whitespace-nowrap px-2.5 py-3 text-[0.8125rem] font-medium text-fg-2 no-underline transition-colors hover:text-fg sm:px-3";
+  const active = { className: "!text-fg after:absolute after:inset-x-2.5 after:-bottom-px sm:after:inset-x-3 after:h-0.5 after:rounded-full after:bg-fg", "aria-current": "page" as const };
 
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur-md supports-[backdrop-filter]:bg-surface/75">
@@ -68,9 +69,10 @@ export function TopNav({ me, networkId }: { me?: Me | undefined; networkId?: str
         </div>
       </div>
       {networkId && (
-        <nav aria-label="Pages" className="mx-auto flex max-w-[1200px] px-1 sm:px-3">
+        <nav aria-label="Pages" className="mx-auto flex max-w-[1200px] overflow-x-auto px-1 [scrollbar-width:none] sm:px-3">
           <Link to="/n/$networkId" params={{ networkId }} search={keep} activeOptions={{ exact: true, includeSearch: false }} className={tab} activeProps={active}>Overview</Link>
           <Link to="/n/$networkId/register" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Decisions</Link>
+          <Link to="/n/$networkId/insights" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Insights</Link>
           <Link to="/n/$networkId/settings" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Settings</Link>
           <Link to="/n/$networkId/network" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Network</Link>
         </nav>

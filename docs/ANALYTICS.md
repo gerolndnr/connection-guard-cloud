@@ -60,6 +60,10 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | `range_changed` | `range` |
 | `issue_dismissed` | `kind`, `tone` |
 | `theme_changed` | `theme` |
+| `rule_builder_added` | `kind` (address, asn, isp, operator, country, type), `effect`, `scope`, `temporary` (never the target) |
+| `rule_preset_picked` | `preset` (label of the shortcut, e.g. Refuse Tor) |
+| `insights_viewed` | none |
+| `insight_rule_opened` | `insight` (network), `effect` |
 | `decision_fix` | `fix` (allow-player, allow-ip, trust-asn, block-player, block-ip, recheck), `verdict` |
 | `overview_stats_opened`, `network_exported`, `account_exported`, `invite_joined` | none |
 
@@ -75,7 +79,7 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | `settings_saved` | `usr_…` + group | `fields[]`, `field_count`, `secret_fields`, `apply_to`, `servers`, `mode` |
 | `settings_applied`, `settings_rejected` | `ins_…` + group | `version`, `reset` / `message` (scrubbed, 160 chars) |
 | `settings_reset`, `server_unlinked`, `server_renamed`, `network_token_created` | `usr_…` + group | none |
-| `rule_added`, `rule_removed`, `recheck_requested` | `usr_…` + group | `effect`, `scope`, `kind` (player, ip, range, asn), `servers` (never the target) |
+| `rule_added`, `rule_removed`, `recheck_requested` | `usr_…` + group | `effect`, `scope`, `kind` (player, ip, range, asn, isp, operator, country, type), `servers` (never the target) |
 | `invite_created`, `invite_accepted` | `usr_…` + group | `role` |
 | `alerts_saved` | `usr_…` + group | `kinds[]`, `webhook` (set or not, never the URL) |
 | `network_deleted`, `account_deleted` | `usr_…` (+ group) | `networks_deleted` |

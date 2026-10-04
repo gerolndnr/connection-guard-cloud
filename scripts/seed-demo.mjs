@@ -23,6 +23,13 @@ const weighted = () => { let r = rand() * 92; for (const [cc, w] of countries) {
 // Documentation ranges only (RFC 5737), so screenshots never show an address that belongs to someone.
 const ip = () => `${pick(["192.0.2", "198.51.100", "203.0.113"])}.${Math.floor(rand() * 254) + 1}`;
 
+// A fixed pool of synthetic players: most keep their home address, a few change it (mobile, travel, VPN hopping).
+const players = Array.from({ length: 60 }, (_, i) => ({ uuid: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`, home: ip(), roams: i % 9 === 0 }));
+function player(vpn) {
+  const p = pick(players);
+  return { uuid: p.uuid, ip: vpn || p.roams ? ip() : p.home };
+}
+
 function event(at, platform, mode, vpnRate) {
   const vpn = rand() < vpnRate;
   const geo = !vpn && rand() < 0.02;
@@ -37,7 +44,7 @@ function event(at, platform, mode, vpnRate) {
     outcome: deny ? "DENY" : "ALLOW",
     reason: deny ? (vpn ? "VPN_FLAG" : "GEO_FLAG") : flags.length ? "FLAG_ALLOWED" : "CHECKS_COMPLETE",
     identity_trust: platform === "BUKKIT" ? "PLATFORM_ONLINE" : "AUTHENTICATED",
-    uuid: crypto.randomUUID(), ip: ip(),
+    ...player(vpn),
     vpn: vpn ? "POSITIVE" : "NEGATIVE", geo: "KNOWN", flags,
     duration_ms: cached ? Math.floor(rand() * 8) + 2 : Math.floor(rand() * 260) + 60,
     sources: [

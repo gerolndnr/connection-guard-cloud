@@ -2,6 +2,7 @@
 import type { Context, Hono } from "hono";
 import { z } from "zod";
 import { CAPABILITY, type Status } from "@cg/protocol";
+import { ruleKind, ruleTarget } from "@cg/protocol/rules";
 import type { AppEnv, Env } from "./env.ts";
 import { audit, canManage, roleIn, type Role } from "./access.ts";
 import { capture } from "./analytics.ts";
@@ -17,20 +18,9 @@ export const ALERT_KINDS = ["server_offline", "provider_trouble", "quota_low", "
 
 // ---- access rules ------------------------------------------------------------
 
-const IPV4 = /^(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}(?:\/(?:3[0-2]|[12]?\d))?$/;
-const IPV6 = /^[0-9a-fA-F:]{2,39}(?:\/(?:12[0-8]|1[01]\d|\d?\d))?$/;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const ASN = /^ASN:[1-9]\d{0,9}$/;
-
-/** The rule targets the dashboard offers: an address or range, a verified player UUID, or a provider network. */
-export function ruleTarget(raw: string): string | null {
-  const t = raw.trim();
-  if (IPV4.test(t) || (t.includes(":") && !t.startsWith("ASN") && IPV6.test(t))) return t.toLowerCase();
-  if (UUID.test(t)) return t.toLowerCase();
-  const asn = t.toUpperCase().replace(/^AS(?=\d)/, "ASN:");
-  if (ASN.test(asn)) return asn;
-  return null;
-}
+// Targets are stored in the plugin's own canonical form (see @cg/protocol/rules), so that a later
+// access_rule.remove matches the rule the plugin stored.
+export { ruleTarget };
 
 const RuleBody = z.object({
   effect: z.enum(["ALLOW", "DENY", "EXEMPT"]),
@@ -142,7 +132,7 @@ export function registerNetwork(app: Hono<AppEnv>) {
     const body = RuleBody.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: "bad_request" }, 400);
     const target = ruleTarget(body.data.target);
-    if (!target) return c.json({ error: "invalid_target", message: "Use an IP address or range, a player UUID or an ASN like AS3320." }, 422);
+    if (!target) return c.json({ error: "invalid_target", message: "Use an IP address or range, a player UUID, an ASN like AS3320, or isp:, operator:, country: or type: followed by a value." }, 422);
     const now = Date.now();
     const existing = await env.DB.prepare("SELECT id FROM access_rules WHERE network_id = ? AND target = ? AND effect = ? AND scope = ? AND removed_at IS NULL AND (expires_at IS NULL OR expires_at > ?)")
       .bind(id, target, body.data.effect, body.data.scope, now).first<{ id: string }>();
@@ -164,7 +154,7 @@ export function registerNetwork(app: Hono<AppEnv>) {
       env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, 'rule.added', ?, ?)")
         .bind(id, user.id, JSON.stringify({ rule_id: ruleId, effect: body.data.effect, scope: body.data.scope }), now),
     ]);
-    const kind = target.startsWith("asn:") || target.startsWith("ASN:") ? "asn" : UUID.test(target) ? "player" : target.includes("/") ? "range" : "ip";
+    const kind = ruleKind(target);
     capture(c, { event: "rule_added", distinct_id: user.id, groups: { network: id }, properties: { effect: body.data.effect, scope: body.data.scope, kind, servers: installs.length, minutes: body.data.expires_in_minutes ?? null } });
     return c.json({ id: ruleId, servers: installs.length, skipped: all.length - installs.length, expires_at: expiresAt }, 201);
   });
@@ -183,7 +173,8 @@ export function registerNetwork(app: Hono<AppEnv>) {
       env.DB.prepare("UPDATE access_rules SET removed_at = ? WHERE id = ?").bind(now, c.req.param("ruleId")),
       // Commands that never reached a server are dropped; servers that applied the rule get a removal.
       env.DB.prepare("DELETE FROM commands WHERE rule_id = ? AND delivered_at IS NULL").bind(c.req.param("ruleId")),
-      ...commandStatements(env, installs, { type: "access_rule.remove", effect: rule.effect, target: rule.target }, user.id, null, now),
+      // Rules saved before targets were canonical (e.g. "203.0.113.7") are stored by the plugin as "203.0.113.7/32".
+      ...commandStatements(env, installs, { type: "access_rule.remove", effect: rule.effect, target: ruleTarget(rule.target) ?? rule.target }, user.id, null, now),
       env.DB.prepare("UPDATE networks SET watched_until = ? WHERE id = ?").bind(now + WATCH_WINDOW, id),
       env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, 'rule.removed', ?, ?)")
         .bind(id, user.id, JSON.stringify({ rule_id: c.req.param("ruleId") }), now),

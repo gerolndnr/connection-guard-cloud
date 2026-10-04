@@ -210,6 +210,9 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
 // Commands the dashboard queues for one install. The plugin only executes
 // the closed set below; anything else is rejected client side.
 export const Command = z.discriminatedUnion("type", [
+  // `target` is canonical (rules.ts): addresses as the plugin's IpNetwork stores them ("203.0.113.5/32"), UUIDs in
+  // lower case, or a 0.5.0 selector (ASN:3320, isp:…, operator:…, country:DE, type:TOR). access_rule.remove sends
+  // the same string, because the plugin removes on an exact, case-insensitive match.
   z.object({ id: CommandResult.shape.id, type: z.literal("access_rule.add"), effect: Effect, scope: Scope,
     target: z.string().min(1).max(64), note: z.string().max(128).nullable(),
     // Epoch milliseconds (UTC) after which the plugin removes the rule. Null or absent: permanent. Only sent to

@@ -1,3 +1,4 @@
+import { displayNetwork, ruleKind, ruleValue } from "@cg/protocol/rules";
 import type { DecisionEvent } from "@cg/protocol";
 import type { Install } from "./api.ts";
 
@@ -111,3 +112,20 @@ export const RULE_DURATIONS: { minutes: number | null; label: string; long: stri
 
 /** Servers that enforce rule expiry themselves (protocol capability "rule_expiry"). */
 export const supportsExpiry = (i: { status: { capabilities?: string[] } | null }) => Boolean(i.status?.capabilities?.includes("rule_expiry"));
+
+/** A rule target in words: "Tor connections", "Provider: Hetzner Online GmbH", "AS3320", "203.0.113.0/24". */
+export function describeTarget(target: string, names: Map<string, string | null>): { text: string; kind: string } {
+  const kind = ruleKind(target);
+  const value = ruleValue(target);
+  switch (kind) {
+    case "player": return { text: names.get(target) ?? `Player ${target.slice(0, 8)}…`, kind: "Player" };
+    case "asn": return { text: `AS${value}`, kind: "Network" };
+    case "isp": return { text: value, kind: "Provider" };
+    case "operator": return { text: value, kind: "Operator" };
+    case "country": return { text: countryName(value), kind: "Country" };
+    case "type": return { text: TYPE_LABEL[value] ?? value, kind: "Connection type" };
+    case "range": return { text: displayNetwork(target), kind: "Address range" };
+    default: return { text: displayNetwork(target), kind: "Address" };
+  }
+}
+const TYPE_LABEL: Record<string, string> = { VPN: "VPN", PROXY: "Proxy", TOR: "Tor", RELAY: "Privacy relay", HOSTING: "Hosting and data centres" };

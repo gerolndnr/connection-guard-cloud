@@ -11,6 +11,7 @@ import { RegisterPage } from "./routes/RegisterPage.tsx";
 import { SettingsPage } from "./routes/SettingsPage.tsx";
 import { SetupPage } from "./routes/SetupPage.tsx";
 import { NotFound } from "./routes/NotFound.tsx";
+import { InsightsPage } from "./routes/InsightsPage.tsx";
 import { NetworkPage } from "./routes/NetworkPage.tsx";
 import { AccountPage } from "./routes/AccountPage.tsx";
 import { InvitePage } from "./routes/InvitePage.tsx";
@@ -64,17 +65,29 @@ const link = createRoute({ getParentRoute: () => root, path: "/link/$code", comp
 const serverSearch = (s: Record<string, unknown>): { server?: string } =>
   typeof s.server === "string" && /^ins_[A-Za-z0-9]{20,32}$/.test(s.server) ? { server: s.server } : {};
 const overview = createRoute({ getParentRoute: () => root, path: "/n/$networkId", component: Overview, validateSearch: serverSearch });
-const register = createRoute({ getParentRoute: () => root, path: "/n/$networkId/register", component: RegisterPage, validateSearch: serverSearch });
+// ?q= opens the decision log with a search, e.g. a player's UUID from the insights page.
+const registerSearch = (s: Record<string, unknown>): { server?: string; q?: string } => ({
+  ...serverSearch(s),
+  ...(typeof s.q === "string" && s.q.length <= 100 ? { q: s.q } : {}),
+});
+const register = createRoute({ getParentRoute: () => root, path: "/n/$networkId/register", component: RegisterPage, validateSearch: registerSearch });
+const insights = createRoute({ getParentRoute: () => root, path: "/n/$networkId/insights", component: InsightsPage, validateSearch: serverSearch });
 
 const settings = createRoute({ getParentRoute: () => root, path: "/n/$networkId/settings", component: SettingsPage, validateSearch: serverSearch });
 
 const setup = createRoute({ getParentRoute: () => root, path: "/n/$networkId/setup", component: SetupPage, validateSearch: serverSearch });
 
-const network = createRoute({ getParentRoute: () => root, path: "/n/$networkId/network", component: NetworkPage, validateSearch: serverSearch });
+// ?rule=<target>&effect=<ALLOW|DENY|EXEMPT> opens the rule builder prefilled (from the insights page).
+const networkSearch = (s: Record<string, unknown>): { server?: string; rule?: string; effect?: "ALLOW" | "DENY" | "EXEMPT" } => ({
+  ...serverSearch(s),
+  ...(typeof s.rule === "string" && s.rule.length <= 80 ? { rule: s.rule } : {}),
+  ...(s.effect === "ALLOW" || s.effect === "DENY" || s.effect === "EXEMPT" ? { effect: s.effect } : {}),
+});
+const network = createRoute({ getParentRoute: () => root, path: "/n/$networkId/network", component: NetworkPage, validateSearch: networkSearch });
 const account = createRoute({ getParentRoute: () => root, path: "/account", component: AccountPage });
 const invite = createRoute({ getParentRoute: () => root, path: "/invite/$token", component: InvitePage });
 
-const router = createRouter({ routeTree: root.addChildren([home, link, overview, register, settings, setup, network, account, invite]), defaultPreload: "intent" });
+const router = createRouter({ routeTree: root.addChildren([home, link, overview, register, insights, settings, setup, network, account, invite]), defaultPreload: "intent" });
 
 declare module "@tanstack/react-router" {
   interface Register { router: typeof router }

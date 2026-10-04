@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, LoaderCircle, Trash2 } from "lucide-react";
 import { api, ApiError, type AccessRuleView, type AlertKind, type NetworkView, type Role, type RuleEffect, type RuleScope } from "../api.ts";
 import { Shell, useMe } from "../components/Shell.tsx";
 import { Row, Section, Switch } from "../components/Form.tsx";
-import { RULE_DURATIONS, ago, num, serverName, supportsExpiry, until } from "../format.ts";
+import { ago, describeTarget, num, serverName, until } from "../format.ts";
+import { RuleBuilder, type Prefill } from "../components/RuleBuilder.tsx";
 import { usePlayerNames } from "../players.ts";
 import { track } from "../analytics.ts";
 
@@ -15,6 +16,7 @@ const stateText = { pending: "waiting for the server", delivered: "sent", applie
 
 export function NetworkPage() {
   const { networkId } = useParams({ from: "/n/$networkId/network" });
+  const search = useSearch({ from: "/n/$networkId/network" });
   const net = useQuery({ queryKey: ["network", networkId], queryFn: () => api.network(networkId) });
   if (net.isPending) return <Shell networkId={networkId}><div className="skeleton h-64" /></Shell>;
   if (!net.data) return <Shell networkId={networkId}><p role="alert" className="text-danger-text">This network does not exist or you are not a member.</p></Shell>;
@@ -27,7 +29,7 @@ export function NetworkPage() {
           <h1 className="text-2xl font-semibold tracking-[-0.025em]">Network</h1>
           <p className="mt-1 text-fg-2">{net.data.network.name} · {net.data.installs.length} {net.data.installs.length === 1 ? "server" : "servers"}</p>
         </div>
-        <Rules networkId={networkId} view={net.data} manage={manage} />
+        <Rules networkId={networkId} view={net.data} manage={manage} prefill={search.rule ? { target: search.rule, effect: search.effect } : undefined} />
         <Team networkId={networkId} role={role} />
         {manage && <Alerts networkId={networkId} />}
         {manage && <Activity networkId={networkId} />}
@@ -39,51 +41,29 @@ export function NetworkPage() {
 
 // ---- access rules -----------------------------------------------------------------
 
-function targetLabel(target: string, names: Map<string, string | null>) {
-  if (target.startsWith("ASN:")) return `AS${target.slice(4)} (provider network)`;
-  if (/^[0-9a-f-]{36}$/.test(target)) return names.get(target) ?? `Player ${target.slice(0, 8)}…`;
-  return target.includes("/") ? `${target} (range)` : target;
-}
-
-function Rules({ networkId, view, manage }: { networkId: string; view: NetworkView; manage: boolean }) {
+function Rules({ networkId, view, manage, prefill }: { networkId: string; view: NetworkView; manage: boolean; prefill?: Prefill | undefined }) {
   const qc = useQueryClient();
   const rules = useQuery({ queryKey: ["rules", networkId], queryFn: () => api.rules(networkId), refetchInterval: (q) => (q.state.data?.rules.some((r) => r.servers.some((s) => s.state !== "applied" && s.state !== "failed")) ? 5000 : 60_000) });
   const names = usePlayerNames(rules.data?.rules.map((r) => r.target) ?? []);
-  const [target, setTarget] = useState("");
-  const [effect, setEffect] = useState<RuleEffect>("ALLOW");
-  const [scope, setScope] = useState<RuleScope>("ALL");
-  const [note, setNote] = useState("");
-  const [minutes, setMinutes] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const serverNames = new Map(view.installs.map((i) => [i.id, serverName(i)]));
-  const expiryOk = view.installs.some(supportsExpiry);
-
-  const add = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true); setError(null);
-    try {
-      await api.addRule(networkId, { effect, scope, target: target.trim(), note: note.trim() || null, expires_in_minutes: minutes });
-      setTarget(""); setNote("");
-      await qc.invalidateQueries({ queryKey: ["rules", networkId] });
-    } catch (err) {
-      setError(err instanceof ApiError && err.code === "invalid_target" ? "Use an IP address or range (203.0.113.0/24), a player UUID or an ASN like AS3320."
-        : err instanceof ApiError && err.code === "rule_expiry_unsupported" ? "Your servers can't end a rule on time yet. Choose Always, or update Connection Guard." : "The rule could not be saved.");
-    } finally { setBusy(false); }
-  };
+  // Opened from an insight with a suggested rule: bring the builder into view once the page has rendered.
+  useEffect(() => { if (prefill?.target) document.getElementById("rules")?.scrollIntoView({ block: "start" }); }, [prefill?.target]);
   const remove = async (r: AccessRuleView) => {
     await api.removeRule(networkId, r.id);
     await qc.invalidateQueries({ queryKey: ["rules", networkId] });
   };
 
   return (
-    <Section id="rules" title="Access rules" description="Let in or refuse a player, an address or a provider network on every server of this network, permanently or for a while. Rules you add from a decision show up here.">
+    <Section id="rules" title="Access rules" description="Let in or refuse a player, an address, a provider, a country or a whole connection type such as Tor, on every server of this network, permanently or for a while. Rules you add from a decision show up here.">
       {rules.data && rules.data.rules.length > 0 ? (
         <ul className="ph-no-capture divide-y divide-line">
           {rules.data.rules.map((r) => (
             <li key={r.id} className="flex items-start justify-between gap-4 px-6 py-3.5">
               <div className="min-w-0">
-                <p className="truncate font-medium">{targetLabel(r.target, names)}</p>
+                <p className="flex min-w-0 items-baseline gap-2">
+                  <span className="truncate font-medium">{describeTarget(r.target, names).text}</span>
+                  <span className="shrink-0 text-[0.75rem] text-fg-3">{describeTarget(r.target, names).kind}</span>
+                </p>
                 <p className="text-[0.8125rem] text-fg-2">
                   <span className={r.effect === "DENY" ? "text-danger-text" : "text-accent-text"}>{effectText[r.effect]}</span> · {scopeText[r.scope]}
                   {r.expires_at ? <span className="text-warn-text"> · ends {until(r.expires_at)}</span> : " · permanent"}
@@ -99,33 +79,11 @@ function Rules({ networkId, view, manage }: { networkId: string; view: NetworkVi
           ))}
         </ul>
       ) : <p className="px-6 py-5 text-fg-2">{rules.isPending ? "Loading…" : "No rules yet. Open a decision and choose “Was this wrong?” to add one."}</p>}
-      {manage && (
-        <form onSubmit={add} className="grid gap-3 border-t border-line px-6 py-5 sm:grid-cols-[minmax(0,1.4fr)_auto_auto]">
-          <label className="grid gap-1.5 sm:col-span-3">
-            <span className="label">Add a rule</span>
-            <input className="input mono ph-no-capture" placeholder="IP, range, player UUID or AS3320" value={target} onChange={(e) => setTarget(e.target.value)} required />
-          </label>
-          <select className="input" aria-label="Effect" value={effect} onChange={(e) => setEffect(e.target.value as RuleEffect)}>
-            {(Object.keys(effectText) as RuleEffect[]).map((k) => <option key={k} value={k}>{effectText[k]}</option>)}
-          </select>
-          <select className="input" aria-label="Applies to" value={scope} onChange={(e) => setScope(e.target.value as RuleScope)}>
-            {(Object.keys(scopeText) as RuleScope[]).map((k) => <option key={k} value={k}>For {scopeText[k]}</option>)}
-          </select>
-          <input className="input" placeholder="Note (optional)" value={note} maxLength={100} onChange={(e) => setNote(e.target.value)} />
-          {expiryOk && (
-            <label className="flex items-center gap-2 text-[0.8125rem] text-fg-2 sm:col-span-3">
-              How long
-              <select className="input h-8 w-auto text-[0.8125rem]" value={minutes ?? ""} onChange={(e) => setMinutes(e.target.value ? Number(e.target.value) : null)}>
-                {RULE_DURATIONS.map((d) => <option key={d.label} value={d.minutes ?? ""}>{d.minutes ? d.long.replace(/^for /, "") : "Always"}</option>)}
-              </select>
-            </label>
-          )}
-          <div className="flex items-center gap-3 sm:col-span-3">
-            <button type="submit" className="btn btn-primary" disabled={busy || !target.trim()}>{busy ? "Adding…" : "Add rule"}</button>
-            {error && <p role="alert" className="text-[0.8125rem] text-danger-text">{error}</p>}
-          </div>
-        </form>
-      )}
+      {manage && <RuleBuilder networkId={networkId} view={view} prefill={prefill} />}
+      <p className="border-t border-line px-6 py-3 text-[0.75rem] leading-relaxed text-fg-3">
+        Rules for a player or an address come first, then rules for networks, providers, countries and connection types. Within each, Refuse beats Let in.
+        Refusals from these rules don't run punishment commands or webhooks.
+      </p>
     </Section>
   );
 }

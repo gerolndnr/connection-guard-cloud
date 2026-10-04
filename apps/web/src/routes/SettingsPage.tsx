@@ -10,6 +10,7 @@ import { Choice, CountryPicker, Row, Section, SecretField, Segmented, Switch, Ta
 import { ago, num, platformName, serverName } from "../format.ts";
 import { PROVIDERS } from "../providers.ts";
 import { SIMULATED_PATHS, simulate, type SimulationResult } from "../simulate.ts";
+import { useHistory } from "../history.ts";
 import { usePlayerNames } from "../players.ts";
 import type { RegisterEvent } from "../api.ts";
 
@@ -160,25 +161,8 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
 
   // What-if: replay the last 7 days of this server's decisions against the edited settings.
   const simRelevant = dirtyFields.some((f) => SIMULATED_PATHS.includes(f));
-  const history = useQuery({
-    queryKey: ["history", networkId, install.id],
-    enabled: simRelevant,
-    staleTime: 5 * 60_000,
-    refetchInterval: false,
-    queryFn: async () => {
-      const since = Date.now() - 7 * 24 * 3_600_000;
-      const out: RegisterEvent[] = [];
-      let before: number | undefined;
-      for (let page = 0; page < 5; page++) {
-        const res = await api.events(networkId, { install: install.id, limit: 200, before });
-        out.push(...res.events.filter((e) => e.at >= since));
-        if (!res.next_before || res.next_before < since) break;
-        before = res.next_before;
-      }
-      return out;
-    },
-  });
-  const simulation = useMemo(() => (simRelevant && history.data && values ? simulate(history.data, values) : null), [simRelevant, history.data, values]);
+  const history = useHistory(networkId, { install: install.id, enabled: simRelevant });
+  const simulation = useMemo(() => (simRelevant && history.data && values ? simulate(history.data.events, values) : null), [simRelevant, history.data, values]);
 
   const name = serverName(install);
   if (cfgQ.isPending) return <div className="skeleton h-64" />;

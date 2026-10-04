@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./examples": "./src/examples.ts",
-    "./scrub": "./src/scrub.ts"
+    "./scrub": "./src/scrub.ts",
+    "./rules": "./src/rules.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

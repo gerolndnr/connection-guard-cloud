@@ -13,14 +13,14 @@ async function linkedNetwork(owner = "Owner") {
 }
 
 describe("access rules", () => {
-  it("accepts addresses, ranges, UUIDs and ASNs only", () => {
-    expect(ruleTarget("203.0.113.7")).toBe("203.0.113.7");
+  it("accepts only targets the plugin accepts, in its stored form", () => {
+    expect(ruleTarget("203.0.113.7")).toBe("203.0.113.7/32");
     expect(ruleTarget("203.0.113.0/24")).toBe("203.0.113.0/24");
-    expect(ruleTarget("2001:db8::1")).toBe("2001:db8::1");
+    expect(ruleTarget("2001:db8::1")).toBe("2001:db8:0:0:0:0:0:1/128");
     expect(ruleTarget("069A79F4-44E9-4726-A5BE-FCA90E38AAF5")).toBe("069a79f4-44e9-4726-a5be-fca90e38aaf5");
     expect(ruleTarget("AS3320")).toBe("ASN:3320");
     expect(ruleTarget("asn:3320")).toBe("ASN:3320");
-    for (const bad of ["Steve", "COUNTRY:DE", "300.1.1.1", "ASN:0", "ban-ip %IP%"]) expect(ruleTarget(bad)).toBeNull();
+    for (const bad of ["Steve", "country:Germany", "type:CLOUD", "300.1.1.1", "ASN:0", "ban-ip %IP%"]) expect(ruleTarget(bad)).toBeNull();
   });
 
   it("sends a rule to every server and shows where it applied", async () => {
@@ -31,7 +31,7 @@ describe("access rules", () => {
 
     const delivered = await syncOk(ins, { seq: 10 });
     const cmd = delivered.commands.find((x) => x.type === "access_rule.add")!;
-    expect(cmd).toMatchObject({ effect: "ALLOW", scope: "ALL", target: "203.0.113.7", note: "school network" });
+    expect(cmd).toMatchObject({ effect: "ALLOW", scope: "ALL", target: "203.0.113.7/32", note: "school network" });
 
     await syncOk(ins, { seq: 11, command_results: [{ id: cmd.id, ok: true, message: "Stored rule-1" }] });
     const { rules } = await (await api(cookie, `/networks/${network_id}/rules`)).json<{ rules: { id: string; servers: { state: string }[] }[] }>();
@@ -43,8 +43,28 @@ describe("access rules", () => {
 
     expect((await api(cookie, `/networks/${network_id}/rules/${id}`, { method: "DELETE", json: {} })).status).toBe(200);
     const removal = await syncOk(ins, { seq: 12 });
-    expect(removal.commands.find((x) => x.type === "access_rule.remove")).toMatchObject({ effect: "ALLOW", target: "203.0.113.7" });
+    expect(removal.commands.find((x) => x.type === "access_rule.remove")).toMatchObject({ effect: "ALLOW", target: "203.0.113.7/32" });
     expect((await (await api(cookie, `/networks/${network_id}/rules`)).json<{ rules: unknown[] }>()).rules).toHaveLength(0);
+  });
+
+  it("sends network, provider, country and connection-type rules in the plugin's selector form", async () => {
+    const { ins, cookie, network_id } = await linkedNetwork();
+    for (const target of ["type:tor", "isp: Hetzner Online GmbH", "country:ru", "operator:Fixture VPN"]) {
+      expect((await api(cookie, `/networks/${network_id}/rules`, { json: { effect: "DENY", scope: "VPN", target } })).status).toBe(201);
+    }
+    const delivered = await syncOk(ins, { seq: 20 });
+    expect(delivered.commands.filter((x) => x.type === "access_rule.add").map((x) => (x as { target: string }).target))
+      .toEqual(["type:TOR", "isp:Hetzner Online GmbH", "country:RU", "operator:Fixture VPN"]);
+  });
+
+  it("removes a rule saved before targets were canonical in the form the plugin stored", async () => {
+    const { ins, cookie, network_id } = await linkedNetwork();
+    const { id } = await (await api(cookie, `/networks/${network_id}/rules`, { json: { effect: "ALLOW", scope: "ALL", target: "203.0.113.8" } })).json<{ id: string }>();
+    await env.DB.prepare("UPDATE access_rules SET target = '203.0.113.8' WHERE id = ?").bind(id).run(); // as stored before this change
+    await syncOk(ins, { seq: 30 });
+    expect((await api(cookie, `/networks/${network_id}/rules/${id}`, { method: "DELETE", json: {} })).status).toBe(200);
+    const removal = await syncOk(ins, { seq: 31 });
+    expect(removal.commands.find((x) => x.type === "access_rule.remove")).toMatchObject({ target: "203.0.113.8/32" });
   });
 
   it("rejects invalid targets and viewers", async () => {
@@ -88,7 +108,7 @@ describe("time-limited rules", () => {
     expect(body.expires_at).toBeGreaterThanOrEqual(before + 60 * 60_000 - 1000);
 
     const delivered = await syncOk(ins, { seq: 41 });
-    expect(delivered.commands.find((x) => x.type === "access_rule.add")).toMatchObject({ target: "203.0.113.50", expires_at: body.expires_at });
+    expect(delivered.commands.find((x) => x.type === "access_rule.add")).toMatchObject({ target: "203.0.113.50/32", expires_at: body.expires_at });
     const { rules } = await (await api(cookie, `/networks/${network_id}/rules`)).json<{ rules: { expires_at: number | null }[] }>();
     expect(rules[0]!.expires_at).toBe(body.expires_at);
   });

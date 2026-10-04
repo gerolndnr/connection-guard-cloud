@@ -16,10 +16,10 @@ const outcomeFor: Record<Filter, string | undefined> = { all: undefined, refused
 
 export function RegisterPage() {
   const { networkId } = useParams({ from: "/n/$networkId/register" });
-  const { server } = useSearch({ from: "/n/$networkId/register" });
+  const { server, q: initialQ } = useSearch({ from: "/n/$networkId/register" });
   const [filter, setFilter] = useState<Filter>("all");
-  const [input, setInput] = useState("");
-  const [q, setQ] = useState("");
+  const [input, setInput] = useState(initialQ ?? "");
+  const [q, setQ] = useState(initialQ ?? "");
   const [selected, setSelected] = useState<RegisterEvent | null>(null);
   useEffect(() => { const t = window.setTimeout(() => setQ(input.trim()), 250); return () => window.clearTimeout(t); }, [input]);
   // Only that a search happened; the search text may be an IP address.
