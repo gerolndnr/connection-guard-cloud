@@ -42,6 +42,9 @@
         { "pattern": "app.connectionguard.net", "custom_domain": true },
         { "pattern": "api.connectionguard.net", "custom_domain": true }
       ],
+      // Smart Placement (free): runs the Worker near its D1 database in the EU instead of near the caller, which
+      // saves round trips on every request that reads or writes D1. Set here so a deploy keeps it.
+      "placement": { "mode": "smart" },
       "vars": {
         "ENVIRONMENT": "production",
         "APP_ORIGIN": "https://app.connectionguard.net",
