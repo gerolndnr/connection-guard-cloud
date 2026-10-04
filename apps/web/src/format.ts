@@ -86,3 +86,22 @@ export function explain(e: DecisionEvent): string {
       return "Every check came back clean.";
   }
 }
+
+/** "in 47 min", "in 23 h", "until 11 Oct": when a time-limited rule ends. */
+export function until(t: number, now = Date.now()): string {
+  const min = Math.max(1, Math.round((t - now) / 60_000));
+  if (min < 60) return `in ${min} min`;
+  if (min < 48 * 60) return `in ${Math.round(min / 60)} h`;
+  return `until ${new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
+}
+
+/** Durations offered for time-limited rules, in minutes (null: permanent). */
+export const RULE_DURATIONS: { minutes: number | null; label: string; long: string }[] = [
+  { minutes: 60, label: "1 h", long: "for 1 hour" },
+  { minutes: 24 * 60, label: "24 h", long: "for 24 hours" },
+  { minutes: 7 * 24 * 60, label: "7 days", long: "for 7 days" },
+  { minutes: null, label: "Always", long: "permanently" },
+];
+
+/** Servers that enforce rule expiry themselves (protocol capability "rule_expiry"). */
+export const supportsExpiry = (i: { status: { capabilities?: string[] } | null }) => Boolean(i.status?.capabilities?.includes("rule_expiry"));

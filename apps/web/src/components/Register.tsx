@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Ban, Check, RotateCw, ShieldCheck, X } from "lucide-react";
 import { api, ApiError, type Install, type RegisterEvent, type RuleEffect, type RuleScope } from "../api.ts";
 import { track } from "../analytics.ts";
-import { ago, clock, countryName, day, explain, ms, reasonLabel, serverName, verdict } from "../format.ts";
+import { RULE_DURATIONS, ago, clock, countryName, day, explain, ms, reasonLabel, serverName, supportsExpiry, verdict } from "../format.ts";
 import { VerdictBadge } from "./Badge.tsx";
 
 const trustText: Record<RegisterEvent["identity_trust"], string> = {
@@ -136,7 +136,7 @@ export function WhySheet({ event, installs, onClose, networkId, canManage = fals
           <VerdictBadge verdict={v} />
         </div>
         <p className={`mt-5 rounded-lg border px-4 py-3 text-[0.875rem] leading-relaxed ${tone}`}>{explain(event)}</p>
-        {networkId && canManage && <Fixes key={event.id} event={event} networkId={networkId} playerName={playerName ?? null} servers={installs.length} />}
+        {networkId && canManage && <Fixes key={event.id} event={event} networkId={networkId} playerName={playerName ?? null} installs={installs} />}
 
         <dl className="mt-5 divide-y divide-line border-y border-line text-[0.875rem]">
           <Row label="Mode">{event.mode === "ENFORCE" ? "Enforce" : "Observe (logs only)"}</Row>
@@ -196,7 +196,11 @@ const TRUSTED = new Set<RegisterEvent["identity_trust"]>(["AUTHENTICATED", "PLAT
 type Fix = { key: string; label: string; hint: string; effect: RuleEffect; scope: RuleScope; target: string; icon: "allow" | "block"; tone: "primary" | "secondary" | "danger" };
 
 /** One-click answers to "this was wrong": they become access rules on every server of the network. */
-function Fixes({ event, networkId, playerName, servers }: { event: RegisterEvent; networkId: string; playerName: string | null; servers: number }) {
+function Fixes({ event, networkId, playerName, installs }: { event: RegisterEvent; networkId: string; playerName: string | null; installs: Install[] }) {
+  const servers = installs.length;
+  const expiryServers = installs.filter(supportsExpiry).length;
+  // Letting someone in for a while is the safer default; it needs servers that enforce the end themselves.
+  const [minutes, setMinutes] = useState<number | null>(expiryServers > 0 ? 24 * 60 : null);
   const [busy, setBusy] = useState<string | null>(null);
   const [done, setDone] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -208,8 +212,8 @@ function Fixes({ event, networkId, playerName, servers }: { event: RegisterEvent
   const uuidOk = Boolean(event.uuid) && TRUSTED.has(event.identity_trust);
   const fixes: Fix[] = flagged
     ? [
-      ...(uuidOk ? [{ key: "allow-player", label: `Let ${who} in`, hint: "Always, from any address. Only works while the player's identity is verified.", effect: "ALLOW" as const, scope: "ALL" as const, target: event.uuid!, icon: "allow" as const, tone: "primary" as const }] : []),
-      { key: "allow-ip", label: "Allow this IP address", hint: "Everyone connecting from it skips the checks.", effect: "ALLOW", scope: "ALL", target: event.ip, icon: "allow", tone: uuidOk ? "secondary" : "primary" },
+      ...(uuidOk ? [{ key: "allow-player", label: `Let ${who} in`, hint: `${minutes ? (RULE_DURATIONS.find((d) => d.minutes === minutes)?.long ?? "").replace(/^for/, "For") : "Always"}, from any address. Only works while the player's identity is verified.`, effect: "ALLOW" as const, scope: "ALL" as const, target: event.uuid!, icon: "allow" as const, tone: "primary" as const }] : []),
+      { key: "allow-ip", label: "Allow this IP address", hint: minutes ? "Everyone connecting from it skips the checks until the time is up." : "Everyone connecting from it skips the checks.", effect: "ALLOW", scope: "ALL", target: event.ip, icon: "allow", tone: uuidOk ? "secondary" : "primary" },
       ...(asn && event.flags.includes("VPN") ? [{ key: "trust-asn", label: `Trust AS${asn.asn}${isp ? ` (${isp})` : ""} for VPN checks`, hint: "For a home or school provider that detection services wrongly list.", effect: "EXEMPT" as const, scope: "VPN" as const, target: `ASN:${asn.asn}`, icon: "allow" as const, tone: "secondary" as const }] : []),
     ]
     : [
@@ -220,10 +224,14 @@ function Fixes({ event, networkId, playerName, servers }: { event: RegisterEvent
   const run = async (f: Fix) => {
     if (f.effect === "DENY" && confirm !== f.key) { setConfirm(f.key); return; }
     setBusy(f.key); setConfirm(null);
+    const limited = f.effect !== "DENY" ? minutes : null;
     try {
-      const res = await api.addRule(networkId, { effect: f.effect, scope: f.scope, target: f.target, note: playerName ? `from decision: ${playerName}` : "from decision" });
-      setDone((d) => ({ ...d, [f.key]: res.duplicate ? "Already a rule." : `Sent to ${res.servers ?? servers} ${(res.servers ?? servers) === 1 ? "server" : "servers"}. Applies within a minute.` }));
-      track("decision_fix", { fix: f.key, verdict: v });
+      const res = await api.addRule(networkId, { effect: f.effect, scope: f.scope, target: f.target, note: playerName ? `from decision: ${playerName}` : "from decision", expires_in_minutes: limited });
+      const n = res.servers ?? servers;
+      const span = limited ? ` ${RULE_DURATIONS.find((d) => d.minutes === limited)?.long ?? ""}` : "";
+      setDone((d) => ({ ...d, [f.key]: res.duplicate ? "Already a rule. Remove it under Network to change it."
+        : `Done${span}, on ${n} ${n === 1 ? "server" : "servers"}. Applies within a minute.${res.skipped ? ` Not sent to ${res.skipped} older ${res.skipped === 1 ? "server" : "servers"} that can't end it on time.` : ""}` }));
+      track("decision_fix", { fix: f.key, verdict: v, minutes: limited });
     } catch (err) {
       setDone((d) => ({ ...d, [f.key]: err instanceof ApiError ? "Could not save this rule." : "No connection. Try again." }));
     } finally { setBusy(null); }
@@ -237,7 +245,14 @@ function Fixes({ event, networkId, playerName, servers }: { event: RegisterEvent
 
   return (
     <section className="mt-5" aria-label="Fix this decision">
-      <h3 className="mb-2 text-sm font-medium">{flagged ? "Was this wrong?" : "Should this player be kept out?"}</h3>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-medium">{flagged ? "Was this wrong?" : "Should this player be kept out?"}</h3>
+        {flagged && expiryServers > 0 && (
+          <div role="group" aria-label="How long" className="segmented">
+            {RULE_DURATIONS.map((d) => <button key={d.label} type="button" aria-pressed={minutes === d.minutes} onClick={() => setMinutes(d.minutes)}>{d.label}</button>)}
+          </div>
+        )}
+      </div>
       <ul className="space-y-2">
         {fixes.map((f) => (
           <li key={f.key}>
@@ -265,7 +280,10 @@ function Fixes({ event, networkId, playerName, servers }: { event: RegisterEvent
               </button>}
         </li>
       </ul>
-      <p className="mt-2 text-[0.75rem] text-fg-3">Rules you add here are listed under Network, where you can remove them.</p>
+      <p className="mt-2 text-[0.75rem] text-fg-3">
+        Rules you add here are listed under Network, where you can remove them.
+        {flagged && expiryServers === 0 && " Letting someone in for a limited time needs a newer Connection Guard on your servers."}
+      </p>
     </section>
   );
 }

@@ -43,6 +43,7 @@ export const syncRequest: SyncRequest = {
     providers: [{ id: "proxycheck", scope: "VPN", attempts: 40, successes: 39, last_reason: "TIMEOUT", paused: false,
       daily_used: 40, daily_budget: 1000 }],
     warnings: ["mode.observe"],
+    capabilities: ["rule_expiry"],
     config_version: null,
     cache_type: "SQLITE",
     buffered_events: 0,
@@ -78,6 +79,9 @@ export const syncResponse: SyncResponse = {
   accept_events: true,
   commands: [
     { id: "cmd_abcdefghijkl", type: "access_rule.add", effect: "ALLOW", scope: "VPN", target: "203.0.113.24", note: "dashboard" },
+    // Time-limited: let a verified player in for one hour (2026-10-04 16:00 UTC).
+    { id: "cmd_mnopqrstuvwx", type: "access_rule.add", effect: "ALLOW", scope: "ALL", target: "069a79f4-44e9-4726-a5be-fca90e38aaf5",
+      note: "dashboard: from decision", expires_at: 1791129600000 },
   ],
   config: {
     version: 2,

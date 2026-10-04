@@ -1,6 +1,7 @@
 // Network tools for the dashboard: access rules, team and invites, Discord alerts, activity, deletion.
 import type { Context, Hono } from "hono";
 import { z } from "zod";
+import { CAPABILITY, type Status } from "@cg/protocol";
 import type { AppEnv, Env } from "./env.ts";
 import { audit, canManage, roleIn, type Role } from "./access.ts";
 import { capture } from "./analytics.ts";
@@ -36,7 +37,22 @@ const RuleBody = z.object({
   scope: z.enum(["VPN", "GEO", "ALL"]),
   target: z.string().min(2).max(64),
   note: z.string().trim().max(100).nullable().optional(),
+  /** Time-limited rule: 5 minutes to 30 days. Absent or null: permanent. */
+  expires_in_minutes: z.number().int().min(5).max(30 * 24 * 60).nullable().optional(),
 });
+
+/** Servers report what they understand; time-limited rules only go to those that enforce the expiry. */
+const capable = (statusJson: string | null) => {
+  try { return Boolean(statusJson && (JSON.parse(statusJson) as Status).capabilities?.includes(CAPABILITY.RULE_EXPIRY)); } catch { return false; }
+};
+
+async function networkInstalls(env: Env, networkId: string) {
+  return (await env.DB.prepare("SELECT id, status_json FROM installs WHERE network_id = ?").bind(networkId).all<{ id: string; status_json: string | null }>()).results
+    .map((r) => ({ id: r.id, expiry: capable(r.status_json) }));
+}
+
+const addPayload = (r: { effect: string; scope: string; target: string; note: string | null; expires_at: number | null }) =>
+  ({ type: "access_rule.add", effect: r.effect, scope: r.scope, target: r.target, note: r.note, ...(r.expires_at ? { expires_at: r.expires_at } : {}) });
 
 async function claimedInstalls(env: Env, networkId: string) {
   return (await env.DB.prepare("SELECT id FROM installs WHERE network_id = ?").bind(networkId).all<{ id: string }>()).results.map((r) => r.id);
@@ -50,9 +66,11 @@ function commandStatements(env: Env, installs: string[], payload: Record<string,
 
 /** Rules added before a server joined the network are sent to it when it joins. */
 export async function rulesForNewInstall(env: Env, networkId: string, installId: string, now: number) {
-  const rules = (await env.DB.prepare("SELECT id, effect, scope, target, note FROM access_rules WHERE network_id = ? AND removed_at IS NULL")
-    .bind(networkId).all<{ id: string; effect: string; scope: string; target: string; note: string | null }>()).results;
-  return rules.flatMap((r) => commandStatements(env, [installId], { type: "access_rule.add", effect: r.effect, scope: r.scope, target: r.target, note: r.note }, null, r.id, now));
+  const rules = (await env.DB.prepare("SELECT id, effect, scope, target, note, expires_at FROM access_rules WHERE network_id = ? AND removed_at IS NULL AND (expires_at IS NULL OR expires_at > ?)")
+    .bind(networkId, now).all<{ id: string; effect: string; scope: string; target: string; note: string | null; expires_at: number | null }>()).results;
+  const status = await env.DB.prepare("SELECT status_json FROM installs WHERE id = ?").bind(installId).first<{ status_json: string | null }>();
+  const expiry = capable(status?.status_json ?? null);
+  return rules.filter((r) => !r.expires_at || expiry).flatMap((r) => commandStatements(env, [installId], addPayload(r), null, r.id, now));
 }
 
 // ---- deletion ------------------------------------------------------------------
@@ -97,9 +115,9 @@ export function registerNetwork(app: Hono<AppEnv>) {
     const id = c.req.param("id");
     if (!(await memberOr404(c, id, "member"))) return c.json({ error: "not_found" }, 404);
     const rules = (await c.env.DB.prepare(
-      `SELECT r.id, r.effect, r.scope, r.target, r.note, r.created_at, u.name AS created_by_name FROM access_rules r
-       LEFT JOIN users u ON u.id = r.created_by WHERE r.network_id = ? AND r.removed_at IS NULL ORDER BY r.created_at DESC`,
-    ).bind(id).all<{ id: string; effect: string; scope: string; target: string; note: string | null; created_at: number; created_by_name: string | null }>()).results;
+      `SELECT r.id, r.effect, r.scope, r.target, r.note, r.created_at, r.expires_at, u.name AS created_by_name FROM access_rules r
+       LEFT JOIN users u ON u.id = r.created_by WHERE r.network_id = ? AND r.removed_at IS NULL AND (r.expires_at IS NULL OR r.expires_at > ?) ORDER BY r.created_at DESC`,
+    ).bind(id, Date.now()).all<{ id: string; effect: string; scope: string; target: string; note: string | null; created_at: number; expires_at: number | null; created_by_name: string | null }>()).results;
     const commands = rules.length ? (await c.env.DB.prepare(
       `SELECT rule_id, install_id, delivered_at, completed_at, result_ok, result_message FROM commands
        WHERE rule_id IN (${rules.map(() => "?").join(",")}) ORDER BY created_at`,
@@ -125,24 +143,30 @@ export function registerNetwork(app: Hono<AppEnv>) {
     if (!body.success) return c.json({ error: "bad_request" }, 400);
     const target = ruleTarget(body.data.target);
     if (!target) return c.json({ error: "invalid_target", message: "Use an IP address or range, a player UUID or an ASN like AS3320." }, 422);
-    const existing = await env.DB.prepare("SELECT id FROM access_rules WHERE network_id = ? AND target = ? AND effect = ? AND scope = ? AND removed_at IS NULL")
-      .bind(id, target, body.data.effect, body.data.scope).first<{ id: string }>();
-    if (existing) return c.json({ id: existing.id, duplicate: true });
     const now = Date.now();
+    const existing = await env.DB.prepare("SELECT id FROM access_rules WHERE network_id = ? AND target = ? AND effect = ? AND scope = ? AND removed_at IS NULL AND (expires_at IS NULL OR expires_at > ?)")
+      .bind(id, target, body.data.effect, body.data.scope, now).first<{ id: string }>();
+    if (existing) return c.json({ id: existing.id, duplicate: true });
     const ruleId = newId("rul");
-    const installs = await claimedInstalls(env, id);
+    const expiresAt = body.data.expires_in_minutes ? now + body.data.expires_in_minutes * 60_000 : null;
+    const all = await networkInstalls(env, id);
+    // A time-limited rule must not reach a plugin that would ignore the expiry and keep the rule forever.
+    const installs = (expiresAt ? all.filter((i) => i.expiry) : all).map((i) => i.id);
+    if (expiresAt && installs.length === 0) {
+      return c.json({ error: "rule_expiry_unsupported", message: "Time-limited rules need a newer Connection Guard on your servers." }, 409);
+    }
     const note = body.data.note || null;
     await env.DB.batch([
-      env.DB.prepare("INSERT INTO access_rules (id, network_id, effect, scope, target, note, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-        .bind(ruleId, id, body.data.effect, body.data.scope, target, note, user.id, now),
-      ...commandStatements(env, installs, { type: "access_rule.add", effect: body.data.effect, scope: body.data.scope, target, note }, user.id, ruleId, now),
+      env.DB.prepare("INSERT INTO access_rules (id, network_id, effect, scope, target, note, created_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(ruleId, id, body.data.effect, body.data.scope, target, note, user.id, now, expiresAt),
+      ...commandStatements(env, installs, addPayload({ effect: body.data.effect, scope: body.data.scope, target, note, expires_at: expiresAt }), user.id, ruleId, now),
       env.DB.prepare("UPDATE networks SET watched_until = ? WHERE id = ?").bind(now + WATCH_WINDOW, id),
       env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, 'rule.added', ?, ?)")
         .bind(id, user.id, JSON.stringify({ rule_id: ruleId, effect: body.data.effect, scope: body.data.scope }), now),
     ]);
     const kind = target.startsWith("asn:") || target.startsWith("ASN:") ? "asn" : UUID.test(target) ? "player" : target.includes("/") ? "range" : "ip";
-    capture(c, { event: "rule_added", distinct_id: user.id, groups: { network: id }, properties: { effect: body.data.effect, scope: body.data.scope, kind, servers: installs.length } });
-    return c.json({ id: ruleId, servers: installs.length }, 201);
+    capture(c, { event: "rule_added", distinct_id: user.id, groups: { network: id }, properties: { effect: body.data.effect, scope: body.data.scope, kind, servers: installs.length, minutes: body.data.expires_in_minutes ?? null } });
+    return c.json({ id: ruleId, servers: installs.length, skipped: all.length - installs.length, expires_at: expiresAt }, 201);
   });
 
   app.delete("/networks/:id/rules/:ruleId", async (c) => {

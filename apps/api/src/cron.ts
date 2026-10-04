@@ -20,6 +20,8 @@ export async function runMaintenance(env: Env, now = Date.now()) {
     env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(now),
     // Commands of active access rules stay: they show on which servers the rule is in place.
     env.DB.prepare("DELETE FROM commands WHERE completed_at IS NOT NULL AND completed_at < ? AND (rule_id IS NULL OR rule_id IN (SELECT id FROM access_rules WHERE removed_at IS NOT NULL))").bind(now - 30 * DAY),
+    // Expired time-limited rules: the plugin already dropped them; here they stop counting as active.
+    env.DB.prepare("UPDATE access_rules SET removed_at = expires_at WHERE removed_at IS NULL AND expires_at IS NOT NULL AND expires_at <= ?").bind(now),
     env.DB.prepare("DELETE FROM access_rules WHERE removed_at IS NOT NULL AND removed_at < ?").bind(now - 30 * DAY),
     env.DB.prepare("DELETE FROM invites WHERE expires_at < ?").bind(now - DAY),
   ]);

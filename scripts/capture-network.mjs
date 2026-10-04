@@ -22,6 +22,7 @@ for (const [n, vp, m] of [["desktop", { width: 1440, height: 900 }, false], ["mo
   await p.getByRole("button", { name: "Refused" }).click(); await p.waitForTimeout(800);
   await p.locator("tbody button").first().click(); await p.waitForTimeout(500);
   await p.screenshot({ path: `${out}/fixes-${n}.png` });
+  await p.getByRole("button", { name: "1 h", exact: true }).click().catch(() => {});
   await p.getByRole("button", { name: /Allow this IP address/ }).click(); await p.waitForTimeout(800);
   await p.screenshot({ path: `${out}/fixes-done-${n}.png` });
   await p.getByRole("button", { name: "Close" }).click();

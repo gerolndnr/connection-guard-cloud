@@ -5,11 +5,11 @@ import { Check, Copy, LoaderCircle, Trash2 } from "lucide-react";
 import { api, ApiError, type AccessRuleView, type AlertKind, type NetworkView, type Role, type RuleEffect, type RuleScope } from "../api.ts";
 import { Shell, useMe } from "../components/Shell.tsx";
 import { Row, Section, Switch } from "../components/Form.tsx";
-import { ago, num, serverName } from "../format.ts";
+import { RULE_DURATIONS, ago, num, serverName, supportsExpiry, until } from "../format.ts";
 import { usePlayerNames } from "../players.ts";
 import { track } from "../analytics.ts";
 
-const effectText: Record<RuleEffect, string> = { ALLOW: "Always let in", DENY: "Always refuse", EXEMPT: "Skip checks" };
+const effectText: Record<RuleEffect, string> = { ALLOW: "Let in", DENY: "Refuse", EXEMPT: "Skip checks" };
 const scopeText: Record<RuleScope, string> = { ALL: "all checks", VPN: "VPN checks", GEO: "country checks" };
 const stateText = { pending: "waiting for the server", delivered: "sent", applied: "in place", failed: "failed" } as const;
 
@@ -53,19 +53,22 @@ function Rules({ networkId, view, manage }: { networkId: string; view: NetworkVi
   const [effect, setEffect] = useState<RuleEffect>("ALLOW");
   const [scope, setScope] = useState<RuleScope>("ALL");
   const [note, setNote] = useState("");
+  const [minutes, setMinutes] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const serverNames = new Map(view.installs.map((i) => [i.id, serverName(i)]));
+  const expiryOk = view.installs.some(supportsExpiry);
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true); setError(null);
     try {
-      await api.addRule(networkId, { effect, scope, target: target.trim(), note: note.trim() || null });
+      await api.addRule(networkId, { effect, scope, target: target.trim(), note: note.trim() || null, expires_in_minutes: minutes });
       setTarget(""); setNote("");
       await qc.invalidateQueries({ queryKey: ["rules", networkId] });
     } catch (err) {
-      setError(err instanceof ApiError && err.code === "invalid_target" ? "Use an IP address or range (203.0.113.0/24), a player UUID or an ASN like AS3320." : "The rule could not be saved.");
+      setError(err instanceof ApiError && err.code === "invalid_target" ? "Use an IP address or range (203.0.113.0/24), a player UUID or an ASN like AS3320."
+        : err instanceof ApiError && err.code === "rule_expiry_unsupported" ? "Your servers can't end a rule on time yet. Choose Always, or update Connection Guard." : "The rule could not be saved.");
     } finally { setBusy(false); }
   };
   const remove = async (r: AccessRuleView) => {
@@ -74,7 +77,7 @@ function Rules({ networkId, view, manage }: { networkId: string; view: NetworkVi
   };
 
   return (
-    <Section id="rules" title="Access rules" description="Always let in or always refuse a player, an address or a provider network, on every server of this network. Rules you add from a decision show up here.">
+    <Section id="rules" title="Access rules" description="Let in or refuse a player, an address or a provider network on every server of this network, permanently or for a while. Rules you add from a decision show up here.">
       {rules.data && rules.data.rules.length > 0 ? (
         <ul className="ph-no-capture divide-y divide-line">
           {rules.data.rules.map((r) => (
@@ -83,6 +86,7 @@ function Rules({ networkId, view, manage }: { networkId: string; view: NetworkVi
                 <p className="truncate font-medium">{targetLabel(r.target, names)}</p>
                 <p className="text-[0.8125rem] text-fg-2">
                   <span className={r.effect === "DENY" ? "text-danger-text" : "text-accent-text"}>{effectText[r.effect]}</span> · {scopeText[r.scope]}
+                  {r.expires_at ? <span className="text-warn-text"> · ends {until(r.expires_at)}</span> : " · permanent"}
                   {r.note ? ` · ${r.note}` : ""}
                 </p>
                 <p className="mt-0.5 text-[0.75rem] text-fg-3">
@@ -108,6 +112,14 @@ function Rules({ networkId, view, manage }: { networkId: string; view: NetworkVi
             {(Object.keys(scopeText) as RuleScope[]).map((k) => <option key={k} value={k}>For {scopeText[k]}</option>)}
           </select>
           <input className="input" placeholder="Note (optional)" value={note} maxLength={100} onChange={(e) => setNote(e.target.value)} />
+          {expiryOk && (
+            <label className="flex items-center gap-2 text-[0.8125rem] text-fg-2 sm:col-span-3">
+              How long
+              <select className="input h-8 w-auto text-[0.8125rem]" value={minutes ?? ""} onChange={(e) => setMinutes(e.target.value ? Number(e.target.value) : null)}>
+                {RULE_DURATIONS.map((d) => <option key={d.label} value={d.minutes ?? ""}>{d.minutes ? d.long.replace(/^for /, "") : "Always"}</option>)}
+              </select>
+            </label>
+          )}
           <div className="flex items-center gap-3 sm:col-span-3">
             <button type="submit" className="btn btn-primary" disabled={busy || !target.trim()}>{busy ? "Adding…" : "Add rule"}</button>
             {error && <p role="alert" className="text-[0.8125rem] text-danger-text">{error}</p>}

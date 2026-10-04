@@ -56,6 +56,8 @@ export type RuleEffect = "ALLOW" | "DENY" | "EXEMPT";
 export type RuleScope = "VPN" | "GEO" | "ALL";
 export interface AccessRuleView {
   id: string; effect: RuleEffect; scope: RuleScope; target: string; note: string | null; created_at: number; created_by_name: string | null;
+  /** Epoch ms when the rule ends; null: permanent. */
+  expires_at: number | null;
   servers: { install_id: string; state: "pending" | "delivered" | "applied" | "failed"; message: string | null }[];
 }
 export interface Member { id: string; name: string; avatar: string | null; role: Role; created_at: number; you: boolean }
@@ -92,8 +94,8 @@ export const api = {
 
   // Writes always carry a JSON body: the API refuses state changes without one (CSRF protection).
   rules: (networkId: string) => request<{ rules: AccessRuleView[] }>(`/networks/${networkId}/rules`),
-  addRule: (networkId: string, body: { effect: RuleEffect; scope: RuleScope; target: string; note?: string | null }) =>
-    request<{ id: string; servers?: number; duplicate?: boolean }>(`/networks/${networkId}/rules`, { json: body }),
+  addRule: (networkId: string, body: { effect: RuleEffect; scope: RuleScope; target: string; note?: string | null; expires_in_minutes?: number | null }) =>
+    request<{ id: string; servers?: number; skipped?: number; expires_at?: number | null; duplicate?: boolean }>(`/networks/${networkId}/rules`, { json: body }),
   removeRule: (networkId: string, ruleId: string) => request<{ ok: true }>(`/networks/${networkId}/rules/${ruleId}`, { method: "DELETE", json: {} }),
   recheck: (networkId: string, ip: string) => request<{ ok: true; servers: number }>(`/networks/${networkId}/recheck`, { json: { ip } }),
   players: (uuids: string[]) => request<{ names: Record<string, string | null> }>(`/players?uuids=${uuids.join(",")}`),

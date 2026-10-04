@@ -71,6 +71,46 @@ describe("access rules", () => {
   });
 });
 
+describe("time-limited rules", () => {
+  it("are only sent to servers that enforce the expiry", async () => {
+    const { ins, cookie, network_id } = await linkedNetwork();
+    // Not synced yet: the server has not said it understands expiry.
+    const refused = await api(cookie, `/networks/${network_id}/rules`, { json: { effect: "ALLOW", scope: "ALL", target: "203.0.113.50", expires_in_minutes: 60 } });
+    expect(refused.status).toBe(409);
+    expect((await refused.json<{ error: string }>()).error).toBe("rule_expiry_unsupported");
+
+    await syncOk(ins, { seq: 40 }); // the example status reports capabilities: ["rule_expiry"]
+    const before = Date.now();
+    const res = await api(cookie, `/networks/${network_id}/rules`, { json: { effect: "ALLOW", scope: "ALL", target: "203.0.113.50", expires_in_minutes: 60 } });
+    expect(res.status).toBe(201);
+    const body = await res.json<{ servers: number; skipped: number; expires_at: number }>();
+    expect(body).toMatchObject({ servers: 1, skipped: 0 });
+    expect(body.expires_at).toBeGreaterThanOrEqual(before + 60 * 60_000 - 1000);
+
+    const delivered = await syncOk(ins, { seq: 41 });
+    expect(delivered.commands.find((x) => x.type === "access_rule.add")).toMatchObject({ target: "203.0.113.50", expires_at: body.expires_at });
+    const { rules } = await (await api(cookie, `/networks/${network_id}/rules`)).json<{ rules: { expires_at: number | null }[] }>();
+    expect(rules[0]!.expires_at).toBe(body.expires_at);
+  });
+
+  it("permanent rules carry no expires_at, so older plugins see the same command as before", async () => {
+    const { ins, cookie, network_id } = await linkedNetwork();
+    await api(cookie, `/networks/${network_id}/rules`, { json: { effect: "DENY", scope: "ALL", target: "198.51.100.77" } });
+    const res = await syncOk(ins, { seq: 50 });
+    expect(res.commands.find((x) => x.type === "access_rule.add")).not.toHaveProperty("expires_at");
+  });
+
+  it("disappear once expired", async () => {
+    const { ins, cookie, network_id } = await linkedNetwork();
+    await syncOk(ins, { seq: 60 });
+    const { id } = await (await api(cookie, `/networks/${network_id}/rules`, { json: { effect: "ALLOW", scope: "ALL", target: "203.0.113.60", expires_in_minutes: 5 } })).json<{ id: string }>();
+    await env.DB.prepare("UPDATE access_rules SET expires_at = ? WHERE id = ?").bind(Date.now() - 1000, id).run();
+    expect((await (await api(cookie, `/networks/${network_id}/rules`)).json<{ rules: unknown[] }>()).rules).toHaveLength(0);
+    // An expired rule no longer blocks adding the same rule again.
+    expect((await api(cookie, `/networks/${network_id}/rules`, { json: { effect: "ALLOW", scope: "ALL", target: "203.0.113.60", expires_in_minutes: 5 } })).status).toBe(201);
+  });
+});
+
 describe("team", () => {
   it("invites a member once, and protects the last owner", async () => {
     const { cookie: owner, network_id } = await linkedNetwork("Owner");

@@ -30,6 +30,16 @@ export const DetectionReason = z.enum(["NONE", "TIMEOUT", "RATE_LIMIT", "HTTP_ER
   "NETWORK", "OVERLOADED", "CIRCUIT_OPEN", "BUDGET_EXHAUSTED", "NO_PROVIDER", "CACHE_ERROR", "CANCELLED", "NO_EVIDENCE", "STALE_DATA"]);
 
 const SourceId = z.string().regex(/^[a-z][a-z0-9-]{0,31}$/);
+
+/**
+ * Features a plugin understands beyond protocol 1. The dashboard only uses a feature with servers that report it,
+ * because older plugins ignore unknown fields: a time-limited rule would otherwise become permanent.
+ */
+export const CAPABILITY = {
+  /** `access_rule.add` honours `expires_at` and removes the rule by itself when it expires. */
+  RULE_EXPIRY: "rule_expiry",
+} as const;
+export const Capability = z.string().regex(/^[a-z][a-z0-9_.-]{0,31}$/);
 const CountryCode = z.string().regex(/^[A-Z]{2}$/);
 const Ip = z.string().min(2).max(45).regex(/^[0-9a-fA-F:.]+$/);
 
@@ -81,6 +91,8 @@ export const Status = z.object({
   config: ConfigSnapshot.nullable(),
   managed: z.array(z.string()).max(64),
   config_result: ConfigResult.nullable(),
+  // Absent on plugins that predate capabilities; treat as none.
+  capabilities: z.array(Capability).max(16).optional(),
 }).strict();
 export type Status = z.infer<typeof Status>;
 
@@ -168,7 +180,10 @@ export type SyncRequest = z.infer<typeof SyncRequest>;
 // the closed set below; anything else is rejected client side.
 export const Command = z.discriminatedUnion("type", [
   z.object({ id: CommandResult.shape.id, type: z.literal("access_rule.add"), effect: Effect, scope: Scope,
-    target: z.string().min(1).max(64), note: z.string().max(128).nullable() }).strict(),
+    target: z.string().min(1).max(64), note: z.string().max(128).nullable(),
+    // Epoch milliseconds (UTC) after which the plugin removes the rule. Null or absent: permanent. Only sent to
+    // servers that report CAPABILITY.RULE_EXPIRY; a plugin must ignore a rule whose expires_at is already past.
+    expires_at: z.number().int().positive().nullable().optional() }).strict(),
   z.object({ id: CommandResult.shape.id, type: z.literal("access_rule.remove"), effect: Effect,
     target: z.string().min(1).max(64) }).strict(),
   z.object({ id: CommandResult.shape.id, type: z.literal("cache.clear"), ip: Ip.nullable() }).strict(),

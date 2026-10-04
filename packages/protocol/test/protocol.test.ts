@@ -14,6 +14,15 @@ describe("protocol v1", () => {
     expect(SyncRequest.safeParse({ ...syncRequest, events: [{ ...syncRequest.events[0], name: "Notch" }] }).success).toBe(false);
   });
 
+  it("accepts time-limited rules and capabilities", () => {
+    const add = { id: "cmd_abcdefghijkl", type: "access_rule.add", effect: "ALLOW", scope: "ALL", target: "203.0.113.1", note: null };
+    expect(Command.safeParse({ ...add, expires_at: 1791129600000 }).success).toBe(true);
+    expect(Command.safeParse({ ...add, expires_at: null }).success).toBe(true);
+    expect(Command.safeParse(add).success).toBe(true);
+    expect(Command.safeParse({ ...add, expires_at: -1 }).success).toBe(false);
+    expect(Command.safeParse({ ...add, expires_at: "1h" }).success).toBe(false);
+  });
+
   it("only knows a closed set of commands", () => {
     expect(Command.safeParse({ id: "cmd_abcdefghijkl", type: "console.execute", command: "op x" }).success).toBe(false);
   });
