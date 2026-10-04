@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "../api.ts";
 import { TopNav } from "./TopNav.tsx";
+import { Announcement } from "./Announcement.tsx";
 
 export function useMe() {
   return useQuery({
@@ -22,6 +23,7 @@ export function Shell({ networkId, children }: { networkId?: string; children: R
   return (
     <div className="min-h-dvh" data-shell>
       <TopNav me={me.data ?? undefined} networkId={networkId} />
+      <Announcement />
       <main className="mx-auto max-w-[1200px] px-4 pb-24 pt-8 sm:px-6">{children}</main>
       <footer className="mx-auto flex max-w-[1200px] flex-wrap gap-x-4 gap-y-1 border-t border-line px-4 py-5 text-[0.75rem] text-fg-3 sm:px-6">
         <a href="https://connectionguard.net/impressum" lang="de" className="no-underline hover:text-fg">Impressum</a>

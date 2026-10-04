@@ -70,8 +70,9 @@ const toc: [string, string][] = [
 
   <h3 id="konto">3.3 Konto, Netzwerke und Server</h3>
   <p>Wir speichern, was Sie eingeben oder was bei der Nutzung entsteht: Namen von Netzwerken und Servern, Ihre Rolle im jeweiligen Netzwerk, den Zeitpunkt, zu dem Sie den Auftragsverarbeitungsvertrag akzeptiert haben, die Einstellungen, die Sie an Ihre Server senden, und ein Protokoll, wer wann was geändert hat. Eingegebene API-Schlüssel und Webhook-Adressen speichern wir nur verschlüsselt und nur so lange, bis Ihr Server den Empfang bestätigt; danach werden sie aus unseren Systemen gelöscht. Außerdem verarbeitet das Dashboard die Daten, die verknüpfte Server senden (Abschnitt 4.2).</p>
+  <p><strong>Team:</strong> Mitglieder eines Netzwerks sehen gegenseitig Discord-Anzeigenamen, Profilbild und Rolle. Einladungslinks gelten einmal für 7 Tage; wir speichern nur einen Hashwert davon. <strong>Discord-Benachrichtigungen:</strong> Wenn Sie einen Discord-Webhook verbinden, speichern wir dessen Adresse verschlüsselt und senden Benachrichtigungen dorthin. Diese enthalten Servernamen und Zahlen, niemals Spielerdaten.</p>
   <p>Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO. Das Änderungsprotokoll dient zusätzlich unserem berechtigten Interesse an Sicherheit und Nachvollziehbarkeit (Art. 6 Abs. 1 lit. f DSGVO).</p>
-  <p>Speicherdauer: Anmeldesitzungen enden nach 30 Tagen. Konto, Netzwerkdaten und Änderungsprotokoll bleiben gespeichert, solange Sie das Dashboard nutzen. Wenn Sie Ihr Konto löschen lassen möchten, schreiben Sie an <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a>; wir löschen es dann innerhalb eines Monats.</p>
+  <p>Speicherdauer: Anmeldesitzungen enden nach 30 Tagen. Konto, Netzwerkdaten und Änderungsprotokoll bleiben gespeichert, solange Sie das Dashboard nutzen. Unter „Account and data“ und auf der Netzwerkseite können Sie Ihre Daten herunterladen und ein Netzwerk oder Ihr gesamtes Konto selbst löschen; die Löschung erfolgt sofort. Sie können auch an <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a> schreiben; wir löschen dann innerhalb eines Monats.</p>
 
   <h3 id="nutzungsanalyse">3.4 Nutzungsanalyse (PostHog)</h3>
   <p>Um das Dashboard zu verbessern, erfassen wir mit PostHog (EU) wie in Abschnitt 2.3, wie es genutzt wird, hier jedoch Ihrem Konto zugeordnet. So sehen wir, wo die Einrichtung eines Servers scheitert.</p>
@@ -95,6 +96,7 @@ const toc: [string, string][] = [
 
   <h3 id="verknuepft">4.2 Verknüpfte Server: Verarbeitung im Auftrag des Serverbetreibers</h3>
   <p>Nachdem ein Serverbetreiber einen Server verknüpft und den Auftragsverarbeitungsvertrag akzeptiert hat, sendet das Plugin zusätzlich einen Eintrag je Anmeldeprüfung. Jeder Eintrag enthält den Zeitpunkt, die IP-Adresse und die verifizierte UUID des Spielers, das Ergebnis mit Grund und die Antworten der Erkennungsdienste (Land, Netzwerk, Anbieter, Risiko). Diese Daten verarbeiten wir <strong>ausschließlich im Auftrag und nach Weisung des Serverbetreibers</strong> (Art. 28 DSGVO), der dafür Verantwortlicher ist, auf Grundlage unseres <a href="/avv">Auftragsverarbeitungsvertrags</a>. Fragen zu diesen Daten richten Spieler bitte an den Betreiber des Servers, auf dem sie gespielt haben; wir unterstützen Betreiber bei der Beantwortung.</p>
+  <p>Damit statt UUIDs Spielernamen angezeigt werden, fragt das Dashboard den öffentlichen Minecraft-Profilnamen zu einer UUID bei der Mojang AB (Schweden) ab; die Suche nach einem Namen fragt umgekehrt die passende UUID ab. Namen werden bis zu 24 Stunden im Cache von Cloudflare zwischengespeichert und nicht in unserer Datenbank gespeichert. Zugriffsregeln, die der Betreiber anlegt, können die UUID oder IP-Adresse eines Spielers enthalten; sie werden nach demselben Vertrag verarbeitet.</p>
   <p>Speicherdauer: Einträge werden nach 30 Tagen gelöscht, stündliche Summen nach 13 Monaten. Wird ein Server entknüpft, werden seine Einträge sofort gelöscht.</p>
 
   <h3 id="produktstatistik">4.3 Produktstatistik über Server</h3>
@@ -107,7 +109,8 @@ const toc: [string, string][] = [
   <ul>
     <li><strong>Cloudflare, Inc.</strong>: Hosting, Auslieferung, Sicherheit, Datenbanken (Dashboard-Daten werden in der EU gespeichert), E-Mail-Weiterleitung. Auftragsverarbeiter.</li>
     <li><strong>PostHog Inc.</strong>: Produktanalyse, gehostet in der EU. Auftragsverarbeiter.</li>
-    <li><strong>Discord Inc.</strong>: Anmeldung. Eigener Verantwortlicher.</li>
+    <li><strong>Discord Inc.</strong>: Anmeldung und Benachrichtigungen an von Ihnen verbundene Webhooks. Eigener Verantwortlicher.</li>
+    <li><strong>Mojang AB</strong> (Schweden): Abfrage öffentlicher Minecraft-Spielernamen zu UUIDs. Eigener Verantwortlicher.</li>
   </ul>
   <p>Mit unseren Auftragsverarbeitern haben wir Verträge zur Auftragsverarbeitung geschlossen. Darüber hinaus geben wir Daten nur weiter, wenn wir gesetzlich dazu verpflichtet sind.</p>
 

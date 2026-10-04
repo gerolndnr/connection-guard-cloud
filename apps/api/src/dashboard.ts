@@ -8,22 +8,11 @@ import { requireUser, sameOrigin } from "./auth.ts";
 import { DAY, HOUR, gunzipJson, mergeCounts, newId, newNetworkToken, normalizeLinkCode, sha256Hex } from "./util.ts";
 import { verifyTurnstile } from "./turnstile.ts";
 import { registerSettings } from "./settings.ts";
+import { audit, canManage, roleIn, type Role } from "./access.ts";
+import { registerNetwork, rulesForNewInstall } from "./network.ts";
+import { isPlayerName, uuidForName } from "./players.ts";
 
-type Role = "owner" | "admin" | "viewer";
 const ONLINE_WINDOW = 20 * 60_000;
-
-async function roleIn(env: Env, networkId: string, userId: string): Promise<Role | null> {
-  const row = await env.DB.prepare("SELECT role FROM memberships WHERE network_id = ? AND user_id = ?")
-    .bind(networkId, userId).first<{ role: Role }>();
-  return row?.role ?? null;
-}
-
-const canManage = (role: Role | null) => role === "owner" || role === "admin";
-
-async function audit(env: Env, networkId: string | null, userId: string, action: string, detail: Record<string, unknown> = {}) {
-  await env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, ?, ?, ?)")
-    .bind(networkId, userId, action, JSON.stringify(detail), Date.now()).run();
-}
 
 function installView(row: InstallRow, now: number) {
   const status = row.status_json ? (JSON.parse(row.status_json) as Status) : null;
@@ -107,11 +96,27 @@ dashboard.get("/config", (c) => c.json({
   posthog_host: c.env.POSTHOG_HOST || "https://eu.i.posthog.com",
 }));
 
+// A message for every dashboard user (maintenance, incidents, sub-processor changes), set in KV:
+// npx wrangler kv key put announcement '{"id":"…","tone":"info","text":"…","url":"…"}' --binding PUBLIC --env production --remote
+let announcementCache: { at: number; value: unknown } | null = null;
+dashboard.get("/announcement", async (c) => {
+  const now = Date.now();
+  if (!announcementCache || now - announcementCache.at > 60_000) {
+    const raw = await c.env.PUBLIC.get("announcement");
+    let value: unknown = null;
+    try { value = raw ? JSON.parse(raw) : null; } catch { value = null; }
+    announcementCache = { at: now, value };
+  }
+  return c.json({ announcement: announcementCache.value });
+});
+
 dashboard.use("/*", sameOrigin);
 dashboard.use("/me", requireUser);
 dashboard.use("/link/*", requireUser);
 dashboard.use("/networks/*", requireUser);
 dashboard.use("/installs/*", requireUser);
+dashboard.use("/invites/*", requireUser);
+dashboard.use("/players", requireUser);
 
 dashboard.get("/me", async (c) => {
   const user = c.get("user");
@@ -188,6 +193,8 @@ dashboard.post("/link/:code", async (c) => {
     env.DB.prepare("UPDATE networks SET watched_until = ? WHERE id = ?").bind(now + 10 * 60_000, networkId),
     env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, 'install.linked', ?, ?)")
       .bind(networkId, user.id, JSON.stringify({ install_id: link.install_id }), now),
+    // Access rules the network already has apply to the new server too.
+    ...(body.network_id ? await rulesForNewInstall(env, networkId, link.install_id, now) : []),
   );
   await env.DB.batch(statements);
   const ins = await env.DB.prepare("SELECT platform, plugin_version, created_at FROM installs WHERE id = ?").bind(link.install_id)
@@ -246,6 +253,8 @@ dashboard.get("/networks/:id/events", async (c) => {
   const before = Number(c.req.query("before") ?? Date.now() + 1);
   const outcome = c.req.query("outcome");
   const query = (c.req.query("q") ?? "").trim().toLowerCase();
+  // A player name is looked up at Mojang so decisions can be found by name; names are not stored with decisions.
+  const nameUuid = env.ENVIRONMENT !== "test" && isPlayerName(query) && !/^[0-9a-f.:]+$/.test(query) ? await uuidForName(query) : null;
   const limit = Math.min(200, Math.max(1, Number(c.req.query("limit") ?? 50)));
   const installId = c.req.query("install");
   const batches = await env.DB.prepare(
@@ -260,7 +269,7 @@ dashboard.get("/networks/:id/events", async (c) => {
         // Observe mode: flagged but admitted, i.e. what ENFORCE would have refused.
         if (!(e.mode === "OBSERVE" && e.outcome === "ALLOW" && e.flags.length > 0)) continue;
       } else if (outcome && e.outcome !== outcome) continue;
-      if (query && !e.ip.toLowerCase().includes(query) && !(e.uuid ?? "").includes(query)
+      if (query && !e.ip.toLowerCase().includes(query) && !(e.uuid ?? "").includes(query) && !(nameUuid && e.uuid === nameUuid)
         && !e.sources.some((s) => (s.country ?? "").toLowerCase() === query || (s.isp ?? "").toLowerCase().includes(query))) continue;
       events.push({ ...e, install_id: b.install_id });
     }
@@ -305,6 +314,7 @@ dashboard.patch("/installs/:id", async (c) => {
 });
 
 registerSettings(dashboard);
+registerNetwork(dashboard);
 
 dashboard.post("/installs/:id/unlink", async (c) => {
   const env = c.env;

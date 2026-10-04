@@ -54,20 +54,23 @@ await page.goto(`${base}/`); await page.waitForURL(/\/n\//); await page.waitForT
 await page.getByRole("button", { name: "Last 7 days" }).click().catch(() => {});
 await page.goto(page.url().split("?")[0] + "/register"); await page.waitForTimeout(2000);
 await page.locator("tbody button").nth(2).click(); await page.waitForTimeout(800);
+await page.getByRole("button", { name: /Check this address again/ }).click().catch(() => {}); await page.waitForTimeout(500);
 await page.getByRole("button", { name: "Close" }).click().catch(() => {});
 await page.getByRole("button", { name: "Refused" }).click().catch(() => {});
 await page.getByPlaceholder(/search|ip/i).first().fill("185.3.241.112").catch(() => {});
 await page.waitForTimeout(1500);
 await page.goto(page.url().replace("/register", "/settings")); await page.waitForTimeout(2500);
+await page.goto(page.url().replace("/settings", "/network")); await page.waitForTimeout(1500);
+await page.getByRole("button", { name: "Invite a viewer" }).click().catch(() => {}); await page.waitForTimeout(800);
 // Give session replay time to flush a full snapshot.
 await page.mouse.move(500, 400); await page.mouse.wheel(0, 500); await page.waitForTimeout(9000);
 const before = events.length;
 // Opt out: nothing more may be sent.
 await page.getByRole("button", { name: "Account" }).click();
-await page.getByRole("switch").uncheck();
+await page.getByRole("switch", { name: /Share usage data/ }).uncheck();
 await page.waitForTimeout(500);
 const afterOptOut = events.length;
-await page.goto(page.url().replace("/settings", "")); await page.waitForTimeout(4000);
+await page.goto(page.url().replace("/network", "")); await page.waitForTimeout(4000);
 const leakedAfterOptOut = events.length - afterOptOut;
 const storage = await page.evaluate(() => ({ cookies: document.cookie, local: Object.keys(localStorage), session: Object.keys(sessionStorage) }));
 

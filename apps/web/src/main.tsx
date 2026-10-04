@@ -11,6 +11,9 @@ import { RegisterPage } from "./routes/RegisterPage.tsx";
 import { SettingsPage } from "./routes/SettingsPage.tsx";
 import { SetupPage } from "./routes/SetupPage.tsx";
 import { NotFound } from "./routes/NotFound.tsx";
+import { NetworkPage } from "./routes/NetworkPage.tsx";
+import { AccountPage } from "./routes/AccountPage.tsx";
+import { InvitePage } from "./routes/InvitePage.tsx";
 import { useConfig, useMe } from "./components/Shell.tsx";
 import { identifyUser, setNetworkGroup, startAnalytics } from "./analytics.ts";
 
@@ -63,7 +66,11 @@ const settings = createRoute({ getParentRoute: () => root, path: "/n/$networkId/
 
 const setup = createRoute({ getParentRoute: () => root, path: "/n/$networkId/setup", component: SetupPage, validateSearch: serverSearch });
 
-const router = createRouter({ routeTree: root.addChildren([home, link, overview, register, settings, setup]), defaultPreload: "intent" });
+const network = createRoute({ getParentRoute: () => root, path: "/n/$networkId/network", component: NetworkPage, validateSearch: serverSearch });
+const account = createRoute({ getParentRoute: () => root, path: "/account", component: AccountPage });
+const invite = createRoute({ getParentRoute: () => root, path: "/invite/$token", component: InvitePage });
+
+const router = createRouter({ routeTree: root.addChildren([home, link, overview, register, settings, setup, network, account, invite]), defaultPreload: "intent" });
 
 declare module "@tanstack/react-router" {
   interface Register { router: typeof router }

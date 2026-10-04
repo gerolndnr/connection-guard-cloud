@@ -52,6 +52,20 @@ export interface ServerConfig {
   desired: { version: number; reset: boolean; values: Record<string, unknown>; secret_paths: string[]; updated_at: number; updated_by: string | null } | null;
 }
 
+export type RuleEffect = "ALLOW" | "DENY" | "EXEMPT";
+export type RuleScope = "VPN" | "GEO" | "ALL";
+export interface AccessRuleView {
+  id: string; effect: RuleEffect; scope: RuleScope; target: string; note: string | null; created_at: number; created_by_name: string | null;
+  servers: { install_id: string; state: "pending" | "delivered" | "applied" | "failed"; message: string | null }[];
+}
+export interface Member { id: string; name: string; avatar: string | null; role: Role; created_at: number; you: boolean }
+export interface InviteView { id: string; role: "admin" | "viewer"; created_at: number; expires_at: number; created_by_name: string | null }
+export interface InvitePreview { network_name: string; network_id: string; role: "admin" | "viewer"; invited_by: string | null; expires_at: number; member: boolean }
+export type AlertKind = "server_offline" | "provider_trouble" | "quota_low" | "refusal_spike" | "weekly_digest";
+export interface AlertSettings { webhook_set: boolean; webhook_hint: string | null; kinds: AlertKind[] }
+export interface ActivityEntry { action: string; at: number; user_name: string | null; detail: Record<string, unknown> }
+export interface Announcement { id: string; tone?: "info" | "warn" | "danger"; text: string; url?: string }
+
 export const api = {
   config: () => request<AppConfig>("/config"),
   me: () => request<Me>("/me"),
@@ -75,4 +89,27 @@ export const api = {
     request<{ versions: Record<string, number> }>(`/installs/${installId}/config`, { method: "PUT", json: body }),
   resetConfig: (installId: string) => request<{ version: number }>(`/installs/${installId}/config/reset`, { json: {} }),
   createToken: (networkId: string) => request<{ token: string }>(`/networks/${networkId}/tokens`, { json: {} }),
+
+  // Writes always carry a JSON body: the API refuses state changes without one (CSRF protection).
+  rules: (networkId: string) => request<{ rules: AccessRuleView[] }>(`/networks/${networkId}/rules`),
+  addRule: (networkId: string, body: { effect: RuleEffect; scope: RuleScope; target: string; note?: string | null }) =>
+    request<{ id: string; servers?: number; duplicate?: boolean }>(`/networks/${networkId}/rules`, { json: body }),
+  removeRule: (networkId: string, ruleId: string) => request<{ ok: true }>(`/networks/${networkId}/rules/${ruleId}`, { method: "DELETE", json: {} }),
+  recheck: (networkId: string, ip: string) => request<{ ok: true; servers: number }>(`/networks/${networkId}/recheck`, { json: { ip } }),
+  players: (uuids: string[]) => request<{ names: Record<string, string | null> }>(`/players?uuids=${uuids.join(",")}`),
+  members: (networkId: string) => request<{ members: Member[] }>(`/networks/${networkId}/members`),
+  setRole: (networkId: string, userId: string, role: Role) => request<{ ok: true }>(`/networks/${networkId}/members/${userId}`, { method: "PATCH", json: { role } }),
+  removeMember: (networkId: string, userId: string) => request<{ ok: true }>(`/networks/${networkId}/members/${userId}`, { method: "DELETE", json: {} }),
+  invites: (networkId: string) => request<{ invites: InviteView[] }>(`/networks/${networkId}/invites`),
+  createInvite: (networkId: string, role: "admin" | "viewer") => request<{ id: string; url: string; expires_at: number }>(`/networks/${networkId}/invites`, { json: { role } }),
+  revokeInvite: (networkId: string, inviteId: string) => request<{ ok: true }>(`/networks/${networkId}/invites/${inviteId}`, { method: "DELETE", json: {} }),
+  invite: (token: string) => request<InvitePreview>(`/invites/${encodeURIComponent(token)}`),
+  acceptInvite: (token: string, termsVersion: string) => request<{ network_id: string }>(`/invites/${encodeURIComponent(token)}/accept`, { json: { accept_terms: true, terms_version: termsVersion } }),
+  alerts: (networkId: string) => request<AlertSettings>(`/networks/${networkId}/alerts`),
+  saveAlerts: (networkId: string, body: { webhook_url?: string | null; kinds: AlertKind[] }) => request<AlertSettings>(`/networks/${networkId}/alerts`, { method: "PUT", json: body }),
+  testAlerts: (networkId: string) => request<{ ok: true }>(`/networks/${networkId}/alerts/test`, { json: {} }),
+  activity: (networkId: string) => request<{ activity: ActivityEntry[] }>(`/networks/${networkId}/activity`),
+  deleteNetwork: (networkId: string, confirm: string) => request<{ ok: true }>(`/networks/${networkId}`, { method: "DELETE", json: { confirm } }),
+  deleteAccount: () => request<{ ok: true }>("/me", { method: "DELETE", json: { confirm: "DELETE" } }),
+  announcement: () => request<{ announcement: Announcement | null }>("/announcement"),
 };

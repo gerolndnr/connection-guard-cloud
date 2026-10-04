@@ -3,6 +3,7 @@ import type { Env } from "./env.ts";
 import { recomputeGovernor } from "./governor.ts";
 import { DAY } from "./util.ts";
 import { sendEvents, type ServerEvent } from "./analytics.ts";
+import { runAlerts } from "./alerts.ts";
 
 export const UNCLAIMED_RETENTION = 30 * DAY;
 export const ROLLUP_RETENTION = 395 * DAY; // ~13 months
@@ -17,7 +18,10 @@ export async function runMaintenance(env: Env, now = Date.now()) {
     env.DB.prepare("DELETE FROM installs WHERE network_id IS NULL AND last_seen_at < ?").bind(now - UNCLAIMED_RETENTION),
     env.DB.prepare("DELETE FROM link_codes WHERE expires_at < ?").bind(now),
     env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(now),
-    env.DB.prepare("DELETE FROM commands WHERE completed_at IS NOT NULL AND completed_at < ?").bind(now - 30 * DAY),
+    // Commands of active access rules stay: they show on which servers the rule is in place.
+    env.DB.prepare("DELETE FROM commands WHERE completed_at IS NOT NULL AND completed_at < ? AND (rule_id IS NULL OR rule_id IN (SELECT id FROM access_rules WHERE removed_at IS NOT NULL))").bind(now - 30 * DAY),
+    env.DB.prepare("DELETE FROM access_rules WHERE removed_at IS NOT NULL AND removed_at < ?").bind(now - 30 * DAY),
+    env.DB.prepare("DELETE FROM invites WHERE expires_at < ?").bind(now - DAY),
   ]);
 }
 
@@ -52,6 +56,8 @@ export async function reportDaily(env: Env, now = Date.now()) {
 }
 
 export async function scheduled(controller: ScheduledController, env: Env) {
-  if (controller.cron === "17 3 * * *") { await runMaintenance(env); await reportDaily(env); }
-  else await recomputeGovernor(env);
+  if (controller.cron === "17 3 * * *") { await runMaintenance(env); await reportDaily(env); return; }
+  await recomputeGovernor(env);
+  // Discord alerts every 15 minutes (the 5-minute cron at :00, :15, :30 and :45).
+  if (new Date(controller.scheduledTime).getUTCMinutes() % 15 === 0) await runAlerts(env, controller.scheduledTime);
 }

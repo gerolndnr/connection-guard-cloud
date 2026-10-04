@@ -49,6 +49,18 @@ npx wrangler d1 migrations apply cg --remote --env production
 npx wrangler deploy --env production
 ```
 
+## Announcements in the dashboard
+
+A banner for every dashboard user, for maintenance, incidents or (per the AVV, 30 days ahead) new sub-processors. Users can dismiss it; a new `id` shows again.
+
+```bash
+cd apps/api
+npx wrangler kv key put announcement '{"id":"2026-10-maintenance","tone":"info","text":"Maintenance on 12 October, 20:00–20:30 UTC. Logins are not affected.","url":"https://connectionguard.net"}' --binding PUBLIC --env production --remote
+npx wrangler kv key delete announcement --binding PUBLIC --env production --remote
+```
+
+`tone` is `info`, `warn` or `danger`. The API caches the value for a minute.
+
 ## Website (connectionguard.net)
 
 Astro 7 needs Node 22.12 or newer. The build reads download counts from Modrinth, Spiget, GitHub and Hangar, so rebuild to refresh them.

@@ -70,8 +70,9 @@ const toc: [string, string][] = [
 
   <h3 id="account">3.3 Account, networks and servers</h3>
   <p>We store what you enter or what results from using the dashboard: network and server names, your role in each network, when you accepted the data processing agreement, the settings you send to your servers, and an audit log of who changed what and when. API keys and webhook addresses you enter are stored encrypted only until your server confirms receipt, then deleted from our systems. The dashboard also processes data that linked servers send (section 4.2).</p>
+  <p><strong>Team:</strong> members of a network see each other's Discord display name, avatar and role. Invitation links work once for 7 days; we store only a hash of them. <strong>Discord alerts:</strong> if you connect a Discord webhook, we store its address encrypted and post alerts to it. Alerts contain server names and counts, never player data.</p>
   <p>Legal basis: Art. 6(1)(b) GDPR. The audit log also serves our legitimate interest in security and traceability (Art. 6(1)(f) GDPR).</p>
-  <p>Retention: sign-in sessions end after 30 days. Account, network data and audit log are kept while you use the dashboard. Write to <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a> to have your account deleted; we then delete it within one month.</p>
+  <p>Retention: sign-in sessions end after 30 days. Account, network data and audit log are kept while you use the dashboard. You can download your data and delete a network or your whole account yourself under "Account and data" and on the network's page; deletion takes effect immediately. You can also write to <a href={`mailto:${OPERATOR.privacyEmail}`}>{OPERATOR.privacyEmail}</a>; we then delete within one month.</p>
 
   <h3 id="dashboard-analytics">3.4 Usage analytics (PostHog)</h3>
   <p>To improve the dashboard, we record how it is used with PostHog (EU), as in section 2.3, but linked to your account. That way we can see where setting up a server fails.</p>
@@ -95,6 +96,7 @@ const toc: [string, string][] = [
 
   <h3 id="linked">4.2 Linked servers: processing on behalf of the server operator</h3>
   <p>After a server operator links a server and accepts the data processing agreement, the plugin also sends one entry per login check. Each entry contains the time, the player's IP address and verified UUID, the verdict and reason, and what each detection service answered (country, network, provider, risk). We process this data <strong>only on behalf of and as instructed by the server operator</strong> (Art. 28 GDPR), who is the controller, under our <a href="/dpa">data processing agreement</a>. Players should address questions about this data to the operator of the server they joined; we support operators in answering them.</p>
+  <p>To show player names instead of UUIDs, the dashboard looks up the public Minecraft profile name for a UUID at Mojang AB (Sweden), and searching decisions by name looks up the matching UUID. Names are cached for up to 24 hours in Cloudflare's cache and are not stored in our database. Access rules that the operator adds can contain a player's UUID or IP address; they are processed under the same agreement.</p>
   <p>Retention: entries are deleted after 30 days, hourly totals after 13 months. Unlinking a server deletes its entries immediately.</p>
 
   <h3 id="product-events">4.3 Product statistics about servers</h3>
@@ -107,7 +109,8 @@ const toc: [string, string][] = [
   <ul>
     <li><strong>Cloudflare, Inc.</strong>: hosting, delivery, security, databases (dashboard data is stored in the EU), email forwarding. Processor.</li>
     <li><strong>PostHog Inc.</strong>: product analytics, hosted in the EU. Processor.</li>
-    <li><strong>Discord Inc.</strong>: sign-in. Separate controller.</li>
+    <li><strong>Discord Inc.</strong>: sign-in, and alerts to webhooks you connect. Separate controller.</li>
+    <li><strong>Mojang AB</strong> (Sweden): looking up public Minecraft player names for UUIDs. Separate controller.</li>
   </ul>
   <p>We have concluded data processing agreements with our processors. We do not pass on data otherwise, unless we are legally required to.</p>
 

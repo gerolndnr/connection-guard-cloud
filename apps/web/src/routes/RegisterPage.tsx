@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { api, type RegisterEvent } from "../api.ts";
 import { Shell } from "../components/Shell.tsx";
 import { DecisionTable, WhySheet } from "../components/Register.tsx";
+import { usePlayerNames } from "../players.ts";
 import { track } from "../analytics.ts";
 
 type Filter = "all" | "refused" | "would" | "errors";
@@ -43,6 +44,7 @@ export function RegisterPage() {
   }, [rows]);
 
   const installs = net.data?.installs ?? [];
+  const players = usePlayerNames(rows.map((e) => e.uuid));
   return (
     <>
     <Shell networkId={networkId}>
@@ -61,7 +63,7 @@ export function RegisterPage() {
           <label className="relative w-full sm:w-80">
             <span className="sr-only">Search by IP, UUID, country code or ISP</span>
             <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-3" />
-            <input className="input pl-9" placeholder="Search IP, UUID, country code, ISP" value={input} onChange={(e) => setInput(e.target.value)} />
+            <input className="input pl-9" placeholder="Search player, IP, UUID, country code, ISP" value={input} onChange={(e) => setInput(e.target.value)} />
           </label>
         </div>
 
@@ -80,7 +82,7 @@ export function RegisterPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <DecisionTable events={rows} narrow={selected !== null} fresh={fresh} installs={installs} selected={selected?.id ?? null} onSelect={(e) => { setSelected(e); if (e) track("decision_opened", { outcome: e.outcome, reason: e.reason, mode: e.mode }); }} />
+              <DecisionTable events={rows} narrow={selected !== null} fresh={fresh} installs={installs} players={players} selected={selected?.id ?? null} onSelect={(e) => { setSelected(e); if (e) track("decision_opened", { outcome: e.outcome, reason: e.reason, mode: e.mode }); }} />
             </div>
           )}
         </div>
@@ -94,7 +96,7 @@ export function RegisterPage() {
       </div>
     </Shell>
     {/* Outside <main> so it stays usable while the page behind it is inert. */}
-    {selected && <WhySheet event={selected} installs={installs} onClose={() => setSelected(null)} />}
+    {selected && <WhySheet event={selected} installs={installs} onClose={() => setSelected(null)} networkId={networkId} canManage={net.data?.role !== "viewer"} playerName={selected.uuid ? players.get(selected.uuid) ?? null : null} />}
     </>
   );
 }

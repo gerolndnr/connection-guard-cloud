@@ -30,7 +30,7 @@ const toc: [string, string][] = [
 
   <h2 id="subject">2. Subject matter, nature, purpose and duration</h2>
   <p><strong>Subject matter and purpose:</strong> providing the dashboard for the controller's linked servers. This covers receiving, storing, analysing, displaying and deleting check results, and sending the settings and commands the controller triggers in the dashboard to the controller's servers.</p>
-  <p><strong>Nature of processing:</strong> collection (receipt from the plugin), storage, organisation, retrieval, consultation, aggregation into statistics, display, transmission to the controller's server, erasure.</p>
+  <p><strong>Nature of processing:</strong> collection (receipt from the plugin), storage, organisation, retrieval, consultation, aggregation into statistics, display, transmission to the controller's server, erasure. For display, public player names for UUIDs are looked up at Mojang (section 6).</p>
   <p><strong>Duration:</strong> as long as at least one of the controller's servers is linked. For a server, the agreement ends when it is unlinked or the controller turns the cloud link off in the plugin; otherwise when the account is deleted.</p>
 
   <h2 id="data">3. Types of personal data and categories of data subjects</h2>
@@ -39,6 +39,7 @@ const toc: [string, string][] = [
   <ul>
     <li>Per login check: time, IP address, the player's verified UUID, verdict and reason, rules applied, and the answers of the detection services (country, network or ASN, provider, risk score, VPN or proxy detection).</li>
     <li>Entries in exemptions and access rules set by the controller: player name, UUID or IP address and an optional note.</li>
+    <li>Public Minecraft player names for these UUIDs, looked up for display and cached for at most 24 hours, but not stored.</li>
     <li>Hourly statistics derived from these, which no longer identify individuals.</li>
   </ul>
   <p>No special categories of personal data (Art. 9 GDPR) are processed.</p>
@@ -55,7 +56,7 @@ const toc: [string, string][] = [
   </ul>
 
   <h2 id="subprocessors">6. Sub-processors</h2>
-  <p>The controller gives general authorisation to engage further processors (Art. 28(2) GDPR). Those engaged when the agreement is concluded are listed in Annex 2. The processor binds them contractually to a level of protection equivalent to this agreement (Art. 28(4) GDPR). It announces intended changes at least 30 days in advance on this page and in the dashboard. The controller may object on important data protection grounds; it may then end the link without any disadvantage.</p>
+  <p>The controller gives general authorisation to engage further processors (Art. 28(2) GDPR). Those engaged when the agreement is concluded are listed in Annex 2. On the controller's instruction, UUIDs are also sent to Mojang AB (Sweden) to look up public player names; Mojang processes them as a separate controller. Alerts sent to a Discord webhook that the controller connects contain no player data. The processor binds them contractually to a level of protection equivalent to this agreement (Art. 28(4) GDPR). It announces intended changes at least 30 days in advance on this page and in the dashboard. The controller may object on important data protection grounds; it may then end the link without any disadvantage.</p>
 
   <h2 id="transfers">7. Processing outside the EU</h2>
   <p>The data is stored in the EU. Access by sub-processors from third countries, in particular the USA, is only permitted where the requirements of Art. 44 et seq. GDPR are met, for example through an adequacy decision (EU-U.S. Data Privacy Framework) or the EU standard contractual clauses.</p>

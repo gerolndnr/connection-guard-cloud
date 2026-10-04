@@ -30,7 +30,7 @@ const toc: [string, string][] = [
 
   <h2 id="gegenstand">2. Gegenstand, Art, Zweck und Dauer der Verarbeitung</h2>
   <p><strong>Gegenstand und Zweck:</strong> Bereitstellung des Dashboards für die verknüpften Server des Verantwortlichen. Dazu gehören das Empfangen, Speichern, Auswerten, Anzeigen und Löschen der Prüfergebnisse sowie das Übermitteln der Einstellungen und Befehle, die der Verantwortliche im Dashboard auslöst, an seine Server.</p>
-  <p><strong>Art der Verarbeitung:</strong> Erheben (Empfang vom Plugin), Speichern, Ordnen, Auslesen, Abfragen, Zusammenfassen zu Statistiken, Anzeigen, Übermitteln an den Server des Verantwortlichen, Löschen.</p>
+  <p><strong>Art der Verarbeitung:</strong> Erheben (Empfang vom Plugin), Speichern, Ordnen, Auslesen, Abfragen, Zusammenfassen zu Statistiken, Anzeigen, Übermitteln an den Server des Verantwortlichen, Löschen. Zur Anzeige werden öffentliche Spielernamen zu UUIDs bei Mojang abgefragt (Abschnitt 6).</p>
   <p><strong>Dauer:</strong> solange mindestens ein Server des Verantwortlichen mit dem Dashboard verknüpft ist. Der Vertrag endet für einen Server mit dessen Entknüpfung oder wenn der Verantwortliche die Cloud-Verbindung im Plugin abschaltet, im Übrigen mit Löschung des Kontos.</p>
 
   <h2 id="daten">3. Art der personenbezogenen Daten und Kategorien betroffener Personen</h2>
@@ -39,6 +39,7 @@ const toc: [string, string][] = [
   <ul>
     <li>Je Anmeldeprüfung: Zeitpunkt, IP-Adresse, verifizierte UUID des Spielers, Ergebnis und Grund, angewandte Regeln sowie die Antworten der Erkennungsdienste (Land, Netzwerk bzw. ASN, Anbieter, Risikowert, Erkennung als VPN oder Proxy).</li>
     <li>Einträge in Ausnahmen und Zugriffsregeln, die der Verantwortliche festlegt: Spielername, UUID oder IP-Adresse und eine optionale Notiz.</li>
+    <li>Öffentliche Minecraft-Spielernamen zu diesen UUIDs, die zur Anzeige abgefragt und höchstens 24 Stunden zwischengespeichert, aber nicht gespeichert werden.</li>
     <li>Statistiken je Stunde, die aus diesen Daten gebildet werden und keine Einzelpersonen mehr erkennen lassen.</li>
   </ul>
   <p>Besondere Kategorien personenbezogener Daten (Art. 9 DSGVO) werden nicht verarbeitet.</p>
@@ -55,7 +56,7 @@ const toc: [string, string][] = [
   </ul>
 
   <h2 id="unterauftrag">6. Unterauftragsverarbeiter</h2>
-  <p>Der Verantwortliche genehmigt allgemein den Einsatz weiterer Auftragsverarbeiter (Art. 28 Abs. 2 DSGVO). Bei Vertragsschluss eingesetzt sind die in Anlage 2 genannten. Der Auftragsverarbeiter verpflichtet sie vertraglich auf ein Schutzniveau, das diesem Vertrag entspricht (Art. 28 Abs. 4 DSGVO). Über beabsichtigte Änderungen informiert er mindestens 30 Tage vorher auf dieser Seite und im Dashboard. Der Verantwortliche kann aus wichtigem datenschutzrechtlichem Grund widersprechen; dann kann er die Verknüpfung beenden, ohne dass ihm Nachteile entstehen.</p>
+  <p>Der Verantwortliche genehmigt allgemein den Einsatz weiterer Auftragsverarbeiter (Art. 28 Abs. 2 DSGVO). Bei Vertragsschluss eingesetzt sind die in Anlage 2 genannten. Auf Weisung des Verantwortlichen werden UUIDs außerdem an die Mojang AB (Schweden) übermittelt, um öffentliche Spielernamen abzurufen; Mojang verarbeitet sie dabei als eigener Verantwortlicher. Benachrichtigungen an einen Discord-Webhook, den der Verantwortliche verbindet, enthalten keine Spielerdaten. Der Auftragsverarbeiter verpflichtet sie vertraglich auf ein Schutzniveau, das diesem Vertrag entspricht (Art. 28 Abs. 4 DSGVO). Über beabsichtigte Änderungen informiert er mindestens 30 Tage vorher auf dieser Seite und im Dashboard. Der Verantwortliche kann aus wichtigem datenschutzrechtlichem Grund widersprechen; dann kann er die Verknüpfung beenden, ohne dass ihm Nachteile entstehen.</p>
 
   <h2 id="drittland">7. Verarbeitung außerhalb der EU</h2>
   <p>Die Daten werden in der EU gespeichert. Ein Zugriff durch Unterauftragsverarbeiter aus Drittländern, insbesondere den USA, ist nur zulässig, wenn die Voraussetzungen der Art. 44 ff. DSGVO erfüllt sind, etwa durch einen Angemessenheitsbeschluss (EU-U.S. Data Privacy Framework) oder die Standardvertragsklauseln der EU.</p>

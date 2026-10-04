@@ -9,6 +9,9 @@ import { StatusDot } from "../components/Badge.tsx";
 import { Choice, CountryPicker, Row, Section, SecretField, Segmented, Switch, TagInput, type SecretEdit } from "../components/Form.tsx";
 import { ago, num, platformName, serverName } from "../format.ts";
 import { PROVIDERS } from "../providers.ts";
+import { SIMULATED_PATHS, simulate, type SimulationResult } from "../simulate.ts";
+import { usePlayerNames } from "../players.ts";
+import type { RegisterEvent } from "../api.ts";
 
 type Values = Record<string, boolean | number | string | string[]>;
 type Secrets = Record<string, SecretEdit>;
@@ -126,6 +129,8 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
   // The change just saved, so the bottom bar can follow it until the server confirms or refuses.
   const [lastSave, setLastSave] = useState<{ version: number; at: number; others: number; reset?: boolean } | null>(null);
   const [now, setNow] = useState(Date.now());
+  // "Block selected" with no country picked yet still shows the picker.
+  const [blockOpen, setBlockOpen] = useState(false);
   const saveVersion = lastSave?.version ?? 0;
   const saveRejected = Boolean(lastSave && cfgQ.data?.error?.version === saveVersion);
   const saveApplied = Boolean(lastSave && !saveRejected && (cfgQ.data?.applied_version ?? 0) >= saveVersion && !cfgQ.data?.pending);
@@ -152,6 +157,28 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
   const dirty = dirtyFields.length > 0 || dirtySecrets.length > 0;
   // Adopt fresh server values unless the user is mid-edit or a save is still on its way.
   useEffect(() => { if (base && !dirty && !savedValues) setValues(base); }, [base]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // What-if: replay the last 7 days of this server's decisions against the edited settings.
+  const simRelevant = dirtyFields.some((f) => SIMULATED_PATHS.includes(f));
+  const history = useQuery({
+    queryKey: ["history", networkId, install.id],
+    enabled: simRelevant,
+    staleTime: 5 * 60_000,
+    refetchInterval: false,
+    queryFn: async () => {
+      const since = Date.now() - 7 * 24 * 3_600_000;
+      const out: RegisterEvent[] = [];
+      let before: number | undefined;
+      for (let page = 0; page < 5; page++) {
+        const res = await api.events(networkId, { install: install.id, limit: 200, before });
+        out.push(...res.events.filter((e) => e.at >= since));
+        if (!res.next_before || res.next_before < since) break;
+        before = res.next_before;
+      }
+      return out;
+    },
+  });
+  const simulation = useMemo(() => (simRelevant && history.data && values ? simulate(history.data, values) : null), [simRelevant, history.data, values]);
 
   const name = serverName(install);
   if (cfgQ.isPending) return <div className="skeleton h-64" />;
@@ -181,7 +208,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
   const enabledProviders = PROVIDERS.filter((p) => v<boolean>(`provider.vpn.${p.key}.enabled`));
   const geoType = v<string>("behavior.geo.type");
   const geoList = v<string[]>("behavior.geo.list") ?? [];
-  const geoMode = geoType === "WHITELIST" ? "allow" : geoList.length > 0 ? "block" : "off";
+  const geoMode = geoType === "WHITELIST" ? "allow" : geoList.length > 0 || blockOpen ? "block" : "off";
   const observing = v<string>("operation.mode") === "OBSERVE";
   const wouldRefuse = stats.data?.totals.would_refuse ?? 0;
 
@@ -284,6 +311,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
             <div role="group" aria-label="Country rule" className="segmented">
               {([["off", "Off"], ["block", "Block selected"], ["allow", "Allow only selected"]] as const).map(([id, label]) => (
                 <button key={id} type="button" aria-pressed={geoMode === id} onClick={() => {
+                  setBlockOpen(id === "block");
                   if (id === "off") setValues({ ...values, "behavior.geo.type": "BLACKLIST", "behavior.geo.list": [] });
                   else set("behavior.geo.type", id === "allow" ? "WHITELIST" : "BLACKLIST");
                 }}>{label}</button>
@@ -297,7 +325,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
               </div>
             )}
             {geoMode === "off" && (
-              <button type="button" className="mt-4 text-[0.8125rem] text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg" onClick={() => set("behavior.geo.list", ["CN"])}>
+              <button type="button" className="mt-4 text-[0.8125rem] text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg" onClick={() => setBlockOpen(true)}>
                 Add a country to block
               </button>
             )}
@@ -418,6 +446,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
       {canEdit && dirty && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/90 backdrop-blur-md">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+            {simRelevant && !hasErrors && <Impact result={simulation} loading={history.isFetching} />}
             <p className="min-w-0 flex-1 text-[0.8125rem]">
               {hasErrors ? <span className="text-danger-text">Fix the highlighted settings to save.</span>
                 : saveError ? <span className="text-danger-text">{saveError}</span>
@@ -436,6 +465,40 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** The save bar's what-if line: how these settings would have treated the last 7 days of logins. */
+function Impact({ result, loading }: { result: SimulationResult | null; loading: boolean }) {
+  const [open, setOpen] = useState(false);
+  const players = usePlayerNames(result?.changed.slice(0, 8).map((c) => c.event.uuid) ?? []);
+  if (!result) return <p className="w-full text-[0.8125rem] text-fg-3">{loading ? "Checking the last 7 days…" : ""}</p>;
+  if (result.total === 0) return <p className="w-full text-[0.8125rem] text-fg-3">No logins in the last 7 days to compare with.</p>;
+  const diff = result.refusedAfter - result.refusedBefore;
+  return (
+    <div className="w-full">
+      <p className="text-[0.8125rem]">
+        <span className="font-medium">With these settings, {num(result.refusedAfter)} of {num(result.total)} logins</span>
+        <span className="text-fg-2"> in the last 7 days would have been refused ({diff === 0 ? "no change" : diff > 0 ? `${num(diff)} more` : `${num(-diff)} fewer`}).</span>
+        {result.changed.length > 0 && (
+          <button type="button" className="ml-2 font-medium underline decoration-line-strong underline-offset-4 hover:text-fg" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            {open ? "Hide" : "Who?"}
+          </button>
+        )}
+      </p>
+      {open && (
+        <ul className="ph-no-capture mt-2 max-h-48 divide-y divide-line overflow-y-auto rounded-lg border border-line bg-surface text-[0.8125rem]">
+          {result.changed.slice(0, 8).map((c) => (
+            <li key={c.event.id} className="flex items-center justify-between gap-3 px-3 py-2">
+              <span className="min-w-0 truncate">{(c.event.uuid && players.get(c.event.uuid)) || <span className="mono">{c.event.ip}</span>}</span>
+              <span className={`shrink-0 ${c.after === "refused" ? "text-danger-text" : "text-accent-text"}`}>{c.after === "refused" ? "would be refused" : "would get in"} · {c.why}</span>
+            </li>
+          ))}
+          {result.changed.length > 8 && <li className="px-3 py-2 text-fg-3">and {num(result.changed.length - 8)} more</li>}
+        </ul>
+      )}
+      {result.unknown > 0 && <p className="mt-1 text-[0.75rem] text-fg-3">Estimate: a newly enabled service was not asked for {num(result.unknown)} of these logins.</p>}
     </div>
   );
 }

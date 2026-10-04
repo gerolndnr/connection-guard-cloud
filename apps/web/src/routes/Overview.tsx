@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDismissed } from "../dismissed.ts";
@@ -8,6 +8,7 @@ import { Shell } from "../components/Shell.tsx";
 import { TallyChart } from "../components/TallyChart.tsx";
 import { Attention } from "../components/Attention.tsx";
 import { DecisionTable } from "../components/Register.tsx";
+import { usePlayerNames } from "../players.ts";
 import { StatusDot } from "../components/Badge.tsx";
 import { SetupChecklist } from "../components/SetupChecklist.tsx";
 import { notes, providers, type ProviderRow } from "../health.ts";
@@ -129,6 +130,17 @@ export function Overview() {
   const net = useQuery({ queryKey: ["network", networkId], queryFn: () => api.network(networkId) });
   const stats = useQuery({ queryKey: ["stats", networkId, range, server], queryFn: () => api.stats(networkId, range, server), placeholderData: (prev) => prev });
   const latest = useQuery({ queryKey: ["events", networkId, "latest", server], queryFn: () => api.events(networkId, { limit: 8, install: server }) });
+  const players = usePlayerNames(latest.data?.events.map((e) => e.uuid) ?? []);
+  // On phones the overview leads with what needs a decision; charts and breakdowns open on request.
+  const [desktop, setDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const on = () => setDesktop(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const showStats = desktop || statsOpen;
   const { isDismissed, dismiss, restoreAll } = useDismissed(networkId);
   const qc = useQueryClient();
 
@@ -237,8 +249,8 @@ export function Overview() {
       )}
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0 space-y-4">
-          <section className="card" aria-labelledby="chart-h">
+        <div className="flex min-w-0 flex-col gap-4">
+          {showStats && <section className="card order-3 lg:order-1" aria-labelledby="chart-h">
             <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-4">
               <h2 id="chart-h" className="text-sm font-medium">Connections · {rangeLong}</h2>
               <dl className="flex gap-5 text-[0.8125rem]">
@@ -247,22 +259,22 @@ export function Overview() {
               </dl>
             </div>
             <div className="px-5 pb-4 pt-2">{stats.data ? <TallyChart stats={stats.data} /> : <div className="skeleton h-56" />}</div>
-          </section>
+          </section>}
 
-          <section className="card overflow-hidden" aria-labelledby="latest-h">
+          <section className="card order-1 overflow-hidden lg:order-2" aria-labelledby="latest-h">
             <CardHeader id="latest-h" title="Latest decisions">
               <Link to="/n/$networkId/register" params={{ networkId }} search={server ? { server } : {}} className="inline-flex items-center gap-1 text-[0.8125rem] font-medium text-fg-2 no-underline hover:text-fg">
                 View all <ArrowRight aria-hidden className="size-3.5" />
               </Link>
             </CardHeader>
             {latest.data && latest.data.events.length > 0 ? (
-              <div className="overflow-x-auto"><DecisionTable events={latest.data.events} installs={installs} compact /></div>
+              <div className="overflow-x-auto"><DecisionTable events={latest.data.events} installs={installs} compact players={players} /></div>
             ) : latest.isPending ? <div className="space-y-2 p-4">{[0, 1, 2].map((k) => <div key={k} className="skeleton h-7" />)}</div> : (
               <p className="px-4 py-8 text-center text-fg-2">No decisions yet. The next login on a linked server shows up here after its next sync, usually within a minute.</p>
             )}
           </section>
 
-          <section className="card overflow-hidden" aria-labelledby="servers-h">
+          <section className="card order-2 overflow-hidden lg:order-3" aria-labelledby="servers-h">
             <CardHeader id="servers-h" title="Servers"><span className="num text-[0.8125rem] text-fg-3">{installs.length}</span></CardHeader>
             <div className="overflow-x-auto">
               <table className="table">
@@ -273,7 +285,12 @@ export function Overview() {
           </section>
         </div>
 
-        <aside className="space-y-4" aria-label="Details">
+        {!showStats && (
+          <button type="button" className="btn btn-secondary w-full lg:hidden" onClick={() => { setStatsOpen(true); track("overview_stats_opened"); }}>
+            Show chart, providers and countries
+          </button>
+        )}
+        <aside className={`space-y-4 ${showStats ? "" : "hidden lg:block"}`} aria-label="Details">
           <section id={attention.length > 0 ? "attention-rail" : undefined} className={`card scroll-mt-28 overflow-hidden ${attention.length > 0 ? "hidden lg:block" : ""}`} aria-labelledby="att-h">
             <CardHeader id="att-h" title="Needs attention">{attention.length > 0 && <span className="num text-[0.8125rem] text-fg-3">{countText}</span>}</CardHeader>
             {net.data && attention.length === 0
@@ -294,7 +311,7 @@ export function Overview() {
         </aside>
       </div>
 
-      {Boolean(stats.data?.countries.length) && (
+      {showStats && Boolean(stats.data?.countries.length) && (
         <div className="mt-4">
           {stats.data && stats.data.countries.length > 0 && (
             <section className="card overflow-hidden" aria-labelledby="cc-h">

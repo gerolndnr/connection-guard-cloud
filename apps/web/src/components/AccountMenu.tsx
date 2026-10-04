@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { LogOut } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import type { Me } from "../api.ts";
 import { analyticsAvailable, analyticsOptedOut, setAnalyticsOptOut } from "../analytics.ts";
 
@@ -44,6 +45,7 @@ export function AccountMenu({ me, onSignOut }: { me: Me; onSignOut: () => void }
             </label>
             <a href="https://connectionguard.net/privacy#dashboard-analytics" className="mt-2 inline-block text-[0.75rem] text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg">What is collected</a>
           </div>
+          <Link to="/account" role="menuitem" onClick={() => setOpen(false)} className="block rounded-md border-t border-line px-2.5 py-2 text-[0.8125rem] text-fg-2 no-underline hover:bg-subtle hover:text-fg">Account and data</Link>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); onSignOut(); }}
             className="flex w-full items-center gap-2 rounded-md border-t border-line px-2.5 py-2 text-left text-[0.8125rem] text-fg-2 hover:bg-subtle hover:text-fg">
             <LogOut aria-hidden className="size-4" /> Sign out

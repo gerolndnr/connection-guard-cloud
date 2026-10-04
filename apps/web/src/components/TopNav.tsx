@@ -72,6 +72,7 @@ export function TopNav({ me, networkId }: { me?: Me | undefined; networkId?: str
           <Link to="/n/$networkId" params={{ networkId }} search={keep} activeOptions={{ exact: true, includeSearch: false }} className={tab} activeProps={active}>Overview</Link>
           <Link to="/n/$networkId/register" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Decisions</Link>
           <Link to="/n/$networkId/settings" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Settings</Link>
+          <Link to="/n/$networkId/network" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Network</Link>
         </nav>
       )}
     </header>
