@@ -201,7 +201,7 @@ dashboard.post("/link/:code", async (c) => {
     .first<{ platform: string; plugin_version: string; created_at: number }>();
   capture(c, {
     event: "server_linked", distinct_id: user.id, groups: { network: networkId },
-    properties: { new_network: !body.network_id, platform: ins?.platform, plugin_version: ins?.plugin_version,
+    properties: { install_id: link.install_id, new_network: !body.network_id, platform: ins?.platform, plugin_version: ins?.plugin_version,
       minutes_since_install: ins ? Math.round((now - ins.created_at) / 60_000) : null, server_named: Boolean(body.server_name) },
   });
   return c.json({ network_id: networkId, install_id: link.install_id }, 201);

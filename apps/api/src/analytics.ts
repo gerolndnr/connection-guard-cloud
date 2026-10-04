@@ -26,6 +26,10 @@ function payload(env: Env, events: ServerEvent[], now: number) {
         properties: {
           ...scrubEventProperties(e.properties ?? {}),
           distinct_id: e.distinct_id,
+          // Plain properties as well as groups: group analytics is a paid add-on, and funnels across
+          // install-, user- and network-keyed events need a common key to aggregate by.
+          ...(e.groups?.network ? { network_id: e.groups.network } : {}),
+          ...(e.distinct_id.startsWith("ins_") ? { install_id: e.distinct_id } : {}),
           $lib: "connection-guard-api",
           $geoip_disable: true,
           ...(e.person === false ? { $process_person_profile: false } : {}),

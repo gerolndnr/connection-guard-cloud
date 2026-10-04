@@ -117,7 +117,7 @@ export function registerSettings(app: Hono<AppEnv>) {
     // Which settings changed, never their values.
     capture(c, {
       event: "settings_saved", distinct_id: user.id, groups: { network: access.network_id },
-      properties: { fields: Object.keys(values), field_count: Object.keys(values).length, secret_fields: Object.keys(secrets).length,
+      properties: { install_id: access.id, fields: Object.keys(values), field_count: Object.keys(values).length, secret_fields: Object.keys(secrets).length,
         apply_to, servers: targets.length, mode: typeof values["operation.mode"] === "string" ? values["operation.mode"] : undefined },
     });
     return c.json({ versions });

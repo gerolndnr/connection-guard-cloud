@@ -84,7 +84,10 @@ export function identifyUser(user: { id: string }, props: Props) {
 }
 
 export function setNetworkGroup(networkId: string | undefined, props: Props = {}) {
-  run((p) => { if (networkId) p.group("network", networkId, props); else p.resetGroups(); });
+  run((p) => {
+    if (networkId) { p.group("network", networkId, props); p.register({ network_id: networkId }); }
+    else { p.resetGroups(); p.unregister("network_id"); }
+  });
 }
 
 export function resetAnalytics() {

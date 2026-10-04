@@ -141,7 +141,7 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     if (on.length > 0) values["required-positive-flags"] = Math.min(Math.max(1, votes), on.length);
     const secrets = Object.fromEntries(on.filter((p) => p.keyPath && typedKey(p)).map((p) => [p.keyPath!, typedKey(p)]));
     if (countryMode !== "off" && snapshot?.["provider.geo.service"] === "Disabled") values["provider.geo.service"] = "IP-API";
-    track("setup_finished", {
+    track("setup_finished", { install_id: install.id,
       vpn, providers: on.map((p) => p.key), keys_entered: Object.keys(secrets).length, votes: on.length ? values["required-positive-flags"] : 0,
       country_mode: countryMode, countries: countryMode === "off" ? 0 : countries.length, mode, platform: install.platform,
     });
@@ -161,10 +161,10 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
 
   // Funnel: which step people reach, what they choose (never keys or country names), and how it ends.
   const startedAt = useRef(Date.now());
-  useEffect(() => { track("setup_step_viewed", { step, platform: install.platform }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (applied) track("setup_applied", { seconds: Math.round((Date.now() - startedAt.current) / 1000), mode }); }, [applied]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { if (rejected) track("setup_rejected"); }, [rejected]);
-  useEffect(() => { if (configured && !forced && cfgQ.data) track("setup_already_configured"); }, [configured, forced, Boolean(cfgQ.data)]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { track("setup_step_viewed", { install_id: install.id, step, platform: install.platform }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (applied) track("setup_applied", { install_id: install.id, seconds: Math.round((Date.now() - startedAt.current) / 1000), mode }); }, [applied]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (rejected) track("setup_rejected", { install_id: install.id }); }, [rejected]);
+  useEffect(() => { if (configured && !forced && cfgQ.data) track("setup_already_configured", { install_id: install.id }); }, [configured, forced, Boolean(cfgQ.data)]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (cfgQ.isPending) return <div className="skeleton h-72" />;
 
@@ -341,7 +341,7 @@ function Verify({ networkId, install, since, onDone }: { networkId: string; inst
   });
   const mine: RegisterEvent | undefined = events.data?.events.find((e) => e.at >= since - 5000);
   const seen = Boolean(mine);
-  useEffect(() => { if (seen) track("setup_verified", { seconds: Math.round((Date.now() - since) / 1000), local_ip: mine ? isPrivateIp(mine.ip) : false }); }, [seen]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (seen) track("setup_verified", { install_id: install.id, seconds: Math.round((Date.now() - since) / 1000), local_ip: mine ? isPrivateIp(mine.ip) : false }); }, [seen]); // eslint-disable-line react-hooks/exhaustive-deps
   const name = serverName(install);
   return (
     <div className="card px-6 py-8">
@@ -354,7 +354,7 @@ function Verify({ networkId, install, since, onDone }: { networkId: string; inst
             <span className="relative flex size-2.5"><span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-50 motion-reduce:hidden" /><span className="relative size-2.5 rounded-full bg-accent" /></span>
             Waiting for the next login on {name}…
           </div>
-          <div className="mt-8 flex justify-end"><button type="button" className="btn btn-ghost" onClick={() => { track("setup_verify_skipped", { seconds: Math.round((Date.now() - since) / 1000) }); onDone(); }}>Skip, go to overview</button></div>
+          <div className="mt-8 flex justify-end"><button type="button" className="btn btn-ghost" onClick={() => { track("setup_verify_skipped", { install_id: install.id, seconds: Math.round((Date.now() - since) / 1000) }); onDone(); }}>Skip, go to overview</button></div>
         </>
       ) : (
         <>

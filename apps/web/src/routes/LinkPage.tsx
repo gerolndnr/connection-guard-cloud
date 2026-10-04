@@ -94,7 +94,7 @@ export function LinkPage() {
         accept_dpa: true, dpa_version: config.data.dpa_version, turnstile_token: token ?? "not-configured",
       });
       setLinked(true);
-      track("link_claimed", { source: src ?? "unknown", new_network: target === "new", server_named: Boolean(serverName.trim()), platform: preview.data?.install.platform });
+      track("link_claimed", { install_id: res.install_id, source: src ?? "unknown", new_network: target === "new", server_named: Boolean(serverName.trim()), platform: preview.data?.install.platform });
       await qc.invalidateQueries({ queryKey: ["me"] });
       // Straight into the setup assistant; it steps aside on its own if the server is already configured.
       window.setTimeout(() => navigate({ to: "/n/$networkId/setup", params: { networkId: res.network_id }, search: { server: res.install_id } }), 900);

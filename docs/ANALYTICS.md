@@ -81,7 +81,7 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | `server_active_daily` | `ins_…` + group | `platform`, `plugin_version`, `mode`, `linked` |
 | `$groupidentify` (daily) | network | `active_servers`, `enforcing_servers`, `platforms[]`, `plugin_versions[]` |
 
-The activation funnel: `plugin_installed` → `server_linked` → `setup_finished` → `settings_applied` → `first_decisions_received`.
+The activation funnel: `plugin_installed` → `server_linked` → `setup_finished` → `settings_applied` → `first_decisions_received`. These events have different distinct IDs (server or account), so funnels aggregate by the `install_id` property, which every one of them carries. Events in a network also carry `network_id` as a plain property: group analytics is a paid add-on, and on the free plan the `$groups` sent alongside are not analysed.
 
 ## Setup
 
