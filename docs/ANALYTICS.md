@@ -36,7 +36,7 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | Event | Properties |
 | --- | --- |
 | `$pageview`, `$pageleave`, `$autocapture`, `$dead_click`, `$web_vitals`, `$exception` | standard |
-| `cta_clicked` | `cta` (download, compare), `location` (nav, hero, closing, platform_*, guide_end), `page` |
+| `cta_clicked` | `cta` (download, compare, dashboard), `location` (nav, hero, closing, platform_*, guide_end, announcement), `page` |
 | `download_clicked` | `destination` (modrinth, hangar, spigotmc, github), `location` (download_page, hero_stats, footer), `page` |
 | `support_clicked` | `channel` (discord, github), `location` |
 | `install_guide_opened` | `platform` (velocity, bungeecord, paper), on platform pages |
@@ -71,6 +71,7 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | `user_signed_up`, `user_signed_in` | `usr_…` | `method` |
 | `server_linked` | `usr_…` + group | `new_network`, `platform`, `plugin_version`, `minutes_since_install`, `server_named` |
 | `first_decisions_received` | `ins_…` + group | `platform`, `plugin_version`, `mode`, `minutes_since_install`, `decisions` |
+| `sync_partly_unreadable` | `ins_…` | `plugin_version`, `dropped_events`, `dropped_reasons`: a newer plugin sent enum values this API does not know yet (see `tolerateSync`) |
 | `settings_saved` | `usr_…` + group | `fields[]`, `field_count`, `secret_fields`, `apply_to`, `servers`, `mode` |
 | `settings_applied`, `settings_rejected` | `ins_…` + group | `version`, `reset` / `message` (scrubbed, 160 chars) |
 | `settings_reset`, `server_unlinked`, `server_renamed`, `network_token_created` | `usr_…` + group | none |

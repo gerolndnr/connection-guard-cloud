@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Command, InstallRequest, SyncRequest, SyncResponse } from "../src/index.ts";
+import { Command, InstallRequest, SyncRequest, SyncResponse, tolerateSync } from "../src/index.ts";
 import { installRequest, syncRequest, syncResponse } from "../src/examples.ts";
 
 describe("protocol v1", () => {
@@ -21,6 +21,31 @@ describe("protocol v1", () => {
     expect(Command.safeParse(add).success).toBe(true);
     expect(Command.safeParse({ ...add, expires_at: -1 }).success).toBe(false);
     expect(Command.safeParse({ ...add, expires_at: "1h" }).success).toBe(false);
+  });
+
+  it("accepts decisions from admission hooks of other plugins", () => {
+    const event = { ...syncRequest.events[0]!, outcome: "DENY", reason: "EXTERNAL_POLICY", flags: ["EXTERNAL_POLICY"] };
+    const counters = { ...syncRequest.counters, reasons: { EXTERNAL_POLICY: 2, EXTERNAL_UNAVAILABLE: 1 } };
+    expect(SyncRequest.safeParse({ ...syncRequest, events: [event], counters }).success).toBe(true);
+  });
+
+  it("keeps a sync from a newer plugin, dropping only what this version cannot read", () => {
+    const future = { ...syncRequest.events[0]!, reason: "SOMETHING_NEW" };
+    const body = { ...syncRequest, events: [syncRequest.events[0], future],
+      counters: { ...syncRequest.counters, reasons: { VPN_FLAG: 3, SOMETHING_NEW: 1 } } };
+    expect(SyncRequest.safeParse(body).success).toBe(false);
+    const tolerated = tolerateSync(body);
+    expect(tolerated.dropped_events).toBe(1);
+    expect(tolerated.dropped_reasons).toBe(1);
+    const parsed = SyncRequest.parse(tolerated.json);
+    expect(parsed.events).toHaveLength(1);
+    expect(parsed.counters.reasons).toEqual({ VPN_FLAG: 3 });
+  });
+
+  it("still rejects unknown top-level and status fields after tolerating", () => {
+    expect(SyncRequest.safeParse(tolerateSync({ ...syncRequest, player_names: ["x"] }).json).success).toBe(false);
+    expect(SyncRequest.safeParse(tolerateSync({ ...syncRequest, status: { ...syncRequest.status, extra: 1 } }).json).success).toBe(false);
+    expect(tolerateSync(null).json).toBe(null);
   });
 
   it("only knows a closed set of commands", () => {

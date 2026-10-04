@@ -80,4 +80,5 @@ After the first deploy: verify the domain in Google Search Console and Bing Webm
 
 - The legal texts in `docs/LEGAL.md` are published and reviewed.
 - Plugin listings (Modrinth, Hangar, Spigot) disclose the opt-out data flow; see `connection-guard/docs/CLOUD.md`.
-- The plugin release that contains the cloud link is published (branch `codex/cloud-dashboard` in the plugin repo).
+- The plugin release that contains the cloud link (0.5, from plugin `master`) is published.
+- Then set `DASHBOARD_RELEASED = true` in `apps/site/src/data/release.ts`, rebuild and deploy the website. That drops the "0.5" chips, turns the copy present tense and adds "Dashboard" to the navigation.

@@ -4,7 +4,7 @@
 import { Hono, type Context } from "hono";
 import { capture } from "./analytics.ts";
 import {
-  Command, InstallRequest, MAX_BODY_BYTES, SyncRequest,
+  Command, InstallRequest, MAX_BODY_BYTES, SyncRequest, tolerateSync,
   type Counters, type DesiredConfig, type ErrorResponse, type InstallResponse, type SyncResponse,
 } from "@cg/protocol";
 import { openSecrets } from "./secrets.ts";
@@ -179,8 +179,18 @@ plugin.post("/v1/sync", async (c) => {
   if (typeof json === "object" && json !== null && "protocol" in json && json.protocol !== 1) {
     return fail(c, 426, "unsupported_protocol");
   }
-  const parsed = SyncRequest.safeParse(json);
+  // A newer plugin may send enum values this version does not know yet; lose those events, not the whole sync.
+  const tolerated = tolerateSync(json);
+  const parsed = SyncRequest.safeParse(tolerated.json);
   if (!parsed.success) return fail(c, 400, "bad_request");
+  if (tolerated.dropped_events > 0 || tolerated.dropped_reasons > 0) {
+    // Tells us the dashboard lags behind a plugin release; contains no player data.
+    capture(c, {
+      event: "sync_partly_unreadable", distinct_id: install.id, person: false,
+      properties: { plugin_version: parsed.data.plugin_version, dropped_events: tolerated.dropped_events,
+        dropped_reasons: tolerated.dropped_reasons },
+    });
+  }
   const req = parsed.data;
   const now = Date.now();
   const claimed = install.network_id !== null;

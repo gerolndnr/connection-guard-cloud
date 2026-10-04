@@ -1,5 +1,7 @@
 ---
 import { COLUMNS, ROWS } from "../data/compare";
+import { DASHBOARD_RELEASED } from "../data/release";
+const soon = (r: { soon?: boolean }) => !DASHBOARD_RELEASED && r.soon;
 const icon = { yes: "M5 12.5l4.5 4.5L19 7.5", no: "M6 12h12", varies: "M5 13.5c1.6-2.4 3.4-2.4 5 0s3.4 2.4 5 0 3.4-2.4 4-1" } as const;
 const color = { yes: "text-accent", no: "text-fg-3", varies: "text-fg-3" } as const;
 const word = { yes: "Yes", no: "No", varies: "Varies" } as const;
@@ -20,7 +22,7 @@ const word = { yes: "Yes", no: "No", varies: "Varies" } as const;
         <tr class="border-b border-line last:border-0">
           <th scope="row" class="px-5 py-4 align-top text-sm font-medium">
             {r.label}
-            {r.soon && <span class="chip chip-soon ml-2 h-5 align-middle text-xs">0.5</span>}
+            {soon(r) && <span class="chip chip-soon ml-2 h-5 align-middle text-xs">0.5</span>}
             {r.proof && <a href={r.proof} data-ph-event="compare_proof_clicked" data-ph-row={r.label} class="mt-1 block text-[0.8125rem] font-normal text-fg-3 no-underline hover:text-fg hover:underline">See it →</a>}
           </th>
           {r.cells.map((c, i) => (
@@ -40,7 +42,7 @@ const word = { yes: "Yes", no: "No", varies: "Varies" } as const;
 <ul class="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface md:hidden">
   {ROWS.map((r) => (
     <li class="px-4 py-4">
-      <p class="flex items-center gap-2 text-sm font-semibold">{r.label}{r.soon && <span class="chip chip-soon h-5 text-xs">0.5</span>}
+      <p class="flex items-center gap-2 text-sm font-semibold">{r.label}{soon(r) && <span class="chip chip-soon h-5 text-xs">0.5</span>}
         {r.proof && <a href={r.proof} data-ph-event="compare_proof_clicked" data-ph-row={r.label} class="ml-auto text-[0.8125rem] font-normal text-fg-3 no-underline hover:text-fg hover:underline">See it →</a>}</p>
       <dl class="mt-3 space-y-2 text-sm">
         {r.cells.map((c, i) => (
@@ -63,5 +65,5 @@ const word = { yes: "Yes", no: "No", varies: "Varies" } as const;
 </p>
 <p class="mt-2 max-w-[34rem] text-[0.8125rem] leading-relaxed text-fg-3">
   The other columns describe common setups we reviewed in October 2026, not any single product; individual plugins and services differ, so check their pages before you choose.
-  Rows marked <span class="chip chip-soon h-5 text-xs">0.5</span> arrive with Connection Guard 0.5; everything else is in today's release.
+  {!DASHBOARD_RELEASED && <>Rows marked <span class="chip chip-soon h-5 text-xs">0.5</span> arrive with Connection Guard 0.5; everything else is in today's release.</>}
 </p>

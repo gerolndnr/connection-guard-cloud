@@ -7,6 +7,8 @@ import stats from "../data/stats.json";
 import Faq from "../components/Faq.astro";
 import { PLATFORMS } from "../data/platforms";
 import { faq as faqSchema, software } from "../lib/seo";
+import { DASHBOARD_RELEASED, DASHBOARD_URL } from "../data/release";
+const live = DASHBOARD_RELEASED;
 const faq = [
   { q: "What is Connection Guard?", a: "Connection Guard is a free, open-source anti-VPN plugin for Minecraft servers. It checks players' IP addresses at login for VPNs, proxies and country rules, and then refuses them, alerts staff or posts to Discord, as you choose." },
   { q: "Is Connection Guard free?", a: "Yes. It's MIT licensed and needs no Connection Guard account. The detection services it uses have their own free plans and limits; the default VPN service, ProxyCheck, works without a key." },
@@ -18,8 +20,12 @@ const faq = [
 const steps = [
   { n: "1", title: "Download one JAR", body: "The same file runs on Paper, Spigot, BungeeCord and Velocity. Java 8 or newer; Velocity needs Java 17.", soon: false },
   { n: "2", title: "Drop it into plugins and restart", body: "New players are checked from their first login. Answers are cached, so a returning player from the same address costs no lookup.", soon: false },
-  { n: "3", title: "Choose your rules", body: "Pick detection services, countries and what happens on a hit: in config.yml today, in a two-minute setup assistant from 0.5.", soon: true },
-  { n: "4", title: "See who was refused, and why", body: "Staff alerts in chat and Discord webhooks today. From 0.5, a decision log that explains every verdict in one sentence.", soon: true },
+  { n: "3", title: "Choose your rules", body: live
+    ? "Pick detection services, countries and what happens on a hit, in a two-minute setup assistant or in config.yml."
+    : "Pick detection services, countries and what happens on a hit: in config.yml today, in a two-minute setup assistant from 0.5.", soon: !live },
+  { n: "4", title: "See who was refused, and why", body: live
+    ? "A decision log that explains every verdict in one sentence, plus staff alerts in chat and Discord webhooks."
+    : "Staff alerts in chat and Discord webhooks today. From 0.5, a decision log that explains every verdict in one sentence.", soon: !live },
 ];
 ---
 <Base title="Connection Guard: Free Anti-VPN Plugin for Minecraft Servers" path="/"
@@ -29,9 +35,15 @@ const steps = [
   <!-- Announcement: be clear about what is released today. -->
   <div class="border-b border-line bg-surface">
     <p class="container-site flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-2.5 text-center text-[0.8125rem] text-fg-2">
-      <span class="chip chip-soon h-5 text-xs">Coming in 0.5</span>
-      A free dashboard and a two-minute setup assistant.
-      <a href="#dashboard" class="font-medium text-fg no-underline hover:underline">See the preview →</a>
+      {live ? <>
+        <span class="chip chip-soon h-5 text-xs">New in 0.5</span>
+        A free dashboard and a two-minute setup assistant.
+        <a href={DASHBOARD_URL} class="font-medium text-fg no-underline hover:underline" data-ph-event="cta_clicked" data-ph-cta="dashboard" data-ph-location="announcement">Open the dashboard →</a>
+      </> : <>
+        <span class="chip chip-soon h-5 text-xs">Coming in 0.5</span>
+        A free dashboard and a two-minute setup assistant.
+        <a href="#dashboard" class="font-medium text-fg no-underline hover:underline">See the preview →</a>
+      </>}
     </p>
   </div>
 
@@ -74,8 +86,8 @@ const steps = [
     <div class="container-site py-20 sm:py-28">
       <div class="flex flex-wrap items-end justify-between gap-6">
         <div class="max-w-2xl">
-          <h2 class="section-title flex flex-wrap items-center gap-x-3 gap-y-2">Every decision, explained. <span class="chip chip-soon text-xs">0.5</span></h2>
-          <p class="lede mt-4">Optional and free from 0.5: link a server with one click from its console, and see who was checked, who was refused, and the reason behind each verdict. Settings change in plain language, without a restart.</p>
+          <h2 class="section-title flex flex-wrap items-center gap-x-3 gap-y-2">Every decision, explained. {!live && <span class="chip chip-soon text-xs">0.5</span>}</h2>
+          <p class="lede mt-4">{live ? "Optional and free" : "Optional and free from 0.5"}: link a server with one click from its console, and see who was checked, who was refused, and the reason behind each verdict. Settings change in plain language, without a restart.</p>
         </div>
         <ul class="grid gap-2 text-sm text-fg-2">
           <li>Logins never wait on the dashboard</li>
@@ -96,7 +108,7 @@ const steps = [
           <pre class="mono whitespace-pre-wrap break-words rounded-xl border border-line bg-[#0a0a0a] px-4 py-3.5 text-[0.75rem] leading-relaxed text-[#a1a1a1]"><span class="text-[#8f8f8f]">[12:04:51 INFO] </span>[connection-guard] Enabled Connection Guard v{stats.latest?.version ?? "0.4"}
 <span class="text-[#8f8f8f]">[12:04:51 INFO] </span>[connection-guard] VPN check: ProxyCheck · country check: IP-API
 <span class="text-[#8f8f8f]">[12:05:07 INFO] </span>[connection-guard] <span class="text-[#34d399]">Link this server to your dashboard: https://app.connectionguard.net/link/7KQM-4P2X</span></pre>
-          <figcaption class="mt-2 text-[0.75rem] text-fg-3">Illustrative console output. The dashboard link appears from 0.5.</figcaption>
+          <figcaption class="mt-2 text-[0.75rem] text-fg-3">{live ? "Illustrative console output." : "Illustrative console output. The dashboard link appears from 0.5."}</figcaption>
         </figure>
       </div>
       <ol class="relative space-y-8 before:absolute before:bottom-2 before:left-[0.9375rem] before:top-2 before:w-px before:bg-line">

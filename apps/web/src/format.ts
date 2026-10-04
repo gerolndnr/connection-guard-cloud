@@ -55,9 +55,12 @@ export const reasonText: Record<DecisionEvent["reason"], string> = {
   GEO_FLAG: "Country not allowed",
   INTERNAL_ERROR: "Internal error",
   IDENTITY_UNAVAILABLE: "Identity could not be verified",
+  EXTERNAL_POLICY: "Refused by another plugin",
+  EXTERNAL_UNAVAILABLE: "Another plugin's check unavailable",
 };
 
-const flagText = { VPN: "a VPN or proxy", GEO: "a blocked country", ACCESS_POLICY: "an access rule" } as const;
+const flagText = { VPN: "a VPN or proxy", GEO: "a blocked country", ACCESS_POLICY: "an access rule",
+  EXTERNAL_POLICY: "a refusal by another plugin" } as const;
 
 /** Reason label for one entry: flagged-but-admitted reads differently in pencil (OBSERVE) and ink (ENFORCE). */
 export const reasonLabel = (e: DecisionEvent) => (wouldRefuse(e) ? "Would refuse in ENFORCE" : reasonText[e.reason]);
@@ -74,6 +77,8 @@ export function explain(e: DecisionEvent): string {
       if (e.reason === "GEO_FLAG") return `Refused: your country rules do not allow connections from ${country ? countryName(country) : "this country"}.`;
       if (e.reason === "LOOKUP_UNAVAILABLE") return "Refused because no provider answered in time and the failure policy is CLOSED.";
       if (e.reason === "OVERLOAD") return "Refused by overload protection: too many logins arrived at once.";
+      if (e.reason === "EXTERNAL_POLICY") return "Refused because another plugin on this server (for example its ban list) said no. Connection Guard did not run its own lookups for it.";
+      if (e.reason === "EXTERNAL_UNAVAILABLE") return "Refused for now because another plugin's check did not answer and its failure policy is CLOSED. The player can try again.";
       return `Refused: ${reasonText[e.reason].toLowerCase()}.`;
     case "would-refuse":
       return `Connection Guard found ${flags} but let the player in, because this server only observes. In ENFORCE mode this connection would have been refused.`;
@@ -81,6 +86,7 @@ export function explain(e: DecisionEvent): string {
       return "The check failed with an internal error; the connection was handled by your failure policy.";
     default:
       if (e.reason === "ACCESS_RULE") return "A manual allow or exempt rule matched, so no lookup was needed.";
+      if (e.reason === "EXTERNAL_UNAVAILABLE") return "Another plugin's check did not answer; its failure policy lets such players in.";
       if (e.reason === "UNKNOWN_ALLOWED") return "The providers could not give an answer in time; your failure policy lets such players in.";
       if (e.reason === "FLAG_ALLOWED") return `Connection Guard found ${flags}, and your settings let such players in.`;
       return "Every check came back clean.";

@@ -19,9 +19,11 @@ export const Mode = z.enum(["OBSERVE", "ENFORCE"]);
 export const IdentityTrust = z.enum(["UNTRUSTED", "AUTHENTICATED", "FORWARDED", "PLATFORM_ONLINE", "FLOODGATE", "VERIFIED_FORWARDING"]);
 export const Outcome = z.enum(["ALLOW", "DENY", "ERROR"]);
 export const DecisionReason = z.enum(["CHECKS_COMPLETE", "FLAG_ALLOWED", "UNKNOWN_ALLOWED", "ACCESS_RULE", "LOOKUP_UNAVAILABLE",
-  "OVERLOAD", "VPN_FLAG", "GEO_FLAG", "INTERNAL_ERROR", "IDENTITY_UNAVAILABLE"]);
+  "OVERLOAD", "VPN_FLAG", "GEO_FLAG", "INTERNAL_ERROR", "IDENTITY_UNAVAILABLE",
+  // An admission hook of another plugin (see the plugin's docs/ADMISSION_API.md) refused, or could not answer.
+  "EXTERNAL_POLICY", "EXTERNAL_UNAVAILABLE"]);
 export const Check = z.enum(["NOT_CHECKED", "EXEMPT", "POSITIVE", "NEGATIVE", "KNOWN", "UNKNOWN"]);
-export const Flag = z.enum(["ACCESS_POLICY", "VPN", "GEO"]);
+export const Flag = z.enum(["ACCESS_POLICY", "VPN", "GEO", "EXTERNAL_POLICY"]);
 export const Scope = z.enum(["VPN", "GEO", "ALL"]);
 export const Effect = z.enum(["DENY", "ALLOW", "EXEMPT"]);
 export const Match = z.enum(["MATCH", "MISS", "UNKNOWN", "CONFLICT"]);
@@ -151,7 +153,7 @@ export const DecisionEvent = z.object({
   ip: Ip,
   vpn: Check,
   geo: Check,
-  flags: z.array(Flag).max(3),
+  flags: z.array(Flag).max(4),
   duration_ms: z.number().int().min(0).max(600_000),
   sources: z.array(EventSource).max(16),
   rules: z.array(EventRule).max(16),
@@ -175,6 +177,35 @@ export const SyncRequest = z.object({
   command_results: z.array(CommandResult).max(64),
 }).strict();
 export type SyncRequest = z.infer<typeof SyncRequest>;
+
+/**
+ * Makes a sync from a newer plugin parse against this protocol version. A plugin that adds an enum value (a new
+ * decision reason, flag or provider status) would otherwise fail the strict schema and lose the whole sync,
+ * counters and command results included. Instead, events this version cannot read are dropped one by one and
+ * unknown reason keys leave the counters; both are counted so the dashboard can say so. Everything else stays
+ * strict.
+ */
+export function tolerateSync(json: unknown): { json: unknown; dropped_events: number; dropped_reasons: number } {
+  if (typeof json !== "object" || json === null || Array.isArray(json)) return { json, dropped_events: 0, dropped_reasons: 0 };
+  const body = { ...(json as Record<string, unknown>) };
+  let droppedEvents = 0;
+  let droppedReasons = 0;
+  if (Array.isArray(body.events) && body.events.length <= MAX_EVENTS_PER_SYNC) {
+    const kept = body.events.filter((e) => DecisionEvent.safeParse(e).success);
+    droppedEvents = body.events.length - kept.length;
+    body.events = kept;
+  }
+  const counters = body.counters;
+  if (typeof counters === "object" && counters !== null && !Array.isArray(counters)) {
+    const reasons = (counters as Record<string, unknown>).reasons;
+    if (typeof reasons === "object" && reasons !== null && !Array.isArray(reasons)) {
+      const known = Object.entries(reasons).filter(([key]) => DecisionReason.safeParse(key).success);
+      droppedReasons = Object.keys(reasons).length - known.length;
+      body.counters = { ...counters, reasons: Object.fromEntries(known) };
+    }
+  }
+  return { json: body, dropped_events: droppedEvents, dropped_reasons: droppedReasons };
+}
 
 // Commands the dashboard queues for one install. The plugin only executes
 // the closed set below; anything else is rejected client side.

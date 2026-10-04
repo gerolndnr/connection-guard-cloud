@@ -36,8 +36,8 @@ export function simulate(events: RegisterEvent[], v: Values): SimulationResult {
     out.total++;
     const before = refusedNow(e);
     if (before) out.refusedBefore++;
-    // Access rules decide independently of these settings.
-    if (e.reason === "ACCESS_RULE") { if (before) out.refusedAfter++; continue; }
+    // Access rules and other plugins' admission checks decide independently of these settings.
+    if (e.reason === "ACCESS_RULE" || e.reason === "EXTERNAL_POLICY" || e.reason === "EXTERNAL_UNAVAILABLE") { if (before) out.refusedAfter++; continue; }
 
     let vpn = false;
     if (enabled.length > 0 && !exempt(v["behavior.vpn.exemptions"], e)) {

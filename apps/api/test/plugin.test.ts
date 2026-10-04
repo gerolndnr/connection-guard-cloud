@@ -64,6 +64,19 @@ describe("POST /v1/sync", () => {
     expect(batches.results).toEqual([{ event_count: 1, denied_count: 0 }, { event_count: 1, denied_count: 1 }]);
   });
 
+  it("keeps a sync from a newer plugin and drops only the events it cannot read", async () => {
+    const ins = await install();
+    expect((await claim(await login(), ins.link_code!)).status).toBe(201);
+    const external = { ...decisionEvent, id: crypto.randomUUID(), outcome: "DENY", reason: "EXTERNAL_POLICY", flags: ["EXTERNAL_POLICY"] };
+    const future = { ...decisionEvent, id: crypto.randomUUID(), reason: "SOMETHING_NEWER" };
+    await syncOk(ins, { seq: 1, events: [external, future],
+      counters: { ...syncRequest.counters, reasons: { EXTERNAL_POLICY: 1, SOMETHING_NEWER: 1 } } });
+    const batch = await env.DB.prepare("SELECT event_count, denied_count FROM event_batches WHERE install_id = ?").bind(ins.install_id).first();
+    expect(batch).toEqual({ event_count: 1, denied_count: 1 });
+    const rollup = await env.DB.prepare("SELECT reasons_json FROM rollups_hourly WHERE install_id = ?").bind(ins.install_id).first<{ reasons_json: string }>();
+    expect(JSON.parse(rollup!.reasons_json)).toEqual({ EXTERNAL_POLICY: 1 });
+  });
+
   it("accepts gzip bodies", async () => {
     const ins = await install();
     const gz = new Blob([JSON.stringify(syncRequest)]).stream().pipeThrough(new CompressionStream("gzip"));

@@ -21,6 +21,17 @@ describe("register language", () => {
     expect(verdict(e)).toBe("refused");
     expect(explain(e)).toBe("Refused: proxycheck reported a VPN or proxy in Netherlands.");
   });
+
+  it("attributes refusals by another plugin's admission check to that plugin", () => {
+    const e = { ...decisionEvent, mode: "ENFORCE" as const, outcome: "DENY" as const, reason: "EXTERNAL_POLICY" as const, flags: ["EXTERNAL_POLICY" as const] };
+    expect(reasonLabel(e)).toBe("Refused by another plugin");
+    expect(explain(e)).toContain("another plugin on this server");
+    const observed = { ...e, mode: "OBSERVE" as const, outcome: "ALLOW" as const };
+    expect(explain(observed)).toContain("found a refusal by another plugin");
+    const unavailable = { ...e, reason: "EXTERNAL_UNAVAILABLE" as const, flags: [] };
+    expect(explain(unavailable)).toContain("CLOSED");
+    expect(explain({ ...unavailable, outcome: "ALLOW" as const })).toContain("lets such players in");
+  });
 });
 
 import { isPrivateIp } from "../format.ts";

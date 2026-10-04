@@ -1,5 +1,6 @@
 ---
 import { ThemeToggle } from "@web/components/ThemeToggle.tsx";
+import { DASHBOARD_RELEASED, DASHBOARD_URL } from "../data/release";
 interface Props { path: string }
 const { path } = Astro.props;
 const links = [
@@ -7,6 +8,7 @@ const links = [
   { href: "/#platforms", label: "Platforms" },
   { href: "/guides", label: "Guides" },
   { href: "https://github.com/gerolndnr/connection-guard/tree/master/docs", label: "Docs" },
+  ...(DASHBOARD_RELEASED ? [{ href: DASHBOARD_URL, label: "Dashboard" }] : []),
 ];
 ---
 <header class="sticky top-0 z-30 border-b border-line bg-surface">

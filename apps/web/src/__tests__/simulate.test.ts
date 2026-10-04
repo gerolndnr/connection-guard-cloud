@@ -24,6 +24,12 @@ describe("simulate", () => {
     expect(r.changed.map((c) => c.why)).toEqual(["Country RU", "Country RU"]);
   });
 
+  it("leaves other plugins' admission decisions as they were", () => {
+    const refused = ev({ country: "RU", outcome: "DENY", reason: "EXTERNAL_POLICY", flags: ["EXTERNAL_POLICY"] });
+    const r = simulate([refused, ev({ country: "RU", reason: "EXTERNAL_UNAVAILABLE" })], { ...base, "operation.mode": "OBSERVE" });
+    expect(r).toMatchObject({ total: 2, refusedBefore: 1, refusedAfter: 1, changed: [] });
+  });
+
   it("an empty allowlist refuses everyone", () => {
     expect(simulate([ev({}), ev({ country: "US" })], { ...base, "behavior.geo.type": "WHITELIST" }).refusedAfter).toBe(2);
   });
