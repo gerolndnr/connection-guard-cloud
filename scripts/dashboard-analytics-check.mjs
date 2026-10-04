@@ -40,6 +40,14 @@ await ctx.route(/posthog\.com|t\.connectionguard\.net/, async (route) => {
   }
   return route.continue();
 });
+// Like uBlock Origin with EasyPrivacy: these file names are blocked, so nothing may depend on them.
+const BLOCKED = [/\/dead-clicks-autocapture\.js/, /\/posthog-recorder\.js/, /:\/\/posthog\./];
+const externalScripts = [];
+ctx.on("request", (r) => {
+  const u = r.url();
+  if (r.resourceType() === "script" && !u.startsWith(base) && /posthog|t\.connectionguard\.net/.test(u)) externalScripts.push(u);
+});
+await ctx.route((url) => BLOCKED.some((re) => re.test(url.toString())), (r) => r.abort("blockedbyclient"));
 const page = await ctx.newPage();
 await page.request.post(`${base}/api/auth/dev-login`, { data: { name: "Demo Operator" }, headers: { origin: base } });
 await page.goto(`${base}/`); await page.waitForURL(/\/n\//); await page.waitForTimeout(2500);
@@ -88,6 +96,7 @@ if (storage.local.some((k) => !["cg-theme", "cg-analytics-optout", "cg-dismissed
 if (leakedAfterOptOut) { bad++; console.log(`✗ ${leakedAfterOptOut} events after opting out`); }
 if (events.some((e) => typeof e.properties?.distinct_id === "string" && !e.properties.distinct_id.startsWith("usr_"))) { bad++; console.log("✗ signed-in events without the account ID"); }
 if (!events.some((e) => e.event === "cg_decision_opened")) { bad++; console.log("✗ no cg_decision_opened"); }
+if (externalScripts.length) { bad++; console.log(`✗ scripts loaded from PostHog: ${[...new Set(externalScripts)].join(", ")}`); }
 console.log(`${events.length} events (${before} before opt-out), ${bad} problems`);
 await browser.close();
 process.exit(bad ? 1 : 0);

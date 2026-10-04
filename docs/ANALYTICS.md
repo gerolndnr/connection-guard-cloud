@@ -21,7 +21,11 @@ Four layers keep it that way:
 3. `before_send` runs `scrubEventProperties` from `@cg/protocol/scrub`. It replaces IPv4/IPv6 addresses, UUIDs and link codes in every property except PostHog's own random IDs. It also normalizes dashboard URLs to `/n/:network/…`.
 4. The API sends only categories and counts. `settings_saved` lists which fields changed, never their values.
 
-`scripts/dashboard-analytics-check.mjs` and `scripts/site-analytics-check.mjs` intercept every PostHog request in a real browser. They fail on IPs, player UUIDs, the account name, browser storage or events after opting out.
+## Content blockers
+
+Events go through our own proxy host, which blocklists don't name. PostHog normally lazy-loads its extensions under fixed file names, and EasyPrivacy blocks some of those by name: `/posthog-recorder.js`, `/dead-clicks-autocapture.js`, and any script from a `posthog.` host. So both apps load `posthog-js/dist/module.no-external`, which never loads scripts by itself, and bundle the extensions they use into one neutrally named chunk: `apps/site/src/lib/runtime.ts` and `apps/web/src/runtime.ts`. The dashboard build also names chunks by hash only. People who block our proxy domain itself are not counted, by their choice.
+
+`scripts/dashboard-analytics-check.mjs` and `scripts/site-analytics-check.mjs` block those file names the way uBlock does, fail if any script loads from PostHog, and intercept every PostHog request in a real browser. They fail on IPs, player UUIDs, the account name, browser storage or events after opting out.
 
 ## Events
 

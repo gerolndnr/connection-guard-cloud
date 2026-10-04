@@ -10,6 +10,8 @@ export default defineConfig({
   integrations: [react(), sitemap()],
   vite: {
     plugins: [tailwindcss()],
+    // Neutral chunk names: content blockers match file names like "posthog-recorder".
+    build: { rollupOptions: { output: { chunkFileNames: "_astro/[hash].js" } } },
     // The dashboard preview uses the real dashboard components.
     resolve: { alias: { "@web": fileURLToPath(new URL("../web/src", import.meta.url)) } },
   },

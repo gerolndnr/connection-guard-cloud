@@ -4,7 +4,7 @@
 //   user ID as the distinct ID (never the Discord name), so reloads don't mint new IDs; a reload starts a new session.
 // - Session replays hide all text and inputs; tables with player data are excluded from autocapture.
 // - Off when the server sends no PostHog key (only production has one), with Global Privacy Control, or after opting out.
-import type { PostHog, CaptureResult } from "posthog-js";
+import type { PostHog, CaptureResult } from "posthog-js/dist/module.no-external";
 import { normalizePath, scrubEventProperties, scrubValue } from "@cg/protocol/scrub";
 
 const OPT_OUT_KEY = "cg-analytics-optout";
@@ -47,7 +47,7 @@ export async function startAnalytics(cfg: StartConfig) {
   lastConfig = cfg;
   if (ph || starting || !cfg.key || gpc() || analyticsOptedOut()) return;
   starting = true;
-  const { default: posthog } = await import("posthog-js");
+  const { default: posthog } = await import("./runtime.ts");
   posthog.init(cfg.key, {
     api_host: cfg.host,
     ui_host: "https://eu.posthog.com",

@@ -24,6 +24,14 @@ await ctx.route(/posthog\.com|t\.connectionguard\.net/, async (route) => {
   if (/\.js(\?|$)/.test(req.url())) return route.continue();
   return route.fulfill({ status: 200, contentType: "application/json", body: '{"status":1}' });
 });
+// Like uBlock Origin with EasyPrivacy: these file names are blocked, so nothing may depend on them.
+const BLOCKED = [/\/dead-clicks-autocapture\.js/, /\/posthog-recorder\.js/, /:\/\/posthog\./];
+const externalScripts = [];
+ctx.on("request", (r) => {
+  const u = r.url();
+  if (r.resourceType() === "script" && !u.startsWith(base) && /posthog|t\.connectionguard\.net/.test(u)) externalScripts.push(u);
+});
+await ctx.route((url) => BLOCKED.some((re) => re.test(url.toString())), (r) => r.abort("blockedbyclient"));
 const page = await ctx.newPage();
 await page.goto(base + "/");
 await page.waitForTimeout(3500);
@@ -51,6 +59,7 @@ console.log("cookieless:", events.every((e) => e.properties?.$cookieless_mode ==
 console.log("browser storage:", JSON.stringify(storage), "cookies:", cookies.length);
 if (cookies.length || storage.cookies || storage.local.some((k) => k !== "cg-theme") || storage.session.length) { bad++; console.log("✗ stored data in the browser"); }
 for (const k of ["$pageview", "cg_cta_clicked", "cg_faq_opened", "cg_download_clicked", "cg_install_guide_opened"]) if (!kinds.has(k)) { bad++; console.log(`✗ missing ${k}`); }
+if (externalScripts.length) { bad++; console.log(`✗ scripts loaded from PostHog: ${[...new Set(externalScripts)].join(", ")}`); }
 console.log(`${events.length} events, ${bad} problems`);
 await browser.close();
 process.exit(bad ? 1 : 0);

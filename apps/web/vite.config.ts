@@ -8,5 +8,9 @@ export default defineConfig({
     port: 5173,
     proxy: { "/api": { target: "http://localhost:8788", changeOrigin: false } },
   },
-  build: { sourcemap: true },
+  build: {
+    sourcemap: true,
+    // Neutral chunk names: content blockers match file names like "posthog-recorder".
+    rollupOptions: { output: { chunkFileNames: "assets/[hash].js" } },
+  },
 });

@@ -7,7 +7,7 @@ import { scrubEventProperties } from "@cg/protocol/scrub";
 const KEY = import.meta.env.PUBLIC_POSTHOG_KEY ?? "";
 const HOST = import.meta.env.PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com";
 
-type Ph = typeof import("posthog-js").default;
+type Ph = typeof import("./runtime").default;
 
 function props(el: HTMLElement): Record<string, string> {
   const out: Record<string, string> = {};
@@ -33,7 +33,7 @@ function wire(ph: Ph) {
 
 export function startSiteAnalytics() {
   if (!KEY || (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl) return;
-  const go = () => import("posthog-js").then(({ default: ph }) => {
+  const go = () => import("./runtime").then(({ default: ph }) => {
     ph.init(KEY, {
       api_host: HOST,
       ui_host: "https://eu.posthog.com",
