@@ -51,7 +51,7 @@ function ApplyStatus({ cfg, server }: { cfg: ServerConfig; server: string }) {
         {cfg.online ? <LoaderCircle aria-hidden className="mt-0.5 size-4 shrink-0 animate-spin text-fg-2 motion-reduce:animate-none" /> : <WifiOff aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />}
         <div>
           <p className="font-medium">{cfg.online ? `Waiting for ${server} to apply your changes…` : `${server} is offline`}</p>
-          <p className="mt-0.5 text-[0.8125rem] text-fg-2">{cfg.online ? "Servers check in every 15 seconds while this page is open. No restart needed." : "Your changes are saved and apply as soon as it reconnects."}</p>
+          <p className="mt-0.5 text-[0.8125rem] text-fg-2">{cfg.online ? "While you have the dashboard open, servers check in every 15 seconds. No restart needed." : "Your changes are saved and apply as soon as it reconnects."}</p>
         </div>
       </div>
     );
@@ -413,7 +413,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
                     {cfgQ.data?.online !== false && <span className="num ml-1.5 font-normal text-fg-3">{Math.max(0, Math.round((now - lastSave.at) / 1000))} s</span>}
                   </p>
                   <p className="text-fg-2">
-                    {cfgQ.data?.online === false ? "Nothing else to do." : "Servers check in every 15 seconds while this page is open, so this usually takes under half a minute."}
+                    {cfgQ.data?.online === false ? "Nothing else to do." : "While you have the dashboard open, servers check in every 15 seconds, so this usually takes under half a minute and at most about a minute."}
                     {lastSave.others > 0 && ` Also sent to ${lastSave.others} other ${lastSave.others === 1 ? "server" : "servers"}.`}
                   </p>
                   <div className="mt-2 h-1 overflow-hidden rounded-full bg-subtle" aria-hidden>

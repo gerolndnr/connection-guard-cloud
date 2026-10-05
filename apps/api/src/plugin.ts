@@ -293,7 +293,9 @@ plugin.post("/v1/sync", async (c) => {
   const code = claimed ? null : await ensureLinkCode(env, install.id, now);
   const gov = await governorState(env, now);
   const onboarding = !claimed && now - install.created_at < ONBOARDING_WINDOW;
-  const busy = req.counters.checks > 0 || req.events.length > 0 || req.status.buffered_events > 0;
+  // Linked servers keep the base interval even when idle, so a dashboard change is picked up within a minute at worst.
+  // The governor's floor already assumes every active install syncs at that interval, so the free-plan budget holds.
+  const busy = claimed || req.counters.checks > 0 || req.events.length > 0 || req.status.buffered_events > 0;
   const body: SyncResponse = {
     next_sync_in: nextSyncIn(gov, { busy, live: false, fast: onboarding || configPending || install.watched_until > now }),
     live: false,

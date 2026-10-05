@@ -9,6 +9,7 @@ import { DAY, HOUR, gunzipJson, mergeCounts, newId, newNetworkToken, normalizeLi
 import { verifyTurnstile } from "./turnstile.ts";
 import { registerSettings } from "./settings.ts";
 import { audit, canManage, roleIn, type Role } from "./access.ts";
+import { WATCH_WINDOW } from "./governor.ts";
 import { registerNetwork, rulesForNewInstall } from "./network.ts";
 import { isPlayerName, uuidForName } from "./players.ts";
 
@@ -216,6 +217,13 @@ dashboard.get("/networks/:id", async (c) => {
   const installs = await env.DB.prepare(`SELECT ${INSTALL_COLUMNS} FROM installs WHERE network_id = ? ORDER BY claimed_at`)
     .bind(id).all<InstallRow>();
   const now = Date.now();
+  // Every dashboard page loads this. Someone who can change settings or rules is here: let the network's servers
+  // check in every 15 s for a while, so a change they save reaches the servers within seconds instead of at the next
+  // regular check-in. At most one write a minute per network.
+  if (canManage(role)) {
+    await env.DB.prepare("UPDATE networks SET watched_until = ? WHERE id = ? AND watched_until < ?")
+      .bind(now + WATCH_WINDOW, id, now + WATCH_WINDOW - 60_000).run();
+  }
   return c.json({ network, role, installs: installs.results.map((row) => installView(row, now)) });
 });
 

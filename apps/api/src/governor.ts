@@ -17,6 +17,8 @@ export const MAX_INTERVAL = 3600;
 export const LIVE_INTERVAL = 5;
 /** While a config change is pending or the settings page is open (bounded to minutes). */
 export const FAST_INTERVAL = 15;
+/** How long a network stays in fast mode after someone who can change settings opens it in the dashboard. */
+export const WATCH_WINDOW = 10 * 60_000;
 const KV_KEY = "governor:v1";
 
 export interface GovernorState { floor: number; activeInstalls: number; computedAt: number }

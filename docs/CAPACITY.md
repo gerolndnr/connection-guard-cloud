@@ -18,11 +18,11 @@ Queues are deliberately not used: the free plan allows only 10,000 operations a 
 
 - **Server-chosen sync interval.** Every response carries `next_sync_in`. The plugin never picks its own interval.
 - **Governor** (`apps/api/src/governor.ts`). Every 5 minutes a cron counts active installs and sets `floor = max(60 s, installs × 86,400 / 40,000)`. Even if every install synced at the floor all day, plugin syncs would stay under 40,000 requests. The value lives in one KV key, which costs about 288 writes a day.
-- **Idle installs** (no checks, nothing buffered) sync at `max(300 s, 3 × floor)`.
+- **Idle unlinked installs** (no checks, nothing buffered) sync at `max(300 s, 3 × floor)`. Linked installs always sync at the floor, so a dashboard change reaches them within one floor interval even when nobody is online. The floor already assumes every active install syncs at it, so this stays inside the budget.
 - **Fast, bounded windows** sync every 15 s:
   - a new, still unlinked install during its first 30 minutes (about 120 requests once per install)
   - a server with a pending settings change
-  - a network whose settings page or setup assistant is open (10 minutes, extended while it is open)
+  - a network that an owner or admin has open in the dashboard, on any page (10 minutes, extended at most once a minute while it is open), so a saved change applies within seconds
 - **Few D1 writes per sync:**
   - the hourly rollup, only if there were checks
   - one event batch row, only for linked installs with events
@@ -34,7 +34,7 @@ Queues are deliberately not used: the free plan allows only 10,000 operations a 
 
 | Active installs | Floor | Worst-case syncs/day |
 | --- | --- | --- |
-| 50 | 60 s | 72,000 at the floor; realistically less than 25,000, because idle installs use 300 s |
+| 50 | 60 s | 72,000 at the floor; realistically less than 25,000, because idle unlinked installs use 300 s |
 | 300 | 65 s | 40,000 |
 | 1,000 | 216 s | 40,000 |
 

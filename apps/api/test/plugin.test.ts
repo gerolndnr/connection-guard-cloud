@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { env } from "cloudflare:test";
 import { syncRequest, decisionEvent } from "@cg/protocol/examples";
-import { claim, install, login, sync, syncOk } from "./helpers.ts";
+import { api, claim, install, login, sync, syncOk } from "./helpers.ts";
 
 describe("POST /v1/installs", () => {
   it("registers anonymously and hands out a link code", async () => {
@@ -116,5 +116,24 @@ describe("onboarding pace", () => {
     await claim(cookie, ins.link_code!);
     const after = await syncOk(ins, { seq: 2, events: [], counters: idle, status: { ...syncRequest.status, buffered_events: 0 } });
     expect(after.next_sync_in).toBe(15);
+  });
+
+  it("keeps an idle linked server at the base interval and speeds it up while an admin has the dashboard open", async () => {
+    const ins = await install();
+    const idle = { ...syncRequest.counters, checks: 0, lookups: 0, countries: {}, reasons: {} };
+    const quiet = { events: [], counters: idle, status: { ...syncRequest.status, buffered_events: 0 } };
+    const cookie = await login();
+    const { network_id } = await (await claim(cookie, ins.link_code!)).json<{ network_id: string }>();
+    // Past the setup window that linking opens.
+    await env.DB.prepare("UPDATE networks SET watched_until = 0 WHERE id = ?").bind(network_id).run();
+    expect((await syncOk(ins, { seq: 1, ...quiet })).next_sync_in).toBe(60);
+
+    // A viewer looking at the network changes nothing; an admin opening any page does.
+    const viewer = await login("Viewer");
+    await env.DB.prepare("INSERT INTO memberships (network_id, user_id, role, created_at) SELECT ?, id, 'viewer', 0 FROM users WHERE name = 'Viewer'").bind(network_id).run();
+    expect((await api(viewer, `/networks/${network_id}`)).status).toBe(200);
+    expect((await syncOk(ins, { seq: 2, ...quiet })).next_sync_in).toBe(60);
+    expect((await api(cookie, `/networks/${network_id}`)).status).toBe(200);
+    expect((await syncOk(ins, { seq: 3, ...quiet })).next_sync_in).toBe(15);
   });
 });

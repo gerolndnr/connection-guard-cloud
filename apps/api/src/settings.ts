@@ -4,10 +4,10 @@ import { capture } from "./analytics.ts";
 import { z } from "zod";
 import { CONFIG_FIELDS, ConfigValues, SECRET_PATHS, fieldSchema, isConfigPath, type ConfigPath, type Status } from "@cg/protocol";
 import type { AppEnv, Env } from "./env.ts";
+import { WATCH_WINDOW } from "./governor.ts";
 import { openSecrets, sealSecrets } from "./secrets.ts";
 
 type Role = "owner" | "admin" | "viewer";
-const WATCH_WINDOW = 10 * 60_000;
 
 interface ConfigRow {
   version: number; reset: number; values_json: string; secret_paths_json: string; keep_secrets_json: string;

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CAPABILITY, type Status } from "@cg/protocol";
 import { ruleKind, ruleTarget } from "@cg/protocol/rules";
 import type { AppEnv, Env } from "./env.ts";
+import { WATCH_WINDOW } from "./governor.ts";
 import { audit, canManage, roleIn, type Role } from "./access.ts";
 import { capture } from "./analytics.ts";
 import { COLOR, isDiscordWebhook, postWebhook, webhookHint } from "./discord.ts";
@@ -13,7 +14,6 @@ import { DAY, newId, sha256Hex } from "./util.ts";
 
 type C = Context<AppEnv>;
 const INVITE_TTL = 7 * DAY;
-const WATCH_WINDOW = 10 * 60_000;
 export const ALERT_KINDS = ["server_offline", "provider_trouble", "quota_low", "refusal_spike", "weekly_digest"] as const;
 
 // ---- access rules ------------------------------------------------------------
