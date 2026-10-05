@@ -113,7 +113,7 @@ for (const s of servers) {
         warnings: s.mode === "OBSERVE" ? ["mode.observe"] : [], config_version: null, cache_type: "SQLITE", buffered_events: 0, dropped_events: 0,
         config: snapshot(s.mode), managed: [], config_result: null,
         // The proxy runs a plugin that can end time-limited rules; the backend an older one that cannot.
-        ...(s.platform === "VELOCITY" ? { capabilities: ["rule_expiry"] } : {}),
+        capabilities: ["rule_expiry"], // every 0.5.0 server reports it
       },
       counters: { window_start: end - H, window_end: end, ...c,
         latency_ms_p50: durations[Math.floor(durations.length / 2)] ?? null, latency_ms_p95: durations[Math.floor(durations.length * 0.95)] ?? null },
