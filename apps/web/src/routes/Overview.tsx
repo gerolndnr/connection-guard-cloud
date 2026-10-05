@@ -11,7 +11,7 @@ import { DecisionTable } from "../components/Register.tsx";
 import { usePlayerNames } from "../players.ts";
 import { StatusDot } from "../components/Badge.tsx";
 import { SetupChecklist } from "../components/SetupChecklist.tsx";
-import { notes, providers, type ProviderRow } from "../health.ts";
+import { notes, providers, providerProblem, type ProviderRow } from "../health.ts";
 import { ago, countryName, ms, num, pct, platformName, reasonText, serverName } from "../format.ts";
 import { track } from "../analytics.ts";
 
@@ -59,24 +59,25 @@ function CardHeader({ title, id, children }: { title: string; id?: string; child
 function ProviderLine({ p }: { p: ProviderRow }) {
   const ratio = p.daily_budget ? Math.min(1, (p.daily_used ?? 0) / p.daily_budget) : null;
   const health = p.attempts > 0 ? p.successes / p.attempts : null;
-  const bad = p.paused || (health !== null && p.attempts >= 5 && health < 0.8);
+  const problem = providerProblem(p);
+  const bad = problem !== null;
   return (
     <li className="px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2 font-medium">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <span className="flex min-w-0 flex-wrap items-center gap-2 break-words font-medium">
           <StatusDot tone={bad ? "danger" : health === null ? "idle" : "ok"} />
           {p.id}<span className="text-[0.8125rem] font-normal text-fg-3">{p.scope === "GEO" ? "Country" : "VPN"}</span>
         </span>
         <span className={`num text-[0.8125rem] ${bad ? "font-medium text-danger-text" : "text-fg-2"}`}>
-          {p.paused ? "Paused" : health === null ? "No lookups yet" : `${pct(health, 0)} answered`}
+          {problem ?? (health === null ? "No lookups yet" : `${pct(health, 0)} answered`)}
         </span>
       </div>
       {ratio !== null && (
         <div className="mt-2.5">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-subtle" role="meter" aria-valuemin={0} aria-valuemax={p.daily_budget!} aria-valuenow={p.daily_used ?? 0} aria-label={`${p.id} daily quota`}>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-subtle" role="meter" aria-valuemin={0} aria-valuemax={p.daily_budget!} aria-valuenow={Math.min(p.daily_budget!, p.daily_used ?? 0)} aria-label={`${p.id} local daily budget`}>
             <div className={`h-full rounded-full ${ratio >= 0.8 ? "bg-danger" : "bg-fg"}`} style={{ width: `${Math.max(2, ratio * 100)}%` }} />
           </div>
-          <p className="num mt-1.5 flex justify-between text-[0.75rem] text-fg-3"><span>Quota today</span><span>{num(p.daily_used ?? 0)} / {num(p.daily_budget!)}</span></p>
+          <p className="num mt-1.5 flex justify-between text-[0.75rem] text-fg-3"><span>Local usage today</span><span>{num(p.daily_used ?? 0)} / {num(p.daily_budget!)}</span></p>
         </div>
       )}
     </li>

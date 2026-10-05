@@ -19,14 +19,29 @@ const warningText: Record<string, string> = {
   "identity.untrusted": "Player identity is not verified on this platform.",
 };
 
-export interface ProviderRow { id: string; scope: string; attempts: number; successes: number; paused: boolean; last_reason: string | null; daily_used: number | null; daily_budget: number | null; servers: number }
+export interface ProviderRow { id: string; scope: string; attempts: number; successes: number; paused: boolean; last_reason: string | null; daily_used: number | null; daily_budget: number | null; servers: number; quota_exhausted: boolean }
+
+const failurePriority = (reason: string | null | undefined) =>
+  ({ BUDGET_EXHAUSTED: 6, AUTHENTICATION: 5, RATE_LIMIT: 4, CIRCUIT_OPEN: 3, NONE: 0, NO_EVIDENCE: 0, STALE_DATA: 1 }[reason ?? "NONE"] ?? 2);
+
+/** A healthy server must not hide another server's exhausted quota or open circuit. */
+export function providerProblem(p: ProviderRow): string | null {
+  if (p.quota_exhausted || p.last_reason === "BUDGET_EXHAUSTED") return "Quota exhausted";
+  if (p.last_reason === "AUTHENTICATION") return "Credentials rejected";
+  if (p.last_reason === "RATE_LIMIT") return "Rate limited";
+  if (p.last_reason === "CIRCUIT_OPEN") return "Circuit open";
+  if (p.paused) return "Paused";
+  if (p.attempts >= 5 && p.successes / p.attempts < 0.8) return "Unreliable";
+  return null;
+}
 
 export function providers(installs: Install[]): ProviderRow[] {
   const byId = new Map<string, ProviderRow>();
   for (const i of installs) for (const p of i.status?.providers ?? []) {
-    const row = byId.get(p.id) ?? { id: p.id, scope: p.scope, attempts: 0, successes: 0, paused: false, last_reason: null, daily_used: null, daily_budget: null, servers: 0 };
+    const row = byId.get(p.id) ?? { id: p.id, scope: p.scope, attempts: 0, successes: 0, paused: false, last_reason: null, daily_used: null, daily_budget: null, servers: 0, quota_exhausted: false };
     row.attempts += p.attempts; row.successes += p.successes; row.paused ||= p.paused; row.servers += 1;
-    row.last_reason = p.last_reason ?? row.last_reason;
+    if (failurePriority(p.last_reason) > failurePriority(row.last_reason)) row.last_reason = p.last_reason;
+    row.quota_exhausted ||= p.last_reason === "BUDGET_EXHAUSTED" || (p.daily_budget !== null && p.daily_budget > 0 && p.daily_used !== null && p.daily_used >= p.daily_budget);
     if (p.daily_used !== null) row.daily_used = (row.daily_used ?? 0) + p.daily_used;
     // Each server reports its own budget; the network total is their sum.
     if (p.daily_budget !== null) row.daily_budget = (row.daily_budget ?? 0) + p.daily_budget;
@@ -41,12 +56,15 @@ export function notes(installs: Install[], now = Date.now()): Note[] {
     if (!i.online) out.push({ id: `offline:${i.id}`, fingerprint: String(i.last_seen_at), installId: i.id, tone: "action", title: `${serverName(i)} stopped reporting`, detail: `Last seen ${ago(i.last_seen_at, now)}. If the server is running, check that it can reach api.connectionguard.net.` });
   }
   for (const p of providers(installs)) {
-    const failing = p.attempts >= 5 && p.successes / p.attempts < 0.8;
-    if (p.paused || failing) {
-      out.push({ id: `failing:${p.id}`, fingerprint: utcDay(now), tone: "action", title: `${p.id} is failing`, detail: `${p.successes} of ${p.attempts} lookups answered${p.last_reason ? `, last error: ${p.last_reason.toLowerCase().replace(/_/g, " ")}` : ""}. Your failure policy decides meanwhile.` });
+    const problem = providerProblem(p);
+    const usage = p.daily_used !== null && p.daily_budget ? `${p.daily_used} of ${p.daily_budget} locally counted lookups today${p.servers > 1 ? ` across ${p.servers} servers` : ""}. ` : "";
+    const quotaDetail = `${usage}Counts are per-server estimates, not the provider account's remaining balance. Check /cg doctor and the provider account. Configured failover and failure policy determine how checks continue.`;
+    if (problem && problem !== "Quota exhausted") {
+      out.push({ id: `failing:${p.id}`, fingerprint: `${utcDay(now)}:${problem}`, tone: "action", title: `${p.id}: ${problem.toLowerCase()}`, detail: `${p.successes} of ${p.attempts} lookups answered${p.last_reason ? `, last error: ${p.last_reason.toLowerCase().replace(/_/g, " ")}` : ""}. Check /cg doctor. Configured failover and failure policy determine how checks continue.` });
     }
-    if (p.daily_budget && p.daily_used !== null && p.daily_used / p.daily_budget >= 0.8) {
-      out.push({ id: `quota:${p.id}`, fingerprint: utcDay(now), tone: "action", title: `${p.id} quota almost used`, detail: `${p.daily_used} of ${p.daily_budget} lookups today${p.servers > 1 ? ` across ${p.servers} servers` : ""}. When it runs out, lookups pause until the quota resets.` });
+    if (problem === "Quota exhausted" || (p.daily_budget && p.daily_used !== null && p.daily_used / p.daily_budget >= 0.8)) {
+      const exhausted = problem === "Quota exhausted";
+      out.push({ id: `quota:${p.id}`, fingerprint: `${utcDay(now)}:${exhausted ? "exhausted" : "low"}`, tone: "action", title: `${p.id}: ${exhausted ? "quota exhausted on at least one server" : "local daily budget almost used"}`, detail: quotaDetail });
     }
   }
   const observing = installs.filter((i) => i.status?.mode === "OBSERVE");
