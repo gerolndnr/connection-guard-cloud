@@ -7,6 +7,18 @@ import { scheduled } from "./cron.ts";
 
 const app = new Hono<AppEnv>();
 
+// The plugin console names api.connectionguard.net, so people open it in a browser. The
+// dashboard and sign-in only work on the app origin (the OAuth state cookie lives there).
+const API_HOST = "api.connectionguard.net";
+const APP_ORIGIN = "https://app.connectionguard.net";
+app.use("/api/*", async (c, next) => {
+  if (new URL(c.req.url).hostname === API_HOST) {
+    const url = new URL(c.req.url);
+    return c.redirect(`${APP_ORIGIN}${url.pathname}${url.search}`, 308);
+  }
+  return next();
+});
+
 app.use("*", async (c, next) => {
   await next();
   c.header("x-content-type-options", "nosniff");

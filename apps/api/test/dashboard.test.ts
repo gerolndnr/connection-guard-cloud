@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SELF, env } from "cloudflare:test";
-import { decisionEvent } from "@cg/protocol/examples";
+import { decisionEvent, syncRequest } from "@cg/protocol/examples";
 import { ORIGIN, api, claim, install, login, syncOk } from "./helpers.ts";
 
 describe("dashboard API", () => {
@@ -17,7 +17,12 @@ describe("dashboard API", () => {
 
   it("links a server and shows its numbers since installation", async () => {
     const ins = await install();
-    await syncOk(ins); // 3 checks before anyone linked it
+    // 3 checks before anyone linked it, stamped "now" so the 24h range keeps covering them.
+    const now = Date.now();
+    await syncOk(ins, {
+      counters: { ...syncRequest.counters, window_start: now - 60_000, window_end: now },
+      events: [{ ...decisionEvent, at: now - 30_000 }],
+    });
     const cookie = await login("Gero");
 
     const preview = await api(cookie, `/link/${ins.link_code!.toLowerCase().replace("-", "")}`);
@@ -119,5 +124,18 @@ describe("would-refuse", () => {
     const stats = await (await api(cookie, `/networks/${network_id}/stats?range=24h`)).json<{ totals: { would_refuse: number; flagged_let_in: number } }>();
     expect(stats.totals.would_refuse).toBe(1);
     expect(stats.totals.flagged_let_in).toBe(0);
+  });
+});
+
+describe("api host", () => {
+  it("sends dashboard and sign-in requests on the API host to the app origin", async () => {
+    const res = await SELF.fetch("https://api.connectionguard.net/api/auth/discord?next=%2F", { redirect: "manual" });
+    expect(res.status).toBe(308);
+    expect(res.headers.get("location")).toBe("https://app.connectionguard.net/api/auth/discord?next=%2F");
+  });
+
+  it("keeps the plugin protocol on the API host", async () => {
+    const res = await SELF.fetch("https://api.connectionguard.net/v1/health");
+    expect(res.status).toBe(200);
   });
 });
