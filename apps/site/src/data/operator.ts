@@ -18,7 +18,7 @@ export const OPERATOR = {
 /** Official list of German data protection authorities (Art. 77 GDPR names no single one for data subjects). */
 export const AUTHORITIES_URL = "https://www.bfdi.bund.de/DE/Service/Anschriften/Laender/Laender-node.html";
 
-export const LEGAL_UPDATED = "2026-10-04";
+export const LEGAL_UPDATED = "2026-10-06";
 /** Version of the terms of service and the data processing agreement. Must equal DPA_VERSION in apps/api/wrangler.jsonc. */
 export const LEGAL_VERSION = "2026-10-04";
 
