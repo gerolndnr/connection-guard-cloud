@@ -75,7 +75,8 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | `user_signed_up`, `user_signed_in` | `usr_…` | `method` |
 | `server_linked` | `usr_…` + group | `new_network`, `platform`, `plugin_version`, `minutes_since_install`, `server_named` |
 | `first_decisions_received` | `ins_…` + group | `platform`, `plugin_version`, `mode`, `minutes_since_install`, `decisions` |
-| `sync_partly_unreadable` | `ins_…` | `plugin_version`, `dropped_events`, `dropped_reasons`: a newer plugin sent enum values this API does not know yet (see `tolerateSync`) |
+| `sync_partly_unreadable` | `ins_…` | `plugin_version`, `dropped_events`, `dropped_reasons`, `dropped_errors`: a newer plugin sent values this API does not know yet (see `tolerateSync`) |
+| `$exception` | `ins_…` (no person) | Plugin 0.5.2+ error reports (sync `errors`, plugin switch `cloud.error-reports`), one per fingerprint and sync: `$exception_list` with the exception class, cause class and Connection Guard's own frames only (other frames are removed by `tolerateSync`), `$exception_fingerprint` `cg-<fingerprint>`, `context`, `count`, `platform`, `plugin_version`, `java_major`, `linked`. Never a message text. Linked servers' reports are also kept in D1 `install_errors` for the dashboard, 30 days after the last occurrence |
 | `settings_saved` | `usr_…` + group | `fields[]`, `field_count`, `secret_fields`, `apply_to`, `servers`, `mode` |
 | `settings_applied`, `settings_rejected` | `ins_…` + group | `version`, `reset` / `message` (scrubbed, 160 chars) |
 | `settings_reset`, `server_unlinked`, `server_renamed`, `network_token_created` | `usr_…` + group | none |

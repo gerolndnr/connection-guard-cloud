@@ -24,6 +24,8 @@ export async function runMaintenance(env: Env, now = Date.now()) {
     env.DB.prepare("UPDATE access_rules SET removed_at = expires_at WHERE removed_at IS NULL AND expires_at IS NOT NULL AND expires_at <= ?").bind(now),
     env.DB.prepare("DELETE FROM access_rules WHERE removed_at IS NOT NULL AND removed_at < ?").bind(now - 30 * DAY),
     env.DB.prepare("DELETE FROM invites WHERE expires_at < ?").bind(now - DAY),
+    // Error reports: kept while they recur, gone 30 days after the last occurrence.
+    env.DB.prepare("DELETE FROM install_errors WHERE last_at < ?").bind(now - 30 * DAY),
   ]);
 }
 

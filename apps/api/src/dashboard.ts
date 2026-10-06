@@ -36,6 +36,11 @@ interface InstallRow {
   id: string; display_name: string | null; platform: string; platform_version: string; plugin_version: string;
   java_version: string; created_at: number; claimed_at: number | null; last_seen_at: number; status_json: string | null;
 }
+interface InstallErrorRow {
+  install_id: string; fingerprint: string; type: string; cause_type: string | null; context: string; top_frame: string;
+  plugin_version: string; count: number; first_at: number; last_at: number;
+}
+
 const INSTALL_COLUMNS = "id, display_name, platform, platform_version, plugin_version, java_version, created_at, claimed_at, last_seen_at, status_json";
 
 interface RollupRow {
@@ -224,7 +229,15 @@ dashboard.get("/networks/:id", async (c) => {
     await env.DB.prepare("UPDATE networks SET watched_until = ? WHERE id = ? AND watched_until < ?")
       .bind(now + WATCH_WINDOW, id, now + WATCH_WINDOW - 60_000).run();
   }
-  return c.json({ network, role, installs: installs.results.map((row) => installView(row, now)) });
+  // The plugin's own errors of the last 7 days, newest first, at most 5 per server.
+  const errors = (await env.DB.prepare(
+    `SELECT e.install_id, e.fingerprint, e.type, e.cause_type, e.context, e.top_frame, e.plugin_version, e.count, e.first_at, e.last_at
+     FROM install_errors e JOIN installs i ON i.id = e.install_id WHERE i.network_id = ? AND e.last_at > ? ORDER BY e.last_at DESC LIMIT 100`,
+  ).bind(id, now - 7 * DAY).all<InstallErrorRow>()).results;
+  return c.json({ network, role, installs: installs.results.map((row) => ({
+    ...installView(row, now),
+    errors: errors.filter((e) => e.install_id === row.id).slice(0, 5).map(({ install_id: _install, ...e }) => e),
+  })) });
 });
 
 dashboard.get("/networks/:id/stats", async (c) => {
@@ -335,6 +348,7 @@ dashboard.post("/installs/:id/unlink", async (c) => {
   await env.DB.batch([
     env.DB.prepare("DELETE FROM event_batches WHERE install_id = ?").bind(installId),
     env.DB.prepare("DELETE FROM commands WHERE install_id = ?").bind(installId),
+    env.DB.prepare("DELETE FROM install_errors WHERE install_id = ?").bind(installId),
     env.DB.prepare("UPDATE installs SET network_id = NULL, claimed_at = NULL, display_name = NULL WHERE id = ?").bind(installId),
     env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, 'install.unlinked', ?, ?)")
       .bind(networkId, user.id, JSON.stringify({ install_id: installId }), now),

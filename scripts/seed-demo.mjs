@@ -137,6 +137,11 @@ for (const s of servers) {
       counters: { window_start: end - H, window_end: end, ...c,
         latency_ms_p50: durations[Math.floor(durations.length / 2)] ?? null, latency_ms_p95: durations[Math.floor(durations.length * 0.95)] ?? null },
       events, command_results: [],
+      // The 0.5.2 server reports one of the plugin's own errors (class names and own frames only, no message).
+      ...(s.next && h <= 2 ? { errors: [{ fingerprint: "3f9c0a1b2d4e5f60", type: "java.lang.IllegalStateException", cause_type: "java.net.SocketTimeoutException",
+        frames: [{ class: "com.github.gerolndnr.connectionguard.core.vpn.IpQueryVpnProvider", method: "parse", line: 88 },
+          { class: "com.github.gerolndnr.connectionguard.core.ConnectionGuard", method: "lambda$lookupVpn$4", line: 301 }],
+        context: "LOOKUP", count: 4 + h, first_at: end - H + 60_000, last_at: end - 120_000 }] } : {}),
     }, auth);
   }
 }

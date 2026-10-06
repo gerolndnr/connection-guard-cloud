@@ -2,10 +2,10 @@
 // Nothing here is on a Minecraft login path: the plugin calls these from a
 // background thread and treats every failure as "try again later".
 import { Hono, type Context } from "hono";
-import { capture } from "./analytics.ts";
+import { capture, type ServerEvent } from "./analytics.ts";
 import {
   Command, InstallRequest, MAX_BODY_BYTES, SyncRequest, tolerateSync,
-  type Counters, type DesiredConfig, type ErrorResponse, type InstallResponse, type SyncResponse,
+  type Counters, type DesiredConfig, type ErrorReport, type ErrorResponse, type InstallResponse, type SyncResponse,
 } from "@cg/protocol";
 import { openSecrets } from "./secrets.ts";
 import type { AppEnv, Env } from "./env.ts";
@@ -58,14 +58,63 @@ async function authenticate(env: Env, header: string | undefined) {
   const [, installId, secret] = match;
   const row = await env.DB.prepare(
     "SELECT i.id, i.secret_hash, i.network_id, i.last_seq, i.last_seen_at, i.created_at, i.status_json, i.plugin_version, i.platform, " +
-    "i.platform_version, n.name AS network_name, COALESCE(n.watched_until, 0) AS watched_until FROM installs i LEFT JOIN networks n ON n.id = i.network_id WHERE i.id = ?",
+    "i.platform_version, i.java_version, n.name AS network_name, COALESCE(n.watched_until, 0) AS watched_until FROM installs i LEFT JOIN networks n ON n.id = i.network_id WHERE i.id = ?",
   ).bind(installId).first<{
     id: string; secret_hash: string; network_id: string | null; last_seq: number; last_seen_at: number; created_at: number;
-    status_json: string | null; plugin_version: string; platform: string; platform_version: string; network_name: string | null; watched_until: number;
+    status_json: string | null; plugin_version: string; platform: string; platform_version: string; java_version: string; network_name: string | null; watched_until: number;
   }>();
   if (!row) return null;
   if (!timingSafeEqualHex(row.secret_hash, await sha256Hex(secret!))) return null;
   return row;
+}
+
+/** "IpQueryVpnProvider.parse:88": the topmost own frame, short enough for a dashboard line. */
+const topFrame = (r: ErrorReport) => {
+  const f = r.frames[0]!;
+  return `${f.class.slice(f.class.lastIndexOf(".") + 1)}.${f.method}${f.line !== null ? `:${f.line}` : ""}`;
+};
+
+/**
+ * Error reports go to PostHog Error Tracking (also for unlinked servers: they contain no message and no player data)
+ * and, for linked servers, into install_errors for the dashboard.
+ */
+type ErrorSource = { id: string; network_id: string | null; platform: string; java_version: string };
+
+/** PostHog Error Tracking events for a sync's reports: one `$exception` per fingerprint, without a person. */
+export function exceptionEvents(install: ErrorSource, req: Pick<SyncRequest, "errors" | "plugin_version">): ServerEvent[] {
+  return (req.errors ?? []).map((r) => ({
+    event: "$exception", distinct_id: install.id, person: false, groups: { network: install.network_id },
+    properties: {
+      $exception_list: [{
+        type: r.type, value: r.cause_type ? `caused by ${r.cause_type}` : r.type,
+        mechanism: { handled: true, synthetic: false },
+        stacktrace: { type: "raw", frames: r.frames.map((f) => ({
+          platform: "custom", lang: "java", resolved: true, in_app: true,
+          module: f.class.slice(0, f.class.lastIndexOf(".")), function: `${f.class.slice(f.class.lastIndexOf(".") + 1)}.${f.method}`,
+          filename: `${f.class.slice(f.class.lastIndexOf(".") + 1).split("$")[0]}.java`, lineno: f.line,
+        })) },
+      }],
+      $exception_fingerprint: `cg-${r.fingerprint}`,
+      $exception_level: "error",
+      fingerprint: r.fingerprint, context: r.context, count: r.count, cause_type: r.cause_type,
+      platform: install.platform, plugin_version: req.plugin_version, java_major: javaMajor(install.java_version),
+      linked: install.network_id !== null,
+    },
+  }));
+}
+
+async function recordErrors(c: Context<AppEnv>, install: ErrorSource, req: SyncRequest, now: number) {
+  const reports = req.errors ?? [];
+  capture(c, ...exceptionEvents(install, req));
+  if (install.network_id === null) return;
+  await c.env.DB.batch(reports.map((r) => c.env.DB.prepare(
+    `INSERT INTO install_errors (install_id, fingerprint, type, cause_type, context, top_frame, plugin_version, count, first_at, last_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+     ON CONFLICT(install_id, fingerprint) DO UPDATE SET count = count + excluded.count, first_at = min(first_at, excluded.first_at),
+       last_at = max(last_at, excluded.last_at), plugin_version = excluded.plugin_version, context = excluded.context, top_frame = excluded.top_frame`,
+  ).bind(install.id, r.fingerprint, r.type, r.cause_type, r.context, topFrame(r), req.plugin_version, r.count,
+    // A plugin clock far ahead must not keep an error "current" for days.
+    Math.min(r.first_at, now), Math.min(r.last_at, now))));
 }
 
 async function writeRollup(env: Env, installId: string, counters: Counters) {
@@ -183,12 +232,12 @@ plugin.post("/v1/sync", async (c) => {
   const tolerated = tolerateSync(json);
   const parsed = SyncRequest.safeParse(tolerated.json);
   if (!parsed.success) return fail(c, 400, "bad_request");
-  if (tolerated.dropped_events > 0 || tolerated.dropped_reasons > 0) {
+  if (tolerated.dropped_events > 0 || tolerated.dropped_reasons > 0 || tolerated.dropped_errors > 0) {
     // Tells us the dashboard lags behind a plugin release; contains no player data.
     capture(c, {
       event: "sync_partly_unreadable", distinct_id: install.id, person: false,
       properties: { plugin_version: parsed.data.plugin_version, dropped_events: tolerated.dropped_events,
-        dropped_reasons: tolerated.dropped_reasons },
+        dropped_reasons: tolerated.dropped_reasons, dropped_errors: tolerated.dropped_errors },
     });
   }
   const req = parsed.data;
@@ -218,6 +267,8 @@ plugin.post("/v1/sync", async (c) => {
       ).bind(install.network_id, install.id, now, Math.min(...ats), Math.max(...ats), req.events.length,
         req.events.filter((e) => e.outcome === "DENY").length, await gzipJson(req.events)).run();
     }
+
+    if (req.errors?.length) await recordErrors(c, install, req, now);
 
     for (const result of req.command_results) {
       await env.DB.prepare(

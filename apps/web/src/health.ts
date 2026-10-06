@@ -1,7 +1,7 @@
 // Turns server status into attention notes: "action" when the operator must act, "pencil" when it is good to know.
 // Every note has a stable id and a fingerprint of the situation. Dismissing stores the fingerprint, so a
 // dismissed note comes back only when the situation changes (a server drops out again, a new day's quota...).
-import type { Install } from "./api.ts";
+import type { Install, InstallError } from "./api.ts";
 import { ago, serverName } from "./format.ts";
 import { sourceLabel } from "./sources.ts";
 
@@ -11,8 +11,34 @@ export interface Note {
   installId?: string;
   /** Label of a link to the settings page, for notes the dashboard can fix directly. */
   settingsLink?: string;
+  /** An outside link, such as a prefilled bug report. */
+  link?: { href: string; label: string };
 }
 const utcDay = (now: number) => new Date(now).toISOString().slice(0, 10);
+
+const ERROR_CONTEXT: Record<InstallError["context"], { during: string; meaning: string }> = {
+  STARTUP: { during: "while starting", meaning: "If Connection Guard did not start completely, players may not be checked. The server log has the details." },
+  RELOAD: { during: "while reloading", meaning: "A failed reload keeps the previous settings active." },
+  LOOKUP: { during: "during lookups", meaning: "A lookup that fails counts as unanswered, so your failure policy decides those logins." },
+  CACHE: { during: "in the cache", meaning: "Check the cache settings (SQLite or Redis) and the server log." },
+  SYNC: { during: "talking to the dashboard", meaning: "This concerns the dashboard connection, not the checks themselves." },
+  COMMAND: { during: "running a command", meaning: "A console or dashboard command did not complete." },
+  OTHER: { during: "", meaning: "The server log has the details." },
+};
+
+/** A prefilled bug report: class names, the top frame, versions and the fingerprint. Nothing about players or the server. */
+export function errorReportUrl(i: Pick<Install, "platform" | "platform_version">, e: InstallError): string {
+  const title = `${e.type.slice(e.type.lastIndexOf(".") + 1)} ${ERROR_CONTEXT[e.context].during}`.trim();
+  const body = [
+    "Reported automatically by Connection Guard (no message text, no player data).", "",
+    `- Exception: \`${e.type}\`${e.cause_type ? ` caused by \`${e.cause_type}\`` : ""}`,
+    `- Where: \`${e.top_frame}\` (${e.context.toLowerCase()})`,
+    `- Plugin: ${e.plugin_version} on ${i.platform_version}`,
+    `- Fingerprint: \`${e.fingerprint}\``, "",
+    "What were you doing when it happened?",
+  ].join("\n");
+  return `https://github.com/gerolndnr/connection-guard/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+}
 
 const warningText: Record<string, string> = {
   "mode.observe": "",
@@ -58,13 +84,14 @@ export function notes(installs: Install[], now = Date.now()): Note[] {
   for (const i of installs) {
     if (!i.online) out.push({ id: `offline:${i.id}`, fingerprint: String(i.last_seen_at), installId: i.id, tone: "action", title: `${serverName(i)} stopped reporting`, detail: `Last seen ${ago(i.last_seen_at, now)}. If the server is running, check that it can reach api.connectionguard.net.` });
   }
-  // Only plugins from 0.5.2 ask the next service when one fails or runs out; on 0.5.1 the failure policy alone decides.
-  const chained = installs.some((i) => i.status?.config?.["provider.vpn-failover.enabled"] === true);
-  const meanwhile = chained
-    ? "The next service in the failover chain steps in; if none can answer, your failure policy decides."
-    : "Until it answers again, your failure policy decides: with \"Let in\", players get in unchecked.";
   for (const p of providers(installs)) {
     const problem = providerProblem(p);
+    // Only plugins from 0.5.2 ask the next service when one fails or runs out; on 0.5.1 the failure policy alone decides.
+    const chained = installs.filter((i) => i.status?.providers.some((x) => x.id === p.id))
+      .every((i) => i.status?.config?.["provider.vpn-failover.enabled"] === true);
+    const meanwhile = chained
+      ? "The next service in the failover chain steps in; if none can answer, your failure policy decides."
+      : "Until it answers again, your failure policy decides: with \"Let in\", players get in unchecked.";
     const usage = p.daily_used !== null && p.daily_budget ? `${p.daily_used} of ${p.daily_budget} locally counted lookups today${p.servers > 1 ? ` across ${p.servers} servers` : ""}. ` : "";
     const quotaDetail = `${usage}Counts are per-server estimates, not the provider account's remaining balance. Check /cg doctor and the provider account. ${meanwhile}`;
     if (problem && problem !== "Quota exhausted") {
@@ -74,6 +101,19 @@ export function notes(installs: Install[], now = Date.now()): Note[] {
       const exhausted = problem === "Quota exhausted";
       out.push({ id: `quota:${p.id}`, fingerprint: `${utcDay(now)}:${exhausted ? "exhausted" : "low"}`, tone: "action", title: `${sourceLabel(p.id)}: ${exhausted ? "quota exhausted on at least one server" : "local daily budget almost used"}`, detail: quotaDetail });
     }
+  }
+  // The plugin's own errors in the last 24 hours. Red while it is still happening, amber once it has been quiet for an hour.
+  for (const i of installs) for (const e of i.errors ?? []) {
+    if (now - e.last_at > 86_400_000) continue;
+    const short = e.type.slice(e.type.lastIndexOf(".") + 1);
+    const ctx = ERROR_CONTEXT[e.context];
+    out.push({
+      id: `error:${i.id}:${e.fingerprint}`, fingerprint: utcDay(now), tone: now - e.last_at < 3_600_000 ? "action" : "pencil",
+      title: `${serverName(i)}: ${short} ${ctx.during}`.trim(),
+      detail: `${e.count === 1 ? "Once" : `${e.count} times`} since ${ago(e.first_at, now)}, last ${ago(e.last_at, now)}, at ${e.top_frame} (Connection Guard ${e.plugin_version}). ${ctx.meaning}`,
+      command: "/cg doctor",
+      link: { href: errorReportUrl(i, e), label: "Report it on GitHub" },
+    });
   }
   const observing = installs.filter((i) => i.status?.mode === "OBSERVE");
   if (observing.length > 0) {

@@ -1,6 +1,6 @@
 // Canonical example payloads. Used by the backend tests and written to
 // fixtures/ for the Java plugin's contract tests.
-import type { DecisionEvent, InstallRequest, SyncRequest, SyncResponse } from "./index.ts";
+import type { DecisionEvent, ErrorReport, InstallRequest, SyncRequest, SyncResponse } from "./index.ts";
 
 export const installRequest: InstallRequest = {
   protocol: 1,
@@ -90,3 +90,19 @@ export const syncResponse: SyncResponse = {
     keep_secrets: ["provider.vpn.proxycheck.api-key"],
   },
 };
+
+/** One aggregated error report, as a 0.5.2 plugin sends it with a sync. No message text, only own frames. */
+export const errorReport: ErrorReport = {
+  fingerprint: "3f9c0a1b2d4e5f60",
+  type: "java.lang.IllegalStateException",
+  cause_type: "java.net.SocketTimeoutException",
+  frames: [
+    { class: "com.github.gerolndnr.connectionguard.core.vpn.IpQueryVpnProvider", method: "parse", line: 88 },
+    { class: "com.github.gerolndnr.connectionguard.core.ConnectionGuard", method: "lambda$lookupVpn$4", line: 301 },
+  ],
+  context: "LOOKUP",
+  count: 37,
+  first_at: 1_791_099_000_000,
+  last_at: 1_791_099_990_000,
+};
+export const syncRequestWithErrors: SyncRequest = { ...syncRequest, seq: 8, plugin_version: "0.5.2", errors: [errorReport] };

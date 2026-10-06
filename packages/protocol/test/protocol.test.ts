@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Command, GATED_PATHS, InstallRequest, SyncRequest, SyncResponse, isConfigPath, supportsPath, tolerateSync } from "../src/index.ts";
-import { installRequest, syncRequest, syncResponse } from "../src/examples.ts";
+import { installRequest, syncRequest, syncRequestWithErrors, syncResponse } from "../src/examples.ts";
 
 describe("protocol v1", () => {
   it("accepts the canonical examples", () => {
@@ -62,6 +62,27 @@ describe("protocol v1", () => {
     expect(supportsPath({ "provider.vpn-failover.enabled": true }, "provider.vpn-failover.enabled")).toBe(true);
     expect(supportsPath(null, "provider.vpn.ipquery.enabled")).toBe(false);
     expect(GATED_PATHS.every((p) => isConfigPath(p))).toBe(true);
+  });
+
+  it("accepts error reports, and older syncs without them", () => {
+    expect(SyncRequest.safeParse(syncRequestWithErrors).success).toBe(true);
+    expect(SyncRequest.safeParse(syncRequest).success).toBe(true);
+  });
+
+  it("keeps only the plugin's own frames and drops unreadable reports one by one", () => {
+    const report = syncRequestWithErrors.errors![0]!;
+    const foreign = { ...report, fingerprint: "aaaaaaaaaaaaaaaa", frames: [...report.frames, { class: "org.bukkit.plugin.Foo", method: "run", line: 1 }, { class: "/home/alice/x", method: "y", line: 2 }] };
+    const onlyForeign = { ...report, fingerprint: "bbbbbbbbbbbbbbbb", frames: [{ class: "net.other.Plugin", method: "run", line: 1 }] };
+    const withMessage = { ...report, fingerprint: "cccccccccccccccc", message: "lookup failed for 203.0.113.9" };
+    const tooMany = Array.from({ length: 12 }, (_, i) => ({ ...report, fingerprint: i.toString(16).padStart(16, "0") }));
+    const t = tolerateSync({ ...syncRequest, errors: [foreign, onlyForeign, withMessage, ...tooMany] });
+    const parsed = SyncRequest.parse(t.json);
+    // The first ten are read: the foreign-frame report survives trimmed, the other two are dropped, then seven more.
+    expect(parsed.errors!.length).toBe(8);
+    expect(parsed.errors![0]!.frames.map((f) => f.class).every((c) => c.startsWith("com.github.gerolndnr.connectionguard."))).toBe(true);
+    expect(JSON.stringify(parsed.errors)).not.toContain("203.0.113.9");
+    expect(t.dropped_errors).toBe(15 - 8);
+    expect(SyncRequest.parse(tolerateSync({ ...syncRequest, errors: "nope" }).json).errors).toBeUndefined();
   });
 
   it("still rejects unknown top-level and status fields after tolerating", () => {

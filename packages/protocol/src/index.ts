@@ -9,6 +9,7 @@ export * from "./config.ts";
 export const PROTOCOL_VERSION = 1;
 export const MAX_BODY_BYTES = 256 * 1024;
 export const MAX_EVENTS_PER_SYNC = 500;
+export const MAX_ERRORS_PER_SYNC = 10;
 
 const shortText = (max: number) => z.string().min(1).max(max);
 const count = z.number().int().min(0).max(1_000_000_000);
@@ -160,6 +161,35 @@ export const DecisionEvent = z.object({
 }).strict();
 export type DecisionEvent = z.infer<typeof DecisionEvent>;
 
+// ---- error reports -----------------------------------------------------------
+
+/**
+ * Connection Guard's own exceptions, aggregated by the plugin (see the plugin's cloud.error-reports switch). Never a
+ * message text: only class names, the plugin's own stack frames and counts. Sent by unlinked servers too, so nothing
+ * here may identify a player, an operator or a machine.
+ */
+export const ErrorContext = z.enum(["STARTUP", "RELOAD", "LOOKUP", "CACHE", "SYNC", "COMMAND", "OTHER"]);
+/** Frames from the plugin's own (and shaded) classes; anything else, such as a path or another plugin, is not one. */
+export const OWN_CLASS = /^com\.github\.gerolndnr\.connectionguard\.[A-Za-z0-9_$]+(?:\.[A-Za-z0-9_$]+){0,30}$/;
+const JavaClass = z.string().max(200).regex(/^[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*){0,30}$/);
+export const ErrorFrame = z.object({
+  class: z.string().max(200).regex(OWN_CLASS),
+  method: z.string().regex(/^[A-Za-z_$<][A-Za-z0-9_$<>]{0,127}$/),
+  line: z.number().int().min(0).max(1_000_000).nullable(),
+}).strict();
+export const ErrorReport = z.object({
+  /** 16 hex characters of SHA-256 over type and the top five own frames: the same bug has the same fingerprint everywhere. */
+  fingerprint: z.string().regex(/^[0-9a-f]{16}$/),
+  type: JavaClass,
+  cause_type: JavaClass.nullable(),
+  frames: z.array(ErrorFrame).min(1).max(12),
+  context: ErrorContext,
+  count: z.number().int().min(1).max(1_000_000_000),
+  first_at: z.number().int(),
+  last_at: z.number().int(),
+}).strict().refine((r) => r.first_at <= r.last_at, "first_at after last_at");
+export type ErrorReport = z.infer<typeof ErrorReport>;
+
 export const CommandResult = z.object({
   id: z.string().regex(/^cmd_[A-Za-z0-9]{12,32}$/),
   ok: z.boolean(),
@@ -175,6 +205,8 @@ export const SyncRequest = z.object({
   counters: Counters,
   events: z.array(DecisionEvent).max(MAX_EVENTS_PER_SYNC),
   command_results: z.array(CommandResult).max(64),
+  // Plugins from 0.5.2; older ones never send it.
+  errors: z.array(ErrorReport).max(MAX_ERRORS_PER_SYNC).optional(),
 }).strict();
 export type SyncRequest = z.infer<typeof SyncRequest>;
 
@@ -185,11 +217,26 @@ export type SyncRequest = z.infer<typeof SyncRequest>;
  * unknown reason keys leave the counters; both are counted so the dashboard can say so. Everything else stays
  * strict.
  */
-export function tolerateSync(json: unknown): { json: unknown; dropped_events: number; dropped_reasons: number } {
-  if (typeof json !== "object" || json === null || Array.isArray(json)) return { json, dropped_events: 0, dropped_reasons: 0 };
+export function tolerateSync(json: unknown): { json: unknown; dropped_events: number; dropped_reasons: number; dropped_errors: number } {
+  if (typeof json !== "object" || json === null || Array.isArray(json)) return { json, dropped_events: 0, dropped_reasons: 0, dropped_errors: 0 };
   const body = { ...(json as Record<string, unknown>) };
   let droppedEvents = 0;
   let droppedReasons = 0;
+  let droppedErrors = 0;
+  // Error reports are optional diagnostics: a frame that is not the plugin's own is removed, a report that is still
+  // unreadable is dropped on its own, and more than the limit are cut. They never cost the sync.
+  if (Array.isArray(body.errors)) {
+    const kept = body.errors.slice(0, MAX_ERRORS_PER_SYNC).map((r) => {
+      if (typeof r !== "object" || r === null || !Array.isArray((r as { frames?: unknown }).frames)) return r;
+      const frames = (r as { frames: unknown[] }).frames.filter((f) => ErrorFrame.safeParse(f).success);
+      return { ...r, frames };
+    }).filter((r) => ErrorReport.safeParse(r).success);
+    droppedErrors = body.errors.length - kept.length;
+    body.errors = kept;
+  } else if ("errors" in body && body.errors !== undefined) {
+    droppedErrors = 1;
+    delete body.errors;
+  }
   if (Array.isArray(body.events) && body.events.length <= MAX_EVENTS_PER_SYNC) {
     const kept = body.events.filter((e) => DecisionEvent.safeParse(e).success);
     droppedEvents = body.events.length - kept.length;
@@ -219,7 +266,7 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
       body.counters = { ...counters, reasons: Object.fromEntries(known) };
     }
   }
-  return { json: body, dropped_events: droppedEvents, dropped_reasons: droppedReasons };
+  return { json: body, dropped_events: droppedEvents, dropped_reasons: droppedReasons, dropped_errors: droppedErrors };
 }
 
 // Commands the dashboard queues for one install. The plugin only executes

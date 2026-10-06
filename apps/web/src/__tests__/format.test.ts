@@ -159,3 +159,22 @@ describe("provider outage visibility", () => {
     expect(providerProblem(providers([server({})])[0]!)).toBeNull();
   });
 });
+
+describe("plugin error notes", () => {
+  const now = 1_791_300_000_000;
+  const err = { fingerprint: "3f9c0a1b2d4e5f60", type: "java.lang.IllegalStateException", cause_type: "java.net.SocketTimeoutException",
+    context: "LOOKUP" as const, top_frame: "IpQueryVpnProvider.parse:88", plugin_version: "0.5.2", count: 37, first_at: now - 7_200_000, last_at: now - 600_000 };
+  const install = { id: "ins_x", name: "Lobby", platform: "BUKKIT" as const, platform_version: "Paper 1.21.11-132", plugin_version: "0.5.2",
+    java_version: "21", created_at: 0, claimed_at: 0, last_seen_at: now, online: true, status: null };
+
+  it("raises recent errors, red while they still happen, and prefills a report without player data", () => {
+    const [n] = notes([{ ...install, errors: [err] }], now).filter((x) => x.id.startsWith("error:"));
+    expect(n).toMatchObject({ tone: "action", title: "Lobby: IllegalStateException during lookups", command: "/cg doctor" });
+    expect(n!.detail).toContain("37 times");
+    const url = decodeURIComponent(n!.link!.href);
+    expect(url).toContain("IpQueryVpnProvider.parse:88");
+    expect(url).toContain("3f9c0a1b2d4e5f60");
+    expect(notes([{ ...install, errors: [{ ...err, last_at: now - 2 * 3_600_000 }] }], now).find((x) => x.id.startsWith("error:"))!.tone).toBe("pencil");
+    expect(notes([{ ...install, errors: [{ ...err, last_at: now - 2 * 86_400_000 }] }], now).some((x) => x.id.startsWith("error:"))).toBe(false);
+  });
+});

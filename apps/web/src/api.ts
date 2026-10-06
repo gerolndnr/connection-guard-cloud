@@ -31,6 +31,13 @@ export interface Me { user: { id: string; name: string; avatar: string | null };
 export interface Install {
   id: string; name: string | null; platform: "BUKKIT" | "BUNGEE" | "VELOCITY"; platform_version: string; plugin_version: string;
   java_version: string; created_at: number; claimed_at: number | null; last_seen_at: number; online: boolean; status: Status | null;
+  /** Last 7 days, newest first; only in the network view. */
+  errors?: InstallError[];
+}
+/** One of Connection Guard's own errors as a linked server reported it (plugin 0.5.2+), added up per fingerprint. */
+export interface InstallError {
+  fingerprint: string; type: string; cause_type: string | null; context: "STARTUP" | "RELOAD" | "LOOKUP" | "CACHE" | "SYNC" | "COMMAND" | "OTHER";
+  top_frame: string; plugin_version: string; count: number; first_at: number; last_at: number;
 }
 export interface NetworkView { network: { id: string; name: string; retention_days: number; created_at: number }; role: Role; installs: Install[] }
 export type Range = "24h" | "7d" | "30d" | "90d";
