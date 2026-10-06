@@ -81,6 +81,16 @@ export const ProviderStatus = z.object({
   daily_budget: count.nullable(),
 }).strict();
 
+// Cumulative plugin-lifetime counts, never a delta to add again on each heartbeat.
+// Deliberate exemptions and CG-denied connections are excluded. No player data.
+export const VpnUncheckedAllowed = z.object({
+  total: count,
+  since_summary: count,
+  window_seconds: count,
+  reasons: z.partialRecord(DetectionReason, count),
+}).strict().refine((v) => v.since_summary <= v.total, "window exceeds lifetime total");
+export type VpnUncheckedAllowed = z.infer<typeof VpnUncheckedAllowed>;
+
 export const Status = z.object({
   mode: Mode,
   uptime_seconds: count,
@@ -90,6 +100,7 @@ export const Status = z.object({
   cache_type: z.enum(["NONE", "SQLITE", "REDIS"]),
   buffered_events: count,
   dropped_events: count,
+  vpn_unchecked_allowed: VpnUncheckedAllowed.optional(),
   // Only once linked: effective values of the dashboard-configurable settings, and which come from the dashboard.
   config: ConfigSnapshot.nullable(),
   managed: z.array(z.string()).max(64),

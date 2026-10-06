@@ -2,7 +2,7 @@
 // Every note has a stable id and a fingerprint of the situation. Dismissing stores the fingerprint, so a
 // dismissed note comes back only when the situation changes (a server drops out again, a new day's quota...).
 import type { Install, InstallError } from "./api.ts";
-import { ago, serverName } from "./format.ts";
+import { ago, num, serverName } from "./format.ts";
 import { sourceLabel } from "./sources.ts";
 
 export interface Note {
@@ -82,6 +82,15 @@ export function providers(installs: Install[]): ProviderRow[] {
 export function notes(installs: Install[], now = Date.now()): Note[] {
   const out: Note[] = [];
   for (const i of installs) {
+    const coverage = i.status?.vpn_unchecked_allowed;
+    if (coverage && coverage.total > 0) {
+      const reasons = Object.entries(coverage.reasons).filter(([, count]) => count! > 0)
+        .map(([reason, count]) => `${reason.toLowerCase().replace(/_/g, " ")}: ${num(count!)}`).join(", ");
+      out.push({ id: `vpn-unchecked:${i.id}`, fingerprint: `${coverage.total}:${coverage.since_summary > 0}`,
+        tone: coverage.since_summary > 0 ? "action" : "pencil",
+        title: `${num(coverage.total)} ${coverage.total === 1 ? "login passed" : "logins passed"} without a VPN result on ${serverName(i)}`,
+        detail: `${num(coverage.since_summary)} since the last console summary.${reasons ? ` Reasons: ${reasons}.` : ""} Totals are since the plugin started; intentional exceptions and refused connections are excluded. Check /cg doctor and provider quotas.` });
+    }
     if (!i.online) out.push({ id: `offline:${i.id}`, fingerprint: String(i.last_seen_at), installId: i.id, tone: "action", title: `${serverName(i)} stopped reporting`, detail: `Last seen ${ago(i.last_seen_at, now)}. If the server is running, check that it can reach api.connectionguard.net.` });
   }
   for (const p of providers(installs)) {
