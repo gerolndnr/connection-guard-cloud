@@ -97,6 +97,11 @@ const others = PLATFORMS.filter((o) => o.slug !== p.slug);
           <div><dt class="font-semibold tracking-[-0.01em]">{t}</dt><dd class="mt-1.5 leading-relaxed text-fg-2">{d}</dd></div>
         ))}
       </dl>
+      <p class="mt-10 max-w-3xl border-t border-line pt-6 leading-relaxed text-fg-2">
+        <span class="font-medium text-fg">Security software shouldn't be a black box.</span>{" "}Everything above is public code under the MIT license,
+        so you can read exactly what runs at every login on your {p.slug === "paper" ? "Paper or Spigot server" : `${p.name} proxy`}.{" "}
+        <a href="https://github.com/gerolndnr/connection-guard" class="font-medium text-fg underline decoration-line-strong underline-offset-4" data-ph-event="cta_clicked" data-ph-cta="source" data-ph-location={`platform_${p.slug}`}>Read the source</a>
+      </p>
     </div>
   </section>
 

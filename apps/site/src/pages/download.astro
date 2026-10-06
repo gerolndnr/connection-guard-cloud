@@ -58,6 +58,14 @@ const fmt = new Intl.NumberFormat("en-US");
           </li>
         ))}
       </ul>
+      <div class="mt-8 max-w-3xl">
+        <h2 class="text-base font-semibold tracking-[-0.015em]">Security software shouldn't be a black box.</h2>
+        <p class="mt-2 text-sm leading-relaxed text-fg-2">
+          Every check the plugin runs is public code under the MIT license, built in public CI. GitHub releases ship with SHA-256 checksums: compare <code class="mono rounded bg-subtle px-1.5 py-0.5 text-fg">sha256sum connection-guard-{v}-all.jar</code> with the <code class="mono">SHA256SUMS</code> file of the release.{" "}
+          <a href="https://github.com/gerolndnr/connection-guard" class="font-medium text-fg underline decoration-line-strong underline-offset-4" data-ph-event="cta_clicked" data-ph-cta="source" data-ph-location="download_page">Plugin source</a>{" · "}
+          <a href="https://github.com/gerolndnr/connection-guard-cloud" class="font-medium text-fg underline decoration-line-strong underline-offset-4" data-ph-event="cta_clicked" data-ph-cta="source_cloud" data-ph-location="download_page">Dashboard source</a>
+        </p>
+      </div>
     </div>
   </section>
 
