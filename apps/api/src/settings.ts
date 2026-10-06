@@ -2,7 +2,7 @@
 import type { Hono } from "hono";
 import { capture } from "./analytics.ts";
 import { z } from "zod";
-import { CONFIG_FIELDS, ConfigValues, SECRET_PATHS, fieldSchema, isConfigPath, type ConfigPath, type Status } from "@cg/protocol";
+import { CONFIG_FIELDS, ConfigValues, SECRET_PATHS, fieldSchema, isConfigPath, supportsPath, type ConfigPath, type Status } from "@cg/protocol";
 import type { AppEnv, Env } from "./env.ts";
 import { WATCH_WINDOW } from "./governor.ts";
 import { openSecrets, sealSecrets } from "./secrets.ts";
@@ -104,23 +104,40 @@ export function registerSettings(app: Hono<AppEnv>) {
     }
     const now = Date.now();
     const targets = apply_to === "network"
-      ? (await env.DB.prepare("SELECT id FROM installs WHERE network_id = ?").bind(access.network_id).all<{ id: string }>()).results.map((r) => r.id)
-      : [access.id];
+      ? (await env.DB.prepare("SELECT id, status_json FROM installs WHERE network_id = ?").bind(access.network_id).all<{ id: string; status_json: string | null }>()).results
+      : [{ id: access.id, status_json: access.status_json }];
+    // A plugin refuses a whole change containing a path it does not accept, so gated paths only go to servers that list them.
+    const unsupported = (statusJson: string | null) => {
+      const snapshot = statusJson ? (JSON.parse(statusJson) as Status).config : null;
+      return [...Object.keys(values), ...Object.keys(secrets)].filter((p) => !supportsPath(snapshot, p));
+    };
+    if (apply_to === "server") {
+      const missing = unsupported(access.status_json);
+      if (missing.length) {
+        return c.json({ error: "invalid_settings", issues: missing.map((path) => ({ path, message: "this server's Connection Guard version cannot take this setting from the dashboard yet; update the plugin first" })) }, 422);
+      }
+    }
     const versions: Record<string, number> = {};
-    for (const id of targets) versions[id] = await saveFor(env, id, user.id, values, secrets, now);
+    const skipped: Record<string, string[]> = {};
+    for (const t of targets) {
+      const missing = unsupported(t.status_json);
+      if (missing.length) skipped[t.id] = missing;
+      const drop = (rec: Record<string, unknown>) => Object.fromEntries(Object.entries(rec).filter(([p]) => !missing.includes(p)));
+      versions[t.id] = await saveFor(env, t.id, user.id, drop(values), drop(secrets) as Record<string, string>, now);
+    }
     await env.DB.batch([
       env.DB.prepare("UPDATE networks SET watched_until = ? WHERE id = ?").bind(now + WATCH_WINDOW, access.network_id),
       env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, 'config.saved', ?, ?)")
         // Only which settings changed are logged, never their secret values.
-        .bind(access.network_id, user.id, JSON.stringify({ installs: targets, paths: [...Object.keys(values), ...Object.keys(secrets)] }), now),
+        .bind(access.network_id, user.id, JSON.stringify({ installs: targets.map((t) => t.id), paths: [...Object.keys(values), ...Object.keys(secrets)] }), now),
     ]);
     // Which settings changed, never their values.
     capture(c, {
       event: "settings_saved", distinct_id: user.id, groups: { network: access.network_id },
       properties: { install_id: access.id, fields: Object.keys(values), field_count: Object.keys(values).length, secret_fields: Object.keys(secrets).length,
-        apply_to, servers: targets.length, mode: typeof values["operation.mode"] === "string" ? values["operation.mode"] : undefined },
+        apply_to, servers: targets.length, skipped_servers: Object.keys(skipped).length, mode: typeof values["operation.mode"] === "string" ? values["operation.mode"] : undefined },
     });
-    return c.json({ versions });
+    return c.json({ versions, skipped });
   });
 
   app.post("/installs/:id/config/reset", async (c) => {

@@ -2,6 +2,7 @@
 // Everything here is descriptive: it shows what the recorded decisions contain, not who is "bad".
 import type { RegisterEvent } from "./api.ts";
 import { verdict } from "./format.ts";
+import { sourceKey } from "./sources.ts";
 
 const flagged = (e: RegisterEvent) => e.flags.includes("VPN");
 const vpnSources = (e: RegisterEvent) => e.sources.filter((s) => s.scope !== "GEO");
@@ -83,7 +84,9 @@ export function compareServices(events: RegisterEvent[]): ServiceRow[] {
     const sources = vpnSources(e);
     const answered = sources.filter((s) => s.status !== "UNKNOWN");
     for (const s of sources) {
-      const row = rows.get(s.id) ?? { id: s.id, asked: 0, answered: 0, positive: 0, medianMs: null, cached: 0, comparable: 0, disagreed: 0, times: [] };
+      // The same service can carry another index on another server ("proxycheckvpnprovider-0"/"-1").
+      const key = sourceKey(s.id);
+      const row = rows.get(key) ?? { id: key, asked: 0, answered: 0, positive: 0, medianMs: null, cached: 0, comparable: 0, disagreed: 0, times: [] };
       row.asked++;
       if (s.from_cache) row.cached++;
       if (s.status !== "UNKNOWN") {
@@ -95,7 +98,7 @@ export function compareServices(events: RegisterEvent[]): ServiceRow[] {
           if (answered.some((o) => o !== s && o.status !== s.status)) row.disagreed++;
         }
       }
-      rows.set(s.id, row);
+      rows.set(key, row);
     }
   }
   return [...rows.values()].map(({ times, ...r }) => {

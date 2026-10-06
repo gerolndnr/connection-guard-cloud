@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Command, InstallRequest, SyncRequest, SyncResponse, tolerateSync } from "../src/index.ts";
+import { Command, GATED_PATHS, InstallRequest, SyncRequest, SyncResponse, isConfigPath, supportsPath, tolerateSync } from "../src/index.ts";
 import { installRequest, syncRequest, syncResponse } from "../src/examples.ts";
 
 describe("protocol v1", () => {
@@ -40,6 +40,28 @@ describe("protocol v1", () => {
     const parsed = SyncRequest.parse(tolerated.json);
     expect(parsed.events).toHaveLength(1);
     expect(parsed.counters.reasons).toEqual({ VPN_FLAG: 3 });
+  });
+
+  it("keeps a newer plugin's status: unknown settings paths and provider reasons are dropped, not fatal", () => {
+    const status = {
+      ...syncRequest.status,
+      config: { ...syncRequest.status.config, "provider.some-future-switch": true },
+      providers: [{ ...syncRequest.status.providers[0]!, last_reason: "SOMETHING_NEW" }],
+    };
+    const body = { ...syncRequest, status };
+    expect(SyncRequest.safeParse(body).success).toBe(false);
+    const parsed = SyncRequest.parse(tolerateSync(body).json);
+    expect(parsed.status.config).not.toHaveProperty("provider.some-future-switch");
+    expect(parsed.status.config).toHaveProperty("operation.mode");
+    expect(parsed.status.providers[0]!.last_reason).toBeNull();
+  });
+
+  it("offers gated settings only to servers that report them", () => {
+    expect(supportsPath({ "operation.mode": "OBSERVE" }, "operation.mode")).toBe(true);
+    expect(supportsPath({ "operation.mode": "OBSERVE" }, "provider.vpn-failover.enabled")).toBe(false);
+    expect(supportsPath({ "provider.vpn-failover.enabled": true }, "provider.vpn-failover.enabled")).toBe(true);
+    expect(supportsPath(null, "provider.vpn.ipquery.enabled")).toBe(false);
+    expect(GATED_PATHS.every((p) => isConfigPath(p))).toBe(true);
   });
 
   it("still rejects unknown top-level and status fields after tolerating", () => {

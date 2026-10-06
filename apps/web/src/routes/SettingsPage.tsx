@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, CircleAlert, CircleCheck, ExternalLink, LoaderCircle, WifiOff, X } from "lucide-react";
-import { SECRET_PATHS, type ConfigSnapshot } from "@cg/protocol";
+import { ArrowDown, ArrowUp, ChevronRight, CircleAlert, CircleCheck, ExternalLink, LoaderCircle, WifiOff, X } from "lucide-react";
+import { SECRET_PATHS, supportsPath, type ConfigSnapshot } from "@cg/protocol";
 import { api, ApiError, type Install, type ServerConfig } from "../api.ts";
 import { Shell } from "../components/Shell.tsx";
 import { StatusDot } from "../components/Badge.tsx";
 import { Choice, CountryPicker, Row, Section, SecretField, Segmented, Switch, TagInput, type SecretEdit } from "../components/Form.tsx";
-import { ago, num, platformName, serverName } from "../format.ts";
-import { PROVIDERS } from "../providers.ts";
+import { ago, configErrorHint, num, platformName, serverName, versionAtLeast } from "../format.ts";
+import { failoverOrder, providersFor, strategyOf } from "../providers.ts";
 import { SIMULATED_PATHS, simulate, type SimulationResult } from "../simulate.ts";
 import { useHistory } from "../history.ts";
 import { usePlayerNames } from "../players.ts";
@@ -41,7 +41,11 @@ function ApplyStatus({ cfg, server }: { cfg: ServerConfig; server: string }) {
     return (
       <div role="alert" className="flex gap-3 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3">
         <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0 text-danger" />
-        <div><p className="font-medium text-danger-text">{server} rejected the last change</p><p className="mt-0.5 text-[0.8125rem] text-fg-2">{cfg.error.message} Its previous settings are still active.</p></div>
+        <div className="min-w-0">
+          <p className="font-medium text-danger-text">{server} rejected the last change</p>
+          <p className="mt-0.5 text-[0.8125rem] text-fg-2">{cfg.error.message} Its previous settings are still active.</p>
+          <ErrorHint message={cfg.error.message} />
+        </div>
       </div>
     );
   }
@@ -68,6 +72,17 @@ function ApplyStatus({ cfg, server }: { cfg: ServerConfig; server: string }) {
     <div className="flex items-center gap-3 rounded-lg border border-line px-4 py-3 text-[0.8125rem] text-fg-2">
       <CircleCheck aria-hidden className="size-4 shrink-0 text-fg-3" />
       <span>All settings currently come from config.yml on {server}. Changes you save here take priority over it.</span>
+    </div>
+  );
+}
+
+function ErrorHint({ message }: { message: string | null | undefined }) {
+  const hint = configErrorHint(message);
+  if (!hint) return null;
+  return (
+    <div className="mt-2 text-[0.8125rem] text-fg-2">
+      <p>{hint.text}</p>
+      {hint.command && <pre className="mono mt-2 overflow-x-auto rounded-md border border-line bg-surface px-3 py-2 text-[0.75rem]">{hint.command}</pre>}
     </div>
   );
 }
@@ -128,7 +143,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   // The change just saved, so the bottom bar can follow it until the server confirms or refuses.
-  const [lastSave, setLastSave] = useState<{ version: number; at: number; others: number; reset?: boolean } | null>(null);
+  const [lastSave, setLastSave] = useState<{ version: number; at: number; others: number; reset?: boolean; skipped?: number } | null>(null);
   const [now, setNow] = useState(Date.now());
   // "Block selected" with no country picked yet still shows the picker.
   const [blockOpen, setBlockOpen] = useState(false);
@@ -189,7 +204,22 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
   const secretEdit = (path: string): SecretEdit => secrets[path] ?? { mode: "keep" };
   const hasKey = (path: string) => { const e = secretEdit(path); return e.mode === "set" ? e.value.length > 0 : e.mode === "clear" ? false : Boolean(secretState(path)?.set); };
 
-  const enabledProviders = PROVIDERS.filter((p) => v<boolean>(`provider.vpn.${p.key}.enabled`));
+  const providers = providersFor(effective);
+  const enabledProviders = providers.filter((p) => v<boolean>(`provider.vpn.${p.key}.enabled`));
+  // Failover (plugin 0.5.2+) asks one service after another; voting asks all and counts. Older plugins only vote.
+  const hasFailover = supportsPath(effective, "provider.vpn-failover.enabled");
+  // 0.5.2 plugins that do not list the switch yet still use failover unless config.yml turns it off.
+  const implicitFailover = !hasFailover && versionAtLeast(install.plugin_version, "0.5.2");
+  const failover = strategyOf(values) === "failover";
+  const order = v<string[]>("provider.vpn-failover.order") ?? [];
+  const chain = failoverOrder(enabledProviders, order);
+  const moveInChain = (key: string, by: -1 | 1) => {
+    const keys: string[] = chain.map((p) => p.key).filter((k) => k !== "ip-api");
+    const i = keys.indexOf(key), j = i + by;
+    if (i < 0 || j < 0 || j >= keys.length) return;
+    [keys[i], keys[j]] = [keys[j]!, keys[i]!];
+    set("provider.vpn-failover.order", keys);
+  };
   const geoType = v<string>("behavior.geo.type");
   const geoList = v<string[]>("behavior.geo.list") ?? [];
   const geoMode = geoType === "WHITELIST" ? "allow" : geoList.length > 0 || blockOpen ? "block" : "off";
@@ -198,8 +228,8 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
 
   // Mirrors the plugin's own validation, in words an operator understands.
   const errors: Record<string, string> = {};
-  for (const p of PROVIDERS) if (p.keyRequired && v<boolean>(`provider.vpn.${p.key}.enabled`) && !hasKey(p.keyPath!)) errors[`provider.vpn.${p.key}.enabled`] = `${p.name} needs an API key.`;
-  if (enabledProviders.length > 0 && v<number>("required-positive-flags") > enabledProviders.length) errors["required-positive-flags"] = `Only ${enabledProviders.length} ${enabledProviders.length === 1 ? "provider is" : "providers are"} enabled.`;
+  for (const p of providers) if (p.keyRequired && v<boolean>(`provider.vpn.${p.key}.enabled`) && !hasKey(p.keyPath!)) errors[`provider.vpn.${p.key}.enabled`] = `${p.name} needs an API key.`;
+  if (!failover && enabledProviders.length > 0 && v<number>("required-positive-flags") > enabledProviders.length) errors["required-positive-flags"] = `Only ${enabledProviders.length} ${enabledProviders.length === 1 ? "provider is" : "providers are"} enabled.`;
   if (geoMode === "allow" && geoList.length === 0) errors["behavior.geo.list"] = "Pick at least one country, or nobody can join.";
   for (const scope of ["vpn", "geo"]) if (v<boolean>(`behavior.${scope}.send-webhook.enabled`) && !hasKey(`behavior.${scope}.send-webhook.url`)) errors[`behavior.${scope}.send-webhook.enabled`] = "Add the Discord webhook URL.";
   const hasErrors = Object.keys(errors).length > 0;
@@ -216,7 +246,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
     try {
       const res = await api.saveConfig(install.id, body);
       setSavedValues(values);
-      setLastSave({ version: res.versions[install.id] ?? 0, at: Date.now(), others: Object.keys(res.versions).length - 1 });
+      setLastSave({ version: res.versions[install.id] ?? 0, at: Date.now(), others: Object.keys(res.versions).length - 1, skipped: Object.keys(res.skipped ?? {}).length });
       setNow(Date.now());
       setSecrets({});
       await qc.invalidateQueries({ queryKey: ["config"] });
@@ -260,8 +290,10 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
           </div>
         </Section>
 
-        <Section id="vpn" title="VPN and proxy detection" description="Each enabled service is asked about new IP addresses. Results are cached, so most logins cost no lookup at all.">
-          {PROVIDERS.map((p) => (
+        <Section id="vpn" title="VPN and proxy detection" description={failover
+          ? "Enabled services are asked one after another about new IP addresses. Results are cached, so most logins cost no lookup at all."
+          : "Each enabled service is asked about new IP addresses. Results are cached, so most logins cost no lookup at all."}>
+          {providers.map((p) => (
             <Row key={p.key} managed={managed(`provider.vpn.${p.key}.enabled`)} error={errors[`provider.vpn.${p.key}.enabled`]}
               label={<>{p.name}{p.signup && <a href={p.signup} target="_blank" rel="noreferrer" className="text-fg-3 hover:text-fg" aria-label={`${p.name} website`}><ExternalLink className="size-3.5" /></a>}</>}
               help={p.body}>
@@ -277,14 +309,64 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
               </div>
             </Row>
           ))}
-          <Row label="Votes needed" managed={managed("required-positive-flags")} error={errors["required-positive-flags"]}
-            help="How many enabled services must agree before a player counts as using a VPN.">
-            <select className="input w-auto pr-8" value={v<number>("required-positive-flags")} onChange={(e) => set("required-positive-flags", Number(e.target.value))}>
-              {Array.from({ length: Math.max(1, enabledProviders.length, v<number>("required-positive-flags")) }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>{n} of {Math.max(enabledProviders.length, 1)}</option>
-              ))}
-            </select>
-          </Row>
+          {hasFailover && (
+            <Row label="How services are asked" managed={managed("provider.vpn-failover.enabled")}
+              help="Applies to every enabled service, with or without a key.">
+              <Segmented name="Lookup strategy" value={failover ? "failover" : "voting"} onChange={(x) => set("provider.vpn-failover.enabled", x === "failover")} options={[
+                { value: "failover", title: "One after another", body: "Recommended. Fewer lookups: when a service fails or its daily limit is used up, the next one steps in." },
+                { value: "voting", title: "All at once", body: "Every service votes. More lookups, but you can require agreement." },
+              ]} />
+            </Row>
+          )}
+          {hasFailover && failover && enabledProviders.length > 0 && (
+            <Row label="Order" managed={managed("provider.vpn-failover.order")}
+              help="The first service that gives a clear answer decides. Local lists such as the Tor list are always checked first, IP-API always last.">
+              <ol className="divide-y divide-line overflow-hidden rounded-lg border border-line">
+                {chain.map((p, i) => {
+                  const movable = p.key !== "ip-api" && supportsPath(effective, "provider.vpn-failover.order");
+                  const last = chain.filter((x) => x.key !== "ip-api").length - 1;
+                  return (
+                    <li key={p.key} className="flex items-center gap-3 px-3 py-2">
+                      <span className="num w-5 text-[0.8125rem] text-fg-3">{i + 1}</span>
+                      <span className="min-w-0 flex-1 font-medium">{p.name}</span>
+                      {movable ? (
+                        <span className="flex gap-1">
+                          <button type="button" className="btn btn-ghost size-7 p-0" aria-label={`Move ${p.name} up`} disabled={i === 0} onClick={() => moveInChain(p.key, -1)}><ArrowUp className="size-3.5" /></button>
+                          <button type="button" className="btn btn-ghost size-7 p-0" aria-label={`Move ${p.name} down`} disabled={i >= last} onClick={() => moveInChain(p.key, 1)}><ArrowDown className="size-3.5" /></button>
+                        </span>
+                      ) : <span className="text-[0.75rem] text-fg-3">{p.key === "ip-api" ? "always last" : ""}</span>}
+                    </li>
+                  );
+                })}
+              </ol>
+            </Row>
+          )}
+          {hasFailover && failover && supportsPath(effective, "provider.max-external-attempts") && (
+            <Row label="Services asked per player" managed={managed("provider.max-external-attempts")}
+              help="At most this many services learn a player's address when the first ones fail. 1 sends each address to a single service only.">
+              <select className="input w-auto pr-8" value={v<number>("provider.max-external-attempts") ?? 16} onChange={(e) => set("provider.max-external-attempts", Number(e.target.value))}>
+                {[1, 2, 3, 16].map((n) => <option key={n} value={n}>{n === 16 ? "As many as needed" : n === 1 ? "1 (strictest)" : n}</option>)}
+              </select>
+            </Row>
+          )}
+          {failover ? (
+            v<number>("required-positive-flags") > 1 && (
+              <p className="px-6 py-3 text-[0.75rem] text-fg-3">
+                One clear answer decides while services are asked one after another. Your stored vote count of {v<number>("required-positive-flags")} applies again if you switch to all at once.
+              </p>
+            )
+          ) : (
+            <Row label="Votes needed" managed={managed("required-positive-flags")} error={errors["required-positive-flags"]}
+              help={implicitFailover
+                ? "This server's plugin asks services one after another by default, so one clear answer decides. The vote count only applies if that is switched off in config.yml (provider.vpn-failover.enabled: false)."
+                : "How many enabled services must agree before a player counts as using a VPN."}>
+              <select className="input w-auto pr-8" value={v<number>("required-positive-flags")} onChange={(e) => set("required-positive-flags", Number(e.target.value))}>
+                {Array.from({ length: Math.max(1, enabledProviders.length, v<number>("required-positive-flags")) }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>{n} of {Math.max(enabledProviders.length, 1)}</option>
+                ))}
+              </select>
+            </Row>
+          )}
           <Row label="If no service answers" managed={managed("failure-policy.vpn")} help="Happens when services are down or a daily limit is used up.">
             <Segmented name="VPN failure policy" value={v<string>("failure-policy.vpn") as "OPEN"} onChange={(x) => set("failure-policy.vpn", x)} options={FAILURE} />
           </Row>
@@ -395,7 +477,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
             {saveRejected ? (
               <>
                 <CircleAlert aria-hidden className="size-5 shrink-0 text-danger" />
-                <p className="min-w-0 flex-1 text-[0.8125rem]"><span className="font-medium text-danger-text">{name} refused the change.</span> <span className="text-fg-2">{cfgQ.data?.error?.message} Its previous settings are still active.</span></p>
+                <p className="min-w-0 flex-1 text-[0.8125rem]"><span className="font-medium text-danger-text">{name} refused the change.</span> <span className="text-fg-2">{cfgQ.data?.error?.message} Its previous settings are still active.{configErrorHint(cfgQ.data?.error?.message) ? " See the note at the top." : ""}</span></p>
               </>
             ) : saveApplied ? (
               <>
@@ -415,6 +497,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
                   <p className="text-fg-2">
                     {cfgQ.data?.online === false ? "Nothing else to do." : "While you have the dashboard open, servers check in every 15 seconds, so this usually takes under half a minute and at most about a minute."}
                     {lastSave.others > 0 && ` Also sent to ${lastSave.others} other ${lastSave.others === 1 ? "server" : "servers"}.`}
+                    {(lastSave.skipped ?? 0) > 0 && ` ${lastSave.skipped} of them ${lastSave.skipped === 1 ? "runs" : "run"} an older Connection Guard and kept ${lastSave.skipped === 1 ? "its" : "their"} own values for the newer settings.`}
                   </p>
                   <div className="mt-2 h-1 overflow-hidden rounded-full bg-subtle" aria-hidden>
                     <div className="h-full rounded-full bg-accent transition-[width] duration-1000 ease-linear" style={{ width: `${Math.min(95, ((now - lastSave.at) / 30_000) * 100)}%` }} />

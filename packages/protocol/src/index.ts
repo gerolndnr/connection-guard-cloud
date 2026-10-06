@@ -2,7 +2,7 @@
 // Wire format is JSON with snake_case keys. The Java plugin mirrors these
 // shapes; contract fixtures in fixtures/ are generated from this file.
 import { z } from "zod";
-import { ConfigResult, ConfigSnapshot, DesiredConfig } from "./config.ts";
+import { ConfigResult, ConfigSnapshot, DesiredConfig, isConfigPath } from "./config.ts";
 
 export * from "./config.ts";
 
@@ -194,6 +194,21 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
     const kept = body.events.filter((e) => DecisionEvent.safeParse(e).success);
     droppedEvents = body.events.length - kept.length;
     body.events = kept;
+  }
+  const status = body.status;
+  if (typeof status === "object" && status !== null && !Array.isArray(status)) {
+    const s = { ...(status as Record<string, unknown>) };
+    // A newer plugin's settings snapshot may list paths this version does not offer yet; they are simply not shown.
+    if (typeof s.config === "object" && s.config !== null && !Array.isArray(s.config)) {
+      s.config = Object.fromEntries(Object.entries(s.config).filter(([path]) => isConfigPath(path)));
+    }
+    // A new failure reason on a provider reads as "no reason given" rather than losing the status.
+    if (Array.isArray(s.providers)) {
+      s.providers = s.providers.map((p) => (typeof p === "object" && p !== null && "last_reason" in p
+        && !DetectionReason.safeParse((p as { last_reason: unknown }).last_reason).success && (p as { last_reason: unknown }).last_reason !== null
+        ? { ...p, last_reason: null } : p));
+    }
+    body.status = s;
   }
   const counters = body.counters;
   if (typeof counters === "object" && counters !== null && !Array.isArray(counters)) {

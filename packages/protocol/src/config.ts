@@ -2,6 +2,7 @@
 // (CloudManagedConfig.java); anything not listed here can only be set in config.yml.
 // Deliberately absent: console commands (execute-command), cache/Redis connection, identity,
 // lookup tuning, overload, integrations, local data and custom providers.
+// Paths in GATED_PATHS below are known here before every plugin release accepts them.
 import { z } from "zod";
 
 const COUNTRY = /^[A-Z]{2}$/;
@@ -41,12 +42,32 @@ export const CONFIG_FIELDS = {
   "behavior.geo.type": { kind: "enum", options: ["BLACKLIST", "WHITELIST"] },
   "behavior.geo.list": { kind: "countries" },
   "behavior.geo.exemptions": { kind: "list", maxItems: 200, maxLength: 64 },
+  // Newer plugins only (see GATED_PATHS).
+  "provider.vpn-failover.enabled": { kind: "bool" },
+  "provider.vpn-failover.order": { kind: "list", maxItems: 16, maxLength: 64 },
+  "provider.max-external-attempts": { kind: "int", min: 1, max: 16 },
+  "provider.vpn.ipquery.enabled": { kind: "bool" },
+  "provider.vpn.ipqualityscore.enabled": { kind: "bool" },
+  "provider.vpn.ipqualityscore.api-key": { kind: "secret" },
 } as const satisfies Record<string, FieldKind>;
 
 export type ConfigPath = keyof typeof CONFIG_FIELDS;
 export const CONFIG_PATHS = Object.keys(CONFIG_FIELDS) as ConfigPath[];
 export const SECRET_PATHS = CONFIG_PATHS.filter((p) => CONFIG_FIELDS[p].kind === "secret");
 export const isConfigPath = (p: string): p is ConfigPath => Object.hasOwn(CONFIG_FIELDS, p);
+
+/**
+ * Settings a plugin only accepts from the dashboard once its own list (CloudManagedConfig.java) includes them. A plugin
+ * refuses a whole change that contains a path it does not know, so these are offered and sent only to servers whose
+ * reported snapshot lists the path; that snapshot is built from the same list.
+ */
+export const GATED_PATHS: readonly ConfigPath[] = [
+  "provider.vpn-failover.enabled", "provider.vpn-failover.order", "provider.max-external-attempts",
+  "provider.vpn.ipquery.enabled", "provider.vpn.ipqualityscore.enabled", "provider.vpn.ipqualityscore.api-key",
+];
+/** Whether a server with this snapshot accepts `path` from the dashboard. */
+export const supportsPath = (snapshot: Record<string, unknown> | null | undefined, path: string) =>
+  !(GATED_PATHS as readonly string[]).includes(path) || Boolean(snapshot && Object.hasOwn(snapshot, path));
 
 export type ConfigValue = boolean | number | string | string[];
 

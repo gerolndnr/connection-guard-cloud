@@ -86,4 +86,25 @@ describe("dashboard-managed settings", () => {
     const { versions } = await (await api(cookie, `/installs/${ins.install_id}/config`, { method: "PUT", json: { values: { "operation.mode": "ENFORCE" }, apply_to: "network" } })).json<{ versions: Record<string, number> }>();
     expect(Object.keys(versions).sort()).toEqual([ins.install_id, second.install_id].sort());
   });
+
+  it("sends newer settings only to servers whose plugin reports them", async () => {
+    const { ins, cookie, network_id } = await linked();
+    const old = await install();
+    await api(cookie, `/link/${old.link_code}`, { json: { network_id, accept_dpa: true, dpa_version: env.DPA_VERSION, turnstile_token: "t" } });
+    // `ins` runs a plugin that offers the failover switch; `old` does not.
+    await syncOk(ins, { seq: 1, status: status({ config_result: null, config: { ...syncRequest.status.config, "provider.vpn-failover.enabled": true } }) });
+    await syncOk(old, { seq: 1, status: status({ config_result: null }) });
+
+    const refused = await api(cookie, `/installs/${old.install_id}/config`, { method: "PUT", json: { values: { "provider.vpn-failover.enabled": false } } });
+    expect(refused.status).toBe(422);
+    expect((await refused.json<{ issues: { path: string }[] }>()).issues[0]!.path).toBe("provider.vpn-failover.enabled");
+
+    const res = await api(cookie, `/installs/${ins.install_id}/config`, { method: "PUT",
+      json: { values: { "provider.vpn-failover.enabled": false, "operation.mode": "ENFORCE" }, apply_to: "network" } });
+    expect(res.status).toBe(200);
+    const { skipped } = await res.json<{ skipped: Record<string, string[]> }>();
+    expect(skipped).toEqual({ [old.install_id]: ["provider.vpn-failover.enabled"] });
+    expect((await syncOk(ins, { seq: 2, status: status({ config_result: null }) })).config!.values).toEqual({ "provider.vpn-failover.enabled": false, "operation.mode": "ENFORCE" });
+    expect((await syncOk(old, { seq: 2, status: status({ config_result: null }) })).config!.values).toEqual({ "operation.mode": "ENFORCE" });
+  });
 });

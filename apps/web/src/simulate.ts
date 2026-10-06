@@ -2,9 +2,11 @@
 // It is an estimate. Providers that were not asked then cannot be replayed, access rules and other plugins are
 // left as they were, and the cache may have answered for some logins.
 import type { RegisterEvent } from "./api.ts";
+import { PROVIDERS, strategyOf } from "./providers.ts";
+import { sourceKey } from "./sources.ts";
 
 type Values = Record<string, unknown>;
-const VPN_PROVIDERS = ["proxycheck", "ip-api", "iphub", "vpnapi"] as const;
+const VPN_PROVIDERS = PROVIDERS.map((p) => p.key);
 
 export interface SimulationResult {
   total: number;
@@ -21,7 +23,9 @@ const refusedNow = (e: RegisterEvent) => e.outcome === "DENY" || (e.mode === "OB
 export function simulate(events: RegisterEvent[], v: Values): SimulationResult {
   const enforce = v["operation.mode"] === "ENFORCE";
   const enabled = VPN_PROVIDERS.filter((p) => v[`provider.vpn.${p}.enabled`] === true);
-  const votes = Math.max(1, Number(v["required-positive-flags"] ?? 1));
+  // A failover chain stops at the first concrete answer: one positive service is enough.
+  const failover = strategyOf(v) === "failover";
+  const votes = failover ? 1 : Math.max(1, Number(v["required-positive-flags"] ?? 1));
   const vpnKick = v["behavior.vpn.kick-player"] !== false;
   const geoKick = v["behavior.geo.kick-player"] !== false;
   const geoType = v["behavior.geo.type"] === "WHITELIST" ? "WHITELIST" : "BLACKLIST";
@@ -41,9 +45,11 @@ export function simulate(events: RegisterEvent[], v: Values): SimulationResult {
 
     let vpn = false;
     if (enabled.length > 0 && !exempt(v["behavior.vpn.exemptions"], e)) {
-      const asked = new Set(e.sources.filter((s) => s.scope !== "GEO").map((s) => s.id));
-      if (enabled.some((p) => !asked.has(p))) out.unknown++;
-      const positives = e.sources.filter((s) => s.scope !== "GEO" && s.status === "POSITIVE" && (enabled as readonly string[]).includes(s.id)).length;
+      const asked = new Set(e.sources.filter((s) => s.scope !== "GEO").map((s) => sourceKey(s.id)));
+      // Under failover, later services are only asked when earlier ones fail, so not being asked is expected.
+      if (failover ? !enabled.some((p) => asked.has(p)) : enabled.some((p) => !asked.has(p))) out.unknown++;
+      const positives = e.sources.filter((s) => s.scope !== "GEO" && s.status === "POSITIVE"
+        && (sourceKey(s.id) === "tor-list" || (enabled as readonly string[]).includes(sourceKey(s.id)))).length;
       vpn = positives >= Math.min(votes, enabled.length);
     }
     let geo = false;
@@ -63,6 +69,6 @@ export function simulate(events: RegisterEvent[], v: Values): SimulationResult {
 }
 
 /** Settings that change who gets in; only these trigger a simulation. */
-export const SIMULATED_PATHS = ["operation.mode", "required-positive-flags", "behavior.vpn.kick-player", "behavior.geo.kick-player",
+export const SIMULATED_PATHS = ["operation.mode", "required-positive-flags", "provider.vpn-failover.enabled", "behavior.vpn.kick-player", "behavior.geo.kick-player",
   "behavior.geo.type", "behavior.geo.list", "provider.geo.service", "behavior.vpn.exemptions", "behavior.geo.exemptions",
   ...VPN_PROVIDERS.map((p) => `provider.vpn.${p}.enabled`)];

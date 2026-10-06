@@ -52,3 +52,24 @@ describe("simulate", () => {
     expect(r.refusedAfter).toBe(0);
   });
 });
+
+describe("simulate with real plugin source IDs", () => {
+  const real = (ids: [string, boolean][]): RegisterEvent => ({
+    ...ev({ outcome: "DENY", reason: "VPN_FLAG", flags: ["VPN"] }),
+    sources: ids.map(([id, pos]) => ({ id, scope: "VPN" as const, status: pos ? "POSITIVE" as const : "NEGATIVE" as const, reason: "NONE" as const,
+      duration_ms: 1, voting: true, from_cache: false, country: null, asn: null, isp: null, risk: null })),
+  });
+
+  it("matches class-named sources to the provider switches", () => {
+    const e = real([["proxycheckvpnprovider-0", true], ["ipapivpnprovider-1", false]]);
+    const both = { ...base, "provider.vpn.ip-api.enabled": true, "required-positive-flags": 2 };
+    expect(simulate([e], { ...base, "provider.vpn.ip-api.enabled": true })).toMatchObject({ refusedAfter: 1, unknown: 0 });
+    expect(simulate([e], both)).toMatchObject({ refusedAfter: 0, unknown: 0 });
+  });
+
+  it("a failover chain needs one positive answer, whatever the stored vote count", () => {
+    const e = real([["proxycheckvpnprovider-0", true]]);
+    const v = { ...base, "provider.vpn.ipquery.enabled": true, "required-positive-flags": 2, "provider.vpn-failover.enabled": true };
+    expect(simulate([e], v)).toMatchObject({ refusedAfter: 1, unknown: 0 });
+  });
+});

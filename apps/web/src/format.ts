@@ -1,6 +1,7 @@
 import { displayNetwork, ruleKind, ruleValue } from "@cg/protocol/rules";
 import type { DecisionEvent } from "@cg/protocol";
 import type { Install } from "./api.ts";
+import { isTorList, sourceLabel } from "./sources.ts";
 
 const nf = new Intl.NumberFormat("en-US");
 export const num = (n: number) => nf.format(n);
@@ -18,6 +19,14 @@ export function ago(t: number, now = Date.now()): string {
 export const clock = (t: number) => new Date(t).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 export const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 export const dayKey = (t: number) => new Date(t).toDateString();
+
+/** "0.5.2-SNAPSHOT" ≥ "0.5.2": development builds already carry the features of their version. */
+export function versionAtLeast(version: string, min: string): boolean {
+  const parts = (x: string) => (x.match(/\d+/g) ?? []).slice(0, 3).map(Number);
+  const a = parts(version), b = parts(min);
+  for (let i = 0; i < 3; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
+  return true;
+}
 
 export const platformName = { BUKKIT: "Paper / Spigot", BUNGEE: "BungeeCord", VELOCITY: "Velocity" } as const;
 export const serverName = (i: Pick<Install, "name" | "platform" | "id">) => i.name ?? `${platformName[i.platform]} ${i.id.slice(4, 8)}`;
@@ -68,12 +77,14 @@ export const reasonLabel = (e: DecisionEvent) => (wouldRefuse(e) ? "Would refuse
 
 /** One plain-English sentence for the "why" panel. */
 export function explain(e: DecisionEvent): string {
-  const positives = e.sources.filter((s) => s.status === "POSITIVE" && s.voting).map((s) => s.id);
+  const positiveSources = e.sources.filter((s) => s.status === "POSITIVE" && s.voting);
+  const positives = [...new Set(positiveSources.map((s) => sourceLabel(s.id)))];
   const country = e.sources.find((s) => s.country)?.country;
   const flags = e.flags.map((f) => flagText[f]).join(" and ");
   switch (verdict(e)) {
     case "refused":
       if (e.reason === "ACCESS_RULE") return "A manual deny rule matched this connection, so it was refused before any lookup.";
+      if (e.reason === "VPN_FLAG" && positiveSources.some((s) => isTorList(s.id))) return "Refused: the address is on the Tor exit list the server keeps itself, so no service had to be asked.";
       if (e.reason === "VPN_FLAG") return `Refused: ${positives.length ? positives.join(" and ") : "the providers"} reported a VPN or proxy${country ? ` in ${countryName(country)}` : ""}.`;
       if (e.reason === "GEO_FLAG") return `Refused: your country rules do not allow connections from ${country ? countryName(country) : "this country"}.`;
       if (e.reason === "LOOKUP_UNAVAILABLE") return "Refused because no provider answered in time and the failure policy is CLOSED.";
@@ -92,6 +103,21 @@ export function explain(e: DecisionEvent): string {
       if (e.reason === "FLAG_ALLOWED") return `Connection Guard found ${flags}, and your settings let such players in.`;
       return "Every check came back clean.";
   }
+}
+
+/**
+ * What to do about a change a server refused, for messages that need more than the plugin's own words. Plugins from
+ * 0.5.2 can hold a locally activated policy version; while it is active, the dashboard cannot change decision settings.
+ */
+export function configErrorHint(message: string | null | undefined): { text: string; command?: string } | null {
+  const m = (message ?? "").toLowerCase();
+  if (m.includes("local policy owns") || m.includes("local policy and dashboard")) {
+    return { text: "A policy version was activated on the server itself. Until it is released there, it owns the protection mode, failure policies, kick switches and country rules; services, actions and exemptions can still be changed here. To manage everything from the dashboard again, run this on the server and then /cg policy release with the token it shows.", command: "/cg policy status" };
+  }
+  if (m.includes("cannot be set from the dashboard")) {
+    return { text: "This server's Connection Guard version does not accept one of these settings from the dashboard. Update the plugin, or change it in config.yml." };
+  }
+  return null;
 }
 
 /** "in 47 min", "in 23 h", "until 11 Oct": when a time-limited rule ends. */

@@ -3,6 +3,7 @@
 // dismissed note comes back only when the situation changes (a server drops out again, a new day's quota...).
 import type { Install } from "./api.ts";
 import { ago, serverName } from "./format.ts";
+import { sourceLabel } from "./sources.ts";
 
 export interface Note {
   id: string; fingerprint: string; tone: "action" | "pencil"; title: string; detail?: string; command?: string;
@@ -17,6 +18,8 @@ const warningText: Record<string, string> = {
   "mode.observe": "",
   "cache.none": "No cache configured: every login costs a provider lookup.",
   "identity.untrusted": "Player identity is not verified on this platform.",
+  // Proposed for plugin 0.5.2 (Redis unreachable, memory fallback); see the plugin handoff of 2026-10-06.
+  "cache.fallback": "Redis is unreachable. The server uses a temporary in-memory cache and reconnects in the background.",
 };
 
 export interface ProviderRow { id: string; scope: string; attempts: number; successes: number; paused: boolean; last_reason: string | null; daily_used: number | null; daily_budget: number | null; servers: number; quota_exhausted: boolean }
@@ -60,11 +63,11 @@ export function notes(installs: Install[], now = Date.now()): Note[] {
     const usage = p.daily_used !== null && p.daily_budget ? `${p.daily_used} of ${p.daily_budget} locally counted lookups today${p.servers > 1 ? ` across ${p.servers} servers` : ""}. ` : "";
     const quotaDetail = `${usage}Counts are per-server estimates, not the provider account's remaining balance. Check /cg doctor and the provider account. Configured failover and failure policy determine how checks continue.`;
     if (problem && problem !== "Quota exhausted") {
-      out.push({ id: `failing:${p.id}`, fingerprint: `${utcDay(now)}:${problem}`, tone: "action", title: `${p.id}: ${problem.toLowerCase()}`, detail: `${p.successes} of ${p.attempts} lookups answered${p.last_reason ? `, last error: ${p.last_reason.toLowerCase().replace(/_/g, " ")}` : ""}. Check /cg doctor. Configured failover and failure policy determine how checks continue.` });
+      out.push({ id: `failing:${p.id}`, fingerprint: `${utcDay(now)}:${problem}`, tone: "action", title: `${sourceLabel(p.id)}: ${problem.toLowerCase()}`, detail: `${p.successes} of ${p.attempts} lookups answered${p.last_reason ? `, last error: ${p.last_reason.toLowerCase().replace(/_/g, " ")}` : ""}. Check /cg doctor. Configured failover and failure policy determine how checks continue.` });
     }
     if (problem === "Quota exhausted" || (p.daily_budget && p.daily_used !== null && p.daily_used / p.daily_budget >= 0.8)) {
       const exhausted = problem === "Quota exhausted";
-      out.push({ id: `quota:${p.id}`, fingerprint: `${utcDay(now)}:${exhausted ? "exhausted" : "low"}`, tone: "action", title: `${p.id}: ${exhausted ? "quota exhausted on at least one server" : "local daily budget almost used"}`, detail: quotaDetail });
+      out.push({ id: `quota:${p.id}`, fingerprint: `${utcDay(now)}:${exhausted ? "exhausted" : "low"}`, tone: "action", title: `${sourceLabel(p.id)}: ${exhausted ? "quota exhausted on at least one server" : "local daily budget almost used"}`, detail: quotaDetail });
     }
   }
   const observing = installs.filter((i) => i.status?.mode === "OBSERVE");

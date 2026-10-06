@@ -17,17 +17,23 @@ export function isConfigured(snapshot: ConfigSnapshot | null | undefined, manage
     || secret(snapshot, "provider.vpn.proxycheck.api-key")
     || snapshot["provider.vpn.iphub.enabled"] === true
     || snapshot["provider.vpn.vpnapi.enabled"] === true
+    || snapshot["provider.vpn.ipqualityscore.enabled"] === true
     || (Array.isArray(snapshot["behavior.geo.list"]) && (snapshot["behavior.geo.list"] as string[]).length > 0)
     || snapshot["behavior.geo.type"] === "WHITELIST";
 }
 
-/** True when VPN detection cannot run out of free lookups quickly: a ProxyCheck key, or a keyed provider. */
+/**
+ * True when VPN detection cannot run out of free lookups quickly: a ProxyCheck key, a keyed provider, or a failover
+ * chain with a keyless service without a daily cap (IPQuery) behind ProxyCheck.
+ */
 export function hasQuotaKey(snapshot: ConfigSnapshot | null | undefined): boolean {
   if (!snapshot) return false;
   if (snapshot["provider.vpn.proxycheck.enabled"] === false) return true;
+  if (snapshot["provider.vpn-failover.enabled"] === true && snapshot["provider.vpn.ipquery.enabled"] === true) return true;
   return secret(snapshot, "provider.vpn.proxycheck.api-key")
     || (snapshot["provider.vpn.iphub.enabled"] === true && secret(snapshot, "provider.vpn.iphub.api-key"))
-    || (snapshot["provider.vpn.vpnapi.enabled"] === true && secret(snapshot, "provider.vpn.vpnapi.api-key"));
+    || (snapshot["provider.vpn.vpnapi.enabled"] === true && secret(snapshot, "provider.vpn.vpnapi.api-key"))
+    || (snapshot["provider.vpn.ipqualityscore.enabled"] === true && secret(snapshot, "provider.vpn.ipqualityscore.api-key"));
 }
 
 /** Lookups per day, extrapolated from the last 24 hours (or the server's age, if younger). */

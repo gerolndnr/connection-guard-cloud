@@ -9,7 +9,7 @@ import { ago, countryName, ms, num, pct } from "../format.ts";
 import { HISTORY_DAYS, useHistory } from "../history.ts";
 import { compareServices, networksBehindFlags, playersOnManyAddresses } from "../insights.ts";
 import { usePlayerNames } from "../players.ts";
-import { PROVIDERS } from "../providers.ts";
+import { sourceLabel } from "../sources.ts";
 import { track } from "../analytics.ts";
 
 function Card({ id, title, description, children }: { id: string; title: string; description: React.ReactNode; children: React.ReactNode }) {
@@ -26,7 +26,7 @@ function Card({ id, title, description, children }: { id: string; title: string;
 
 const Empty = ({ children }: { children: React.ReactNode }) => <p className="px-5 py-8 text-center text-fg-2">{children}</p>;
 const countries = (list: string[]) => (list.length === 0 ? "–" : list.length <= 2 ? list.map(countryName).join(", ") : `${countryName(list[0]!)} +${list.length - 1}`);
-const serviceName = (id: string) => PROVIDERS.find((p) => p.key === id)?.name ?? (id === "ipqualityscore" ? "IPQualityScore" : id);
+const serviceName = sourceLabel;
 
 export function InsightsPage() {
   const { networkId } = useParams({ from: "/n/$networkId/insights" });

@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Check, CircleCheck, ExternalLink, Globe, KeyRound, LoaderCircle, ShieldCheck, Sparkles } from "lucide-react";
-import type { ConfigSnapshot } from "@cg/protocol";
+import { supportsPath, type ConfigSnapshot } from "@cg/protocol";
 import { api, ApiError, type Install, type RegisterEvent } from "../api.ts";
 import { Shell } from "../components/Shell.tsx";
 import { VerdictBadge } from "../components/Badge.tsx";
 import { CountryPicker, Switch } from "../components/Form.tsx";
-import { clock, explain, isPrivateIp, ms, num, serverName, verdict } from "../format.ts";
+import { clock, explain, isPrivateIp, ms, num, serverName, verdict, versionAtLeast } from "../format.ts";
 import { isConfigured, lookupsPerDay } from "../setup.ts";
-import { PROVIDERS, dailyCapacity, isValidKey, type ProviderInfo } from "../providers.ts";
+import { dailyCapacity, failoverCoverage, failoverOrder, isValidKey, providersFor, type ProviderInfo } from "../providers.ts";
 import { track } from "../analytics.ts";
 
 type CountryMode = "off" | "block" | "allow";
@@ -91,6 +91,10 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
   const stats = useQuery({ queryKey: ["stats", networkId, "24h", install.id], queryFn: () => api.stats(networkId, "24h", install.id) });
   const snapshot: ConfigSnapshot | null = cfgQ.data?.effective ?? null;
   const configured = isConfigured(snapshot, cfgQ.data?.managed);
+  const available = providersFor(snapshot);
+  // Plugins from 0.5.2 ask services one after another unless config.yml switches that off; the assistant keeps it as is.
+  const failover = snapshot?.["provider.vpn-failover.enabled"] === true
+    || (!supportsPath(snapshot, "provider.vpn-failover.enabled") && versionAtLeast(install.plugin_version, "0.5.2"));
 
   // Choices, prefilled with the server's current values (or the shipped defaults until it reports).
   const [vpn, setVpn] = useState(true);
@@ -112,14 +116,14 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     setCountries(list);
     setCountryMode(snapshot["behavior.geo.type"] === "WHITELIST" ? "allow" : list.length ? "block" : "off");
     setMode((snapshot["operation.mode"] as "OBSERVE" | "ENFORCE") ?? "OBSERVE");
-    const fromServer = Object.fromEntries(PROVIDERS.map((p) => [p.key, snapshot[`provider.vpn.${p.key}.enabled`] === true]));
+    const fromServer = Object.fromEntries(providersFor(snapshot).map((p) => [p.key, snapshot[`provider.vpn.${p.key}.enabled`] === true]));
     if (Object.values(fromServer).some(Boolean)) setSelected(fromServer);
     setVotes(Number(snapshot["required-positive-flags"] ?? 1));
   }, [snapshot]);
 
   const perDay = stats.data ? lookupsPerDay(stats.data.totals.lookups, install) : null;
   const keyOnServer = (p: ProviderInfo) => p.keyPath ? (snapshot?.[p.keyPath] as { set: boolean; hint: string | null } | undefined) : undefined;
-  const chosen = PROVIDERS.filter((p) => selected[p.key]);
+  const chosen = available.filter((p) => selected[p.key]);
   const typedKey = (p: ProviderInfo) => (keys[p.key] ?? "").trim();
   const willHaveKey = (p: ProviderInfo) => typedKey(p).length > 0 || Boolean(keyOnServer(p)?.set);
   const providerErrors = Object.fromEntries(chosen.flatMap((p) => {
@@ -137,12 +141,12 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
       "behavior.geo.type": countryMode === "allow" ? "WHITELIST" : "BLACKLIST",
       "behavior.geo.list": countryMode === "off" ? [] : countries,
     };
-    for (const p of PROVIDERS) values[`provider.vpn.${p.key}.enabled`] = on.includes(p);
-    if (on.length > 0) values["required-positive-flags"] = Math.min(Math.max(1, votes), on.length);
+    for (const p of available) values[`provider.vpn.${p.key}.enabled`] = on.includes(p);
+    if (on.length > 0 && !failover) values["required-positive-flags"] = Math.min(Math.max(1, votes), on.length);
     const secrets = Object.fromEntries(on.filter((p) => p.keyPath && typedKey(p)).map((p) => [p.keyPath!, typedKey(p)]));
     if (countryMode !== "off" && snapshot?.["provider.geo.service"] === "Disabled") values["provider.geo.service"] = "IP-API";
     track("setup_finished", { install_id: install.id,
-      vpn, providers: on.map((p) => p.key), keys_entered: Object.keys(secrets).length, votes: on.length ? values["required-positive-flags"] : 0,
+      vpn, providers: on.map((p) => p.key), keys_entered: Object.keys(secrets).length, votes: on.length && !failover ? values["required-positive-flags"] : 0, failover,
       country_mode: countryMode, countries: countryMode === "off" ? 0 : countries.length, mode, platform: install.platform,
     });
     try {
@@ -215,15 +219,22 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
   }
 
   if (step === "providers") {
-    const capacity = dailyCapacity(chosen.map((p) => ({ info: p, hasKey: willHaveKey(p) })));
+    const order = (snapshot?.["provider.vpn-failover.order"] as string[] | undefined) ?? [];
+    const chain = failoverOrder(chosen, order);
+    const coverage = failover ? failoverCoverage(chain.map((p) => ({ info: p, hasKey: willHaveKey(p) }))) : null;
+    const capacity = failover
+      ? (coverage && coverage.firstLimit !== null && !coverage.uncappedFallback ? { limit: coverage.firstLimit, by: coverage.first, keyless: !willHaveKey(coverage.first) } : null)
+      : dailyCapacity(chosen.map((p) => ({ info: p, hasKey: willHaveKey(p) })));
     const short = capacity !== null && perDay !== null && capacity.limit < perDay * 1.2;
     return (
       <>{connecting}
         <StepFrame step="providers" title="Which services should check players?"
-          lead="Each new IP address is checked by every service you pick. Returning players are answered from the cache, so most logins cost nothing."
+          lead={failover
+            ? "Each new IP address goes to the first service you pick; the next one only steps in when it fails or its limit is used up. Returning players are answered from the cache."
+            : "Each new IP address is checked by every service you pick. Returning players are answered from the cache, so most logins cost nothing."}
           onBack={() => setStep("goals")} onNext={() => setStep("mode")} nextDisabled={!providersOk}>
           <div className="space-y-3">
-            {PROVIDERS.map((p) => {
+            {available.map((p) => {
               const on = Boolean(selected[p.key]);
               const server = keyOnServer(p);
               return (
@@ -246,7 +257,7 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
                         : <p className="mt-1.5 text-[0.75rem] text-fg-3">{server?.set && !typedKey(p) ? "The server keeps its current key." : "Sent to your server once, then deleted from the cloud."}</p>}
                     </div>
                   ) : (
-                    <p className="text-[0.8125rem] text-fg-2">No key needed. Allowed for non-commercial servers only.</p>
+                    <p className="text-[0.8125rem] text-fg-2">{p.nonCommercial ? "No key needed. Allowed for non-commercial servers only." : "No key needed."}</p>
                   )}
                 </OptionCard>
               );
@@ -255,7 +266,18 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
 
           {chosen.length === 0 && <p className="mt-4 text-[0.8125rem] text-warn-text">Pick at least one service, or turn off VPN checks in the previous step.</p>}
 
-          {chosen.length >= 2 && (
+          {failover && chain.length >= 2 && (
+            <div className="mt-5 rounded-lg border border-line px-4 py-3">
+              <p className="font-medium">Asked in this order</p>
+              <p className="mt-0.5 text-[0.8125rem] text-fg-2">
+                {chain.map((p) => p.name).join(" → ")}. {coverage?.uncappedFallback
+                  ? `When ${coverage.first.name}'s daily limit is used up, ${coverage.uncappedFallback.name} takes over, so players stay checked.`
+                  : "When one limit is used up, the next service takes over."} You can change the order in the settings.
+              </p>
+            </div>
+          )}
+
+          {!failover && chosen.length >= 2 && (
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line px-4 py-3">
               <div className="min-w-0">
                 <p className="font-medium">Treat a player as VPN when</p>
@@ -271,11 +293,15 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
             <div className={`mt-5 flex gap-3 rounded-lg border px-4 py-3 ${short ? "border-warn/40 bg-warn-soft" : "border-line bg-subtle"}`}>
               <KeyRound aria-hidden className={`mt-0.5 size-4 shrink-0 ${short ? "text-warn" : "text-fg-3"}`} />
               <p className="text-[0.8125rem] leading-relaxed text-fg-2">
-                Your selection allows about <span className="num font-medium text-fg">{num(capacity.limit)}</span> new IP addresses a day,
-                limited by {capacity.by.name}{capacity.keyless && capacity.by.keyPath ? " without a key" : ""}.
+                {failover && chain.length > 1 ? (
+                  <>{capacity.by.name} answers about <span className="num font-medium text-fg">{num(capacity.limit)}</span> new IP addresses a day{capacity.keyless && capacity.by.keyPath ? " without a key" : ""}; then the next services take over until their limits are used up too.</>
+                ) : (
+                  <>Your selection allows about <span className="num font-medium text-fg">{num(capacity.limit)}</span> new IP addresses a day,
+                  limited by {capacity.by.name}{capacity.keyless && capacity.by.keyPath ? " without a key" : ""}.</>
+                )}
                 {perDay !== null && <> {name} needs about <span className="num font-medium text-fg">{num(perDay)}</span>.</>}
                 {short && capacity.keyless && " Add a free key to stay covered."}
-                {" "}When the limit is reached, players are let in unchecked.
+                {" "}When {failover && chain.length > 1 ? "every limit" : "the limit"} is reached, players are let in unchecked.
               </p>
             </div>
           )}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decisionEvent } from "@cg/protocol/examples";
-import { explain, reasonLabel, verdict } from "../format.ts";
+import { configErrorHint, explain, reasonLabel, verdict, versionAtLeast } from "../format.ts";
 
 describe("register language", () => {
   it("pencils flagged entries on observing servers", () => {
@@ -19,7 +19,29 @@ describe("register language", () => {
   it("names the provider and country behind a VPN refusal", () => {
     const e = { ...decisionEvent, mode: "ENFORCE" as const, outcome: "DENY" as const, reason: "VPN_FLAG" as const };
     expect(verdict(e)).toBe("refused");
-    expect(explain(e)).toBe("Refused: proxycheck reported a VPN or proxy in Netherlands.");
+    expect(explain(e)).toBe("Refused: ProxyCheck reported a VPN or proxy in Netherlands.");
+  });
+
+  it("names class-named sources and the server's own Tor list", () => {
+    const src = decisionEvent.sources[0]!;
+    const named = { ...decisionEvent, mode: "ENFORCE" as const, outcome: "DENY" as const, reason: "VPN_FLAG" as const,
+      sources: [{ ...src, id: "proxycheckvpnprovider-0" }, { ...src, id: "ipapivpnprovider-1" }] };
+    expect(explain(named)).toBe("Refused: ProxyCheck and IP-API reported a VPN or proxy in Netherlands.");
+    const tor = { ...named, sources: [{ ...src, id: "torexitlist", country: null }] };
+    expect(explain(tor)).toContain("Tor exit list the server keeps itself");
+  });
+
+  it("explains changes a server refuses because a local policy version owns its decisions", () => {
+    expect(configErrorHint("Local policy owns decision settings; release its revision before changing config/dashboard policy (values redacted).")!.command).toBe("/cg policy status");
+    expect(configErrorHint("Setting cannot be set from the dashboard (path/value redacted).")!.text).toContain("Update the plugin");
+    expect(configErrorHint("required-positive-flags must be 1..3")).toBeNull();
+  });
+
+  it("compares plugin versions, counting development builds as their version", () => {
+    expect(versionAtLeast("0.5.2-SNAPSHOT", "0.5.2")).toBe(true);
+    expect(versionAtLeast("0.5.10", "0.5.2")).toBe(true);
+    expect(versionAtLeast("0.5.1", "0.5.2")).toBe(false);
+    expect(versionAtLeast("1.0.0", "0.5.2")).toBe(true);
   });
 
   it("attributes refusals by another plugin's admission check to that plugin", () => {

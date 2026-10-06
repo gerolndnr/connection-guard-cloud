@@ -88,7 +88,8 @@ export const api = {
   unlink: (id: string) => request<{ ok: true }>(`/installs/${id}/unlink`, { json: {} }),
   serverConfig: (installId: string) => request<ServerConfig>(`/installs/${installId}/config`),
   saveConfig: (installId: string, body: { values: Record<string, unknown>; secrets: Record<string, string>; apply_to: "server" | "network" }) =>
-    request<{ versions: Record<string, number> }>(`/installs/${installId}/config`, { method: "PUT", json: body }),
+    // `skipped`: servers whose plugin does not take some of these settings from the dashboard yet; they got the rest.
+    request<{ versions: Record<string, number>; skipped?: Record<string, string[]> }>(`/installs/${installId}/config`, { method: "PUT", json: body }),
   resetConfig: (installId: string) => request<{ version: number }>(`/installs/${installId}/config/reset`, { json: {} }),
   createToken: (networkId: string) => request<{ token: string }>(`/networks/${networkId}/tokens`, { json: {} }),
 
