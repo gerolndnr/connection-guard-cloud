@@ -48,6 +48,16 @@ describe("dashboard-managed settings", () => {
     expect(next.config!.values).toEqual({ "operation.mode": "OBSERVE" });
   });
 
+  it("accepts a 0.6 setting right after linking, before the server's first report, by its plugin version", async () => {
+    for (const [version, status] of [["0.6.0", 200], ["0.5.1", 422]] as const) {
+      const ins = await install({ plugin_version: version });
+      const cookie = await login("Owner");
+      await claim(cookie, ins.link_code!);
+      const res = await api(cookie, `/installs/${ins.install_id}/config`, { method: "PUT", json: { values: { "provider.vpn.blackbox.enabled": true, "provider.local.connectionguard-intel.enabled": true } } });
+      expect(res.status).toBe(status);
+    }
+  });
+
   it("syncs every 5 s while an editor has the server's Settings page open", async () => {
     const { ins, cookie } = await linked();
     expect((await syncOk(ins, { seq: 1 })).next_sync_in).toBe(15);

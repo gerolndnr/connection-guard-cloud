@@ -76,6 +76,15 @@ describe("protocol v1", () => {
     expect(parsed.status.providers[0]!.last_reason).toBeNull();
   });
 
+  it("offers a release's settings by version until the server has reported its snapshot", () => {
+    expect(supportsPath(null, "provider.vpn.blackbox.enabled", "0.6.0")).toBe(true);
+    expect(supportsPath(null, "provider.local.connectionguard-intel.enabled", "0.6.1-SNAPSHOT")).toBe(true);
+    expect(supportsPath(null, "provider.vpn.blackbox.enabled", "0.5.1")).toBe(false);
+    expect(supportsPath(null, "provider.vpn-failover.order", "0.6.0")).toBe(false);
+    // Once reported, the snapshot decides, whatever the version says.
+    expect(supportsPath({ "operation.mode": "ENFORCE" }, "provider.vpn.blackbox.enabled", "0.6.0")).toBe(false);
+  });
+
   it("offers gated settings only to servers that report them", () => {
     expect(supportsPath({ "operation.mode": "OBSERVE" }, "operation.mode")).toBe(true);
     expect(supportsPath({ "operation.mode": "OBSERVE" }, "provider.vpn-failover.enabled")).toBe(false);

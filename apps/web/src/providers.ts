@@ -46,15 +46,15 @@ export const PROVIDERS: readonly ProviderInfo[] = [
 ];
 
 /** Services this server can switch from the dashboard: each plugin version offers its own set (0.6.0 has no IPQuery switch). */
-export const providersFor = (snapshot: Record<string, unknown> | null | undefined) =>
-  PROVIDERS.filter((p) => supportsPath(snapshot, `provider.vpn.${p.key}.enabled`) && (!p.keyPath || supportsPath(snapshot, p.keyPath)));
+export const providersFor = (snapshot: Record<string, unknown> | null | undefined, pluginVersion?: string | null) =>
+  PROVIDERS.filter((p) => supportsPath(snapshot, `provider.vpn.${p.key}.enabled`, pluginVersion) && (!p.keyPath || supportsPath(snapshot, p.keyPath, pluginVersion)));
 
 /**
  * Services the server runs that the dashboard cannot switch, as its provider health shows them (0.6.0 keeps IPQuery in
  * config.yml). They still belong in the order a player's address travels.
  */
-export function fixedProviders(snapshot: Record<string, unknown> | null | undefined, healthKeys: readonly string[]): ProviderInfo[] {
-  const switchable = new Set(providersFor(snapshot).map((p) => p.key));
+export function fixedProviders(snapshot: Record<string, unknown> | null | undefined, healthKeys: readonly string[], pluginVersion?: string | null): ProviderInfo[] {
+  const switchable = new Set(providersFor(snapshot, pluginVersion).map((p) => p.key));
   return PROVIDERS.filter((p) => !switchable.has(p.key) && healthKeys.includes(p.key));
 }
 

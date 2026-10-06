@@ -74,9 +74,32 @@ export const GATED_PATHS: readonly ConfigPath[] = [
   "provider.local.connectionguard-intel.enabled", "provider.local.connectionguard-intel.relay",
   "provider.vpn.blackbox.enabled", "provider.vpn.ipcheck.enabled", "provider.vpn.zowi.enabled",
 ];
-/** Whether a server with this snapshot accepts `path` from the dashboard. */
-export const supportsPath = (snapshot: Record<string, unknown> | null | undefined, path: string) =>
-  !(GATED_PATHS as readonly string[]).includes(path) || Boolean(snapshot && Object.hasOwn(snapshot, path));
+/**
+ * Gated paths every plugin from a given release accepts. Used only until a server has reported its snapshot (right after
+ * linking), so the dashboard can offer that release's settings at once; afterwards the snapshot decides.
+ */
+export const PATHS_SINCE: readonly { version: string; paths: readonly ConfigPath[] }[] = [
+  { version: "0.6.0", paths: ["provider.vpn.blackbox.enabled", "provider.vpn.ipcheck.enabled", "provider.vpn.zowi.enabled",
+    "provider.local.connectionguard-intel.enabled", "provider.local.connectionguard-intel.relay"] },
+];
+
+/** "0.6.0-SNAPSHOT" ≥ "0.6.0": development builds already carry the features of their version. */
+export function versionAtLeast(version: string | null | undefined, min: string): boolean {
+  const parts = (x: string | null | undefined) => ((x ?? "").match(/\d+/g) ?? []).slice(0, 3).map(Number);
+  const a = parts(version), b = parts(min);
+  for (let i = 0; i < 3; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
+  return true;
+}
+
+/**
+ * Whether a server accepts `path` from the dashboard: its reported snapshot decides; before it has reported one, its
+ * plugin version (PATHS_SINCE).
+ */
+export const supportsPath = (snapshot: Record<string, unknown> | null | undefined, path: string, pluginVersion?: string | null) => {
+  if (!(GATED_PATHS as readonly string[]).includes(path)) return true;
+  if (snapshot) return Object.hasOwn(snapshot, path);
+  return Boolean(pluginVersion) && PATHS_SINCE.some((r) => versionAtLeast(pluginVersion, r.version) && (r.paths as readonly string[]).includes(path));
+};
 
 export type ConfigValue = boolean | number | string | string[];
 

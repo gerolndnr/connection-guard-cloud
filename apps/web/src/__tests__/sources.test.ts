@@ -43,6 +43,11 @@ describe("providers", () => {
     expect(sourceLabel("zowivpnprovider-1")).toBe("zowi");
   });
 
+  it("shows 0.6's services before the server's first report", () => {
+    expect(providersFor(null, "0.6.0").map((x) => x.key)).toEqual(["proxycheck", "blackbox", "ipcheck", "zowi", "iphub", "vpnapi", "ip-api"]);
+    expect(providersFor(null, "0.5.1").map((x) => x.key)).toEqual(["proxycheck", "iphub", "vpnapi", "ip-api"]);
+  });
+
   it("treats a server that does not report the strategy switch by its version's default", () => {
     expect(usesFailover({}, {}, "0.6.0")).toBe(true);
     expect(usesFailover({}, {}, "0.5.1")).toBe(false);

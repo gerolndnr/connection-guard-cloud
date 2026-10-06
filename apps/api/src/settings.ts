@@ -17,9 +17,9 @@ interface ConfigRow {
 
 async function installAccess(env: Env, installId: string, userId: string) {
   return env.DB.prepare(
-    `SELECT i.id, i.network_id, i.status_json, i.last_seen_at, m.role FROM installs i
+    `SELECT i.id, i.network_id, i.status_json, i.last_seen_at, i.plugin_version, m.role FROM installs i
      JOIN memberships m ON m.network_id = i.network_id AND m.user_id = ? WHERE i.id = ?`,
-  ).bind(userId, installId).first<{ id: string; network_id: string; status_json: string | null; last_seen_at: number; role: Role }>();
+  ).bind(userId, installId).first<{ id: string; network_id: string; status_json: string | null; last_seen_at: number; plugin_version: string; role: Role }>();
 }
 
 const loadRow = (env: Env, installId: string) => env.DB.prepare(
@@ -109,15 +109,15 @@ export function registerSettings(app: Hono<AppEnv>) {
     }
     const now = Date.now();
     const targets = apply_to === "network"
-      ? (await env.DB.prepare("SELECT id, status_json FROM installs WHERE network_id = ?").bind(access.network_id).all<{ id: string; status_json: string | null }>()).results
-      : [{ id: access.id, status_json: access.status_json }];
+      ? (await env.DB.prepare("SELECT id, status_json, plugin_version FROM installs WHERE network_id = ?").bind(access.network_id).all<{ id: string; status_json: string | null; plugin_version: string }>()).results
+      : [{ id: access.id, status_json: access.status_json, plugin_version: access.plugin_version }];
     // A plugin refuses a whole change containing a path it does not accept, so gated paths only go to servers that list them.
-    const unsupported = (statusJson: string | null) => {
+    const unsupported = (statusJson: string | null, pluginVersion: string) => {
       const snapshot = statusJson ? (JSON.parse(statusJson) as Status).config : null;
-      return [...Object.keys(values), ...Object.keys(secrets)].filter((p) => !supportsPath(snapshot, p));
+      return [...Object.keys(values), ...Object.keys(secrets)].filter((p) => !supportsPath(snapshot, p, pluginVersion));
     };
     if (apply_to === "server") {
-      const missing = unsupported(access.status_json);
+      const missing = unsupported(access.status_json, access.plugin_version);
       if (missing.length) {
         return c.json({ error: "invalid_settings", issues: missing.map((path) => ({ path, message: "this server's Connection Guard version cannot take this setting from the dashboard yet; update the plugin first" })) }, 422);
       }
@@ -125,7 +125,7 @@ export function registerSettings(app: Hono<AppEnv>) {
     const versions: Record<string, number> = {};
     const skipped: Record<string, string[]> = {};
     for (const t of targets) {
-      const missing = unsupported(t.status_json);
+      const missing = unsupported(t.status_json, t.plugin_version);
       if (missing.length) skipped[t.id] = missing;
       const drop = (rec: Record<string, unknown>) => Object.fromEntries(Object.entries(rec).filter(([p]) => !missing.includes(p)));
       versions[t.id] = await saveFor(env, t.id, user.id, drop(values), drop(secrets) as Record<string, string>, now);

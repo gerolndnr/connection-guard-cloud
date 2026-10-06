@@ -97,21 +97,23 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
   const stats = useQuery({ queryKey: ["stats", networkId, "24h", install.id], queryFn: () => api.stats(networkId, "24h", install.id) });
   const snapshot: ConfigSnapshot | null = cfgQ.data?.effective ?? null;
   const configured = isConfigured(snapshot, cfgQ.data?.managed);
-  const available = providersFor(snapshot);
+  const pv = install.plugin_version;
+  // Before the server's first report (right after linking) its version says what it offers, so 0.6 shows its services at once.
+  const available = providersFor(snapshot, pv);
   // Plugins from 0.5.2 ask services one after another unless config.yml switches that off; the assistant keeps it as is.
   const failover = usesFailover(snapshot, snapshot, install.plugin_version);
   // 0.6 brings Connection Guard Intel, three more keyless services and stricter defaults for new installs.
-  const v06 = versionAtLeast(install.plugin_version, "0.6.0") || supportsPath(snapshot, "provider.vpn.blackbox.enabled");
-  const hasIntel = supportsPath(snapshot, INTEL);
+  const v06 = versionAtLeast(pv, "0.6.0") || supportsPath(snapshot, "provider.vpn.blackbox.enabled");
+  const hasIntel = supportsPath(snapshot, INTEL, pv);
   const recommendedSet = (list: readonly ProviderInfo[]) => Object.fromEntries(list.map((p) => [p.key, v06 ? Boolean(p.recommended) : p.key === "proxycheck"]));
-  const fixed = fixedProviders(snapshot, (install.status?.providers ?? []).filter((p) => p.scope === "VPN").map((p) => sourceKey(p.id)));
+  const fixed = fixedProviders(snapshot, (install.status?.providers ?? []).filter((p) => p.scope === "VPN").map((p) => sourceKey(p.id)), pv);
 
   // Choices, prefilled with the server's current values (or the shipped defaults until it reports).
   const [vpn, setVpn] = useState(true);
   const [countryMode, setCountryMode] = useState<CountryMode>("off");
   const [countries, setCountries] = useState<string[]>([]);
   // Services: prefilled from the server; ProxyCheck alone on a fresh install.
-  const [selected, setSelected] = useState<Record<string, boolean>>(() => recommendedSet(available.length ? available : providersFor(null)));
+  const [selected, setSelected] = useState<Record<string, boolean>>(() => recommendedSet(available));
   const [intel, setIntel] = useState(true);
   const [relay, setRelay] = useState<"ALLOW" | "VPN">("ALLOW");
   const [keys, setKeys] = useState<Record<string, string>>({});
@@ -127,11 +129,18 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     const list = (snapshot["behavior.geo.list"] as string[] | undefined) ?? [];
     setCountries(list);
     setCountryMode(snapshot["behavior.geo.type"] === "WHITELIST" ? "allow" : list.length ? "block" : "off");
-    setMode((snapshot["operation.mode"] as "OBSERVE" | "ENFORCE") ?? (v06 ? "ENFORCE" : "OBSERVE"));
-    const fromServer = Object.fromEntries(providersFor(snapshot).map((p) => [p.key, snapshot[`provider.vpn.${p.key}.enabled`] === true]));
-    setSelected(Object.values(fromServer).some(Boolean) ? fromServer : recommendedSet(providersFor(snapshot)));
-    if (supportsPath(snapshot, INTEL)) setIntel(snapshot[INTEL] === true || !Object.values(fromServer).some(Boolean));
     if (supportsPath(snapshot, INTEL_RELAY)) setRelay(snapshot[INTEL_RELAY] === "VPN" ? "VPN" : "ALLOW");
+    if (v06) {
+      // 0.6: the assistant sets the server up the way 0.6 sets up a new install, also when it runs an older config.yml
+      // (an upgrade keeps the new services and Intel off until someone chooses them). Keys and countries stay.
+      setSelected(recommendedSet(providersFor(snapshot, pv)));
+      setIntel(true);
+      setMode("ENFORCE");
+      return;
+    }
+    setMode((snapshot["operation.mode"] as "OBSERVE" | "ENFORCE") ?? "OBSERVE");
+    const fromServer = Object.fromEntries(providersFor(snapshot, pv).map((p) => [p.key, snapshot[`provider.vpn.${p.key}.enabled`] === true]));
+    setSelected(Object.values(fromServer).some(Boolean) ? fromServer : recommendedSet(providersFor(snapshot, pv)));
     setVotes(Number(snapshot["required-positive-flags"] ?? 1));
   }, [snapshot]);
 
@@ -156,7 +165,7 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
       "behavior.geo.list": countryMode === "off" ? [] : countries,
     };
     for (const p of available) values[`provider.vpn.${p.key}.enabled`] = on.includes(p);
-    if (hasIntel) { values[INTEL] = vpn && intel; if (supportsPath(snapshot, INTEL_RELAY)) values[INTEL_RELAY] = relay; }
+    if (hasIntel) { values[INTEL] = vpn && intel; if (supportsPath(snapshot, INTEL_RELAY, pv)) values[INTEL_RELAY] = relay; }
     if (on.length > 0 && !failover) values["required-positive-flags"] = Math.min(Math.max(1, votes), on.length);
     const secrets = Object.fromEntries(on.filter((p) => p.keyPath && typedKey(p)).map((p) => [p.keyPath!, typedKey(p)]));
     if (countryMode !== "off" && snapshot?.["provider.geo.service"] === "Disabled") values["provider.geo.service"] = "IP-API";
