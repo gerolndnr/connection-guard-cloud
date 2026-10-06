@@ -1,4 +1,5 @@
 ---
+import DownloadCta from "../components/DownloadCta.astro";
 import Base from "../layouts/Base.astro";
 import Breadcrumbs from "../components/Breadcrumbs.astro";
 import Faq from "../components/Faq.astro";
@@ -36,10 +37,9 @@ const others = PLATFORMS.filter((o) => o.slug !== p.slug);
       <Breadcrumbs items={[[p.name, p.path]]} />
       <h1 class="display mt-6 text-[clamp(2.25rem,5vw,3.5rem)]">{p.h1}</h1>
       <p class="lede mt-5">{p.lede}</p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <a href="/download" class="btn btn-primary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location={`platform_${p.slug}`}>Download free</a>
+      <DownloadCta location={`platform_${p.slug}`} class="mt-8">
         <a href="#setup" class="btn btn-secondary btn-lg no-underline">Set it up</a>
-      </div>
+      </DownloadCta>
       <dl class="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-4">
         {p.facts.map(([k, v]) => (
           <div class="bg-surface px-5 py-4">

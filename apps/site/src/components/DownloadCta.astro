@@ -1,0 +1,49 @@
+---
+// The main download button, in the two flows of the download funnel test (DOWNLOAD_FLOW in data/release.ts):
+// "page" goes to /download, "direct" downloads the JAR from Modrinth's CDN and offers the other sources below.
+// Both are rendered; a script in <head> picks one per page load, and without JavaScript the /download flow shows.
+// Secondary buttons go in the default slot, so they sit in the same row.
+import stats from "../data/stats.json";
+import { DOWNLOAD_FLOW } from "../data/release";
+interface Props { location: string; class?: string }
+const { location, class: cls = "" } = Astro.props;
+const file = DOWNLOAD_FLOW === "page" ? null : (stats.latest as { file?: { name: string; size: number; url: string } | null } | null)?.file ?? null;
+const version = stats.latest?.version;
+const mb = file ? (file.size / 1_000_000).toFixed(1) : null;
+const icon = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0 5-5m-5 5-5-5M5 20h14"/></svg>`;
+---
+<div class:list={["dl-cta", cls]}>
+  <div class="flex flex-wrap gap-3">
+    <a href="/download" class:list={["btn btn-primary btn-lg no-underline", file && "dl-page"]}
+      data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location={location}>Download free<Fragment set:html={icon} /></a>
+    {file && (
+      <a href={file.url} download={file.name} class="dl-direct btn btn-primary btn-lg no-underline" data-dl-direct
+        data-ph-event="download_clicked" data-ph-destination="modrinth_file" data-ph-location={location}>Download v{version}<Fragment set:html={icon} /></a>
+    )}
+    <slot />
+  </div>
+  {file && (
+    <>
+      <p class="dl-direct mt-3 text-[0.8125rem] text-fg-3">
+        <span class="num">{mb} MB</span> JAR for every platform, from Modrinth<span aria-hidden="true"> · </span>
+        <a href="/download" class="font-medium text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg"
+          data-ph-event="cta_clicked" data-ph-cta="other_download_options" data-ph-location={location}>Other download options</a>
+      </p>
+      <p class="dl-after mt-3 hidden text-[0.8125rem] text-fg-2" role="status">
+        Downloading {file.name}. Put it into your server's <code class="mono">plugins</code> folder and restart.{" "}
+        <a href="/download#inst-h" class="font-medium text-fg underline decoration-line-strong underline-offset-4">Install steps</a>
+      </p>
+    </>
+  )}
+</div>
+
+<script>
+  // After a direct download starts, say where the file goes: the /download page would have.
+  document.addEventListener("click", (e) => {
+    const link = (e.target as Element | null)?.closest<HTMLElement>("[data-dl-direct]");
+    const box = link?.closest(".dl-cta");
+    if (!box) return;
+    box.querySelectorAll("p.dl-direct").forEach((p) => p.classList.add("hidden"));
+    box.querySelector(".dl-after")?.classList.remove("hidden");
+  });
+</script>

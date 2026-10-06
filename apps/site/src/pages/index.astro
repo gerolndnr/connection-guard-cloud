@@ -1,4 +1,5 @@
 ---
+import DownloadCta from "../components/DownloadCta.astro";
 import Base from "../layouts/Base.astro";
 import DownloadStats from "../components/DownloadStats.astro";
 import Compare from "../components/Compare.astro";
@@ -37,8 +38,8 @@ const steps = [
     <p class="container-site flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-2.5 text-center text-[0.8125rem] text-fg-2">
       {live ? <>
         <span class="chip chip-soon h-5 text-xs">New in 0.5</span>
-        A free dashboard and a two-minute setup assistant.
-        <a href={DASHBOARD_URL} class="font-medium text-fg no-underline hover:underline" data-ph-event="cta_clicked" data-ph-cta="dashboard" data-ph-location="announcement">Open the dashboard →</a>
+        See who was refused and why, and let the right players in with one click.
+        <a href={DASHBOARD_URL} class="font-medium text-fg no-underline hover:underline" data-ph-event="cta_clicked" data-ph-cta="dashboard" data-ph-location="announcement">Try the free dashboard →</a>
       </> : <>
         <span class="chip chip-soon h-5 text-xs">Coming in 0.5</span>
         A free dashboard and a two-minute setup assistant.
@@ -52,15 +53,11 @@ const steps = [
       <div>
         <h1 class="display text-[clamp(2.5rem,5.2vw,3.75rem)]">Keep VPN alts off your Minecraft server.</h1>
         <p class="lede mt-6 max-w-xl">Connection Guard is a free, open-source anti-VPN plugin with country rules for Paper, Spigot, BungeeCord and Velocity. You choose the detection services and how strict to be.</p>
-        <div class="mt-9 flex flex-wrap gap-3">
-          <a href="/download" class="btn btn-primary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location="hero">
-            Download free
-            <svg viewBox="0 0 24 24" aria-hidden="true" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0 5-5m-5 5-5-5M5 20h14"/></svg>
-          </a>
+        <DownloadCta location="hero" class="mt-9">
           <a href="#compare" class="btn btn-secondary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="compare" data-ph-location="hero">How it compares</a>
-        </div>
+        </DownloadCta>
         <ul class="mt-9 flex flex-wrap gap-x-6 gap-y-2 text-[0.8125rem] text-fg-2">
-          {["MIT licensed", "No account needed", "Paper, Spigot, BungeeCord, Velocity"].map((t) => (
+          {["Open source (MIT)", "No account needed", "Paper, Spigot, BungeeCord, Velocity"].map((t) => (
             <li class="flex items-center gap-2">
               <svg viewBox="0 0 24 24" aria-hidden="true" class="size-3.5 text-accent" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{t}
             </li>
@@ -87,12 +84,25 @@ const steps = [
       <div class="flex flex-wrap items-end justify-between gap-6">
         <div class="max-w-2xl">
           <h2 class="section-title flex flex-wrap items-center gap-x-3 gap-y-2">Every decision, explained. {!live && <span class="chip chip-soon text-xs">0.5</span>}</h2>
-          <p class="lede mt-4">{live ? "Optional and free" : "Optional and free from 0.5"}: link a server with one click from its console, and see who was checked, who was refused, and the reason behind each verdict. Settings change in plain language, without a restart.</p>
+          <p class="lede mt-4">{live ? "Optional and free" : "Optional and free from 0.5"}. Link a server from its console and stop guessing why a player could not join.</p>
+          {live && (
+            <div class="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <a href={DASHBOARD_URL} class="btn btn-primary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="dashboard" data-ph-location="dashboard_section">Open the dashboard</a>
+              <span class="text-[0.8125rem] text-fg-2">Logins never wait on it. Off with <code class="rounded border border-line bg-surface px-1.5 py-0.5 text-fg">cloud.enabled: false</code>. Open source, data in the EU.</span>
+            </div>
+          )}
         </div>
-        <ul class="grid gap-2 text-sm text-fg-2">
-          <li>Logins never wait on the dashboard</li>
-          <li>Off with one line: <code class="rounded border border-line bg-surface px-1.5 py-0.5 text-fg">cloud.enabled: false</code></li>
-          <li>Open source, data stored in the EU</li>
+        <ul class="grid max-w-md gap-3 text-[0.9375rem] leading-snug">
+          {[
+            "See why each player was refused, in one sentence.",
+            "Let a wrongly flagged player in with one click, for an hour or for good.",
+            "Try new settings on last week's logins before you save them.",
+            "Get a Discord alert when a detection service fails or its quota runs low.",
+          ].map((t) => (
+            <li class="flex gap-3">
+              <svg viewBox="0 0 24 24" aria-hidden="true" class="mt-0.5 size-4 shrink-0 text-accent" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{t}
+            </li>
+          ))}
         </ul>
       </div>
       <div class="mt-12 min-h-[38rem]"><DashboardPreview client:only="react" /></div>
@@ -148,8 +158,8 @@ const steps = [
   <section id="open-source" aria-labelledby="oss-h" class="scroll-mt-28 md:scroll-mt-20">
     <div class="container-site py-20 sm:py-28">
       <div class="max-w-2xl">
-        <h2 id="oss-h" class="section-title">Open source, all the way down.</h2>
-        <p class="lede mt-4">Read exactly what runs on your server and what the dashboard stores. Fork it, audit it, self-host it.</p>
+        <h2 id="oss-h" class="section-title">Security software shouldn't be a black box.</h2>
+        <p class="lede mt-4">Connection Guard sees every login on your server. Every check it runs, every request it sends to a detection service and everything the dashboard stores is public code. Read it, audit it, fork it, self-host it.</p>
       </div>
       <div class="mt-10 grid gap-4 md:grid-cols-2">
         {[
@@ -166,6 +176,15 @@ const steps = [
           </a>
         ))}
       </div>
+      <ul class="mt-8 grid gap-x-8 gap-y-3 text-sm leading-relaxed text-fg-2 md:grid-cols-3">
+        {[
+          ["Builds you can check.", "Every commit is built in public CI. Releases ship with SHA-256 checksums."],
+          ["No hidden phone-home.", "What the plugin sends to connectionguard.net is defined in a public protocol, and one line turns it off."],
+          ["Your providers, not ours.", "There is no secret detection service. You pick the services, and every verdict names the one that answered."],
+        ].map(([t, d]) => (
+          <li><span class="font-medium text-fg">{t}</span> {d}</li>
+        ))}
+      </ul>
     </div>
   </section>
 
@@ -186,12 +205,11 @@ const steps = [
     <div class="container-site flex flex-col items-start justify-between gap-8 py-16 sm:flex-row sm:items-center">
       <div>
         <h2 class="section-title">Your server, your rules.</h2>
-        <p class="lede mt-2">Free forever. Questions? The community is on Discord.</p>
+        <p class="lede mt-2">Free forever. Stuck on a setup or a refused player? Ask on Discord.</p>
       </div>
-      <div class="flex flex-wrap gap-3">
-        <a href="/download" class="btn btn-primary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location="closing">Download free</a>
-        <a href="https://discord.gg/8q4HFCh2RK" class="btn btn-secondary btn-lg no-underline" data-ph-event="support_clicked" data-ph-channel="discord" data-ph-location="closing">Join the Discord</a>
-      </div>
+      <DownloadCta location="closing">
+        <a href="https://discord.gg/8q4HFCh2RK" class="btn btn-secondary btn-lg no-underline" data-ph-event="support_clicked" data-ph-channel="discord" data-ph-location="closing">Get help on Discord</a>
+      </DownloadCta>
     </div>
   </section>
 </Base>

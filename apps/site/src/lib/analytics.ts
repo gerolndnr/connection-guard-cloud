@@ -49,7 +49,12 @@ export function startSiteAnalytics() {
       disable_session_recording: true,
       disable_surveys: true,
       respect_dnt: true,
-      before_send: (ev) => { if (ev) ev.properties = scrubEventProperties(ev.properties) as typeof ev.properties; return ev; },
+      before_send: (ev) => {
+        if (!ev) return ev;
+        // Which download flow this page load showed (data/release.ts DOWNLOAD_FLOW).
+        ev.properties = { ...scrubEventProperties(ev.properties), download_flow: document.documentElement.dataset.dl ?? null } as typeof ev.properties;
+        return ev;
+      },
     });
     ph.register({ surface: "site" });
     wire(ph);

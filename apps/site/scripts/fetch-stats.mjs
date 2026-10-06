@@ -34,7 +34,10 @@ for (const [id, s] of Object.entries(sources)) {
 }
 try {
   const [v] = await get("https://api.modrinth.com/v2/project/connectionguard/version");
-  result.latest = { version: v.version_number, published: v.date_published, loaders: v.loaders };
+  // The primary file, for the direct download button: Modrinth's CDN URL, so the download still counts there.
+  const f = v.files.find((x) => x.primary) ?? v.files[0];
+  result.latest = { version: v.version_number, published: v.date_published, loaders: v.loaders,
+    file: f ? { name: f.filename, size: f.size, url: f.url } : null };
 } catch (e) { console.warn("stats: latest version unavailable; keeping last known"); }
 writeFileSync(out, JSON.stringify(result, null, 2) + "\n");
 console.log("stats:", Object.entries(result.sources).map(([k, v]) => `${k}=${v.downloads}${v.stale ? " (stale)" : ""}`).join(" "), "latest", result.latest?.version);

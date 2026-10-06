@@ -50,3 +50,7 @@ html { scroll-behavior: smooth; }
   .prose-guide .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
   .prose-guide .table-wrap tr:last-child td { border-bottom: 0; }
 }
+
+/* Download funnel test (components/DownloadCta.astro). Unlayered, so it wins over .btn's display. */
+html:not([data-dl="direct"]) .dl-direct { display: none; }
+html[data-dl="direct"] .dl-page { display: none; }
