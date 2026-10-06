@@ -12,3 +12,11 @@ export const DASHBOARD_URL = "https://app.connectionguard.net";
  * offers "Other download options". Events carry download_flow; see docs/ANALYTICS.md. Set "page" or "direct" to end it.
  */
 export const DOWNLOAD_FLOW: "test" | "page" | "direct" = "test";
+
+/**
+ * Benchmark page (/benchmark), homepage section and links. Off until a published run (3 rounds, full dataset) is in
+ * src/data/benchmark.json and mc-antivpn-bench is public: claims about named plugins must be checkable. While off,
+ * /benchmark is built with noindex and nothing links to it; `astro dev` shows everything for review.
+ */
+export const BENCHMARK_LIVE = false;
+export const BENCHMARK_REPO = "https://github.com/gerolndnr/mc-antivpn-bench";

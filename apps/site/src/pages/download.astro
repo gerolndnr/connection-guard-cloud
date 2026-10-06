@@ -2,6 +2,7 @@
 import Base from "../layouts/Base.astro";
 import stats from "../data/stats.json";
 import { breadcrumbs, software } from "../lib/seo";
+import { showBenchmark, perf, CURRENT, num } from "../lib/benchmark";
 type Source = { name: string; url: string; downloads: number; stale: boolean };
 const s = stats.sources as Record<string, Source>;
 const v = stats.latest?.version;
@@ -34,6 +35,9 @@ const fmt = new Intl.NumberFormat("en-US");
           {published && <span>Released {published}</span>}
           <a href="https://github.com/gerolndnr/connection-guard/blob/master/CHANGELOG.md" class="font-medium text-fg underline">What changed</a>
         </p>
+      )}
+      {showBenchmark && (
+        <p class="mt-4 text-sm text-fg-2">In the open benchmark it checked all {num(perf(CURRENT, "burst")!.subjects)} players of a join wave. <a href="/benchmark" class="font-medium text-fg underline" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="download_page">See the results</a></p>
       )}
     </div>
   </section>

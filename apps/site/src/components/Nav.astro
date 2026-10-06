@@ -2,10 +2,12 @@
 import { ThemeToggle } from "@web/components/ThemeToggle.tsx";
 import { DASHBOARD_RELEASED, DASHBOARD_URL } from "../data/release";
 import Mark from "./Mark.astro";
+import { showBenchmark } from "../lib/benchmark";
 interface Props { path: string }
 const { path } = Astro.props;
 const links = [
   { href: "/#compare", label: "Compare" },
+  ...(showBenchmark ? [{ href: "/benchmark", label: "Benchmark" }] : []),
   { href: "/#platforms", label: "Platforms" },
   { href: "/guides", label: "Guides" },
   { href: "https://github.com/gerolndnr/connection-guard/tree/master/docs", label: "Docs" },

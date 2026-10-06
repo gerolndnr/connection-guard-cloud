@@ -3,6 +3,8 @@ import DownloadCta from "../components/DownloadCta.astro";
 import Base from "../layouts/Base.astro";
 import DownloadStats from "../components/DownloadStats.astro";
 import Compare from "../components/Compare.astro";
+import BenchmarkSection from "../components/BenchmarkSection.astro";
+import { showBenchmark } from "../lib/benchmark";
 import { DashboardPreview } from "../components/DashboardPreview.tsx";
 import stats from "../data/stats.json";
 import Faq from "../components/Faq.astro";
@@ -67,6 +69,8 @@ const steps = [
       <DownloadStats />
     </div>
   </section>
+
+  {showBenchmark && <BenchmarkSection />}
 
   <section id="compare" class="scroll-mt-28 md:scroll-mt-20 border-t border-line">
     <div class="container-site py-20 sm:py-28">

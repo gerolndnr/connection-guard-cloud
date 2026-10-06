@@ -1,0 +1,627 @@
+{
+  "status": "preliminary",
+  "date": "2026-10-06",
+  "platform": "velocity",
+  "rounds": 1,
+  "host": "GitHub-hosted 2 vCPU, 7 GB, AMD EPYC 7763 64-Core Processor",
+  "runs": {
+    "performance": "37529160056",
+    "detection": "37529164268",
+    "failure": "37526896017"
+  },
+  "products": {
+    "connection-guard": {
+      "name": "Connection Guard",
+      "version": "0.5.0",
+      "us": true,
+      "previous": true
+    },
+    "connection-guard-candidate": {
+      "name": "Connection Guard",
+      "version": "0.6 build",
+      "us": true
+    },
+    "foxgate": {
+      "name": "FoxGate",
+      "version": "1.2.0-pre10",
+      "us": false
+    },
+    "proxyshield": {
+      "name": "ProxyShield",
+      "version": "2.5.1",
+      "us": false
+    },
+    "vpnguard": {
+      "name": "VPNGuard",
+      "version": "1.2.0",
+      "us": false
+    }
+  },
+  "performance": {
+    "connection-guard-candidate": {
+      "start_s": 7.9,
+      "errors": 0,
+      "cold": {
+        "decision_p50": 134.6,
+        "decision_p95": 292.3,
+        "join_p50": 244.5,
+        "join_p95": 417.0,
+        "checked": 50,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "warm": {
+        "decision_p50": 3.6,
+        "decision_p95": 6.8,
+        "join_p50": 98.6,
+        "join_p95": 103.9,
+        "checked": 0,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "stampede": {
+        "decision_p50": 123.0,
+        "decision_p95": 187.0,
+        "join_p50": 3975.2,
+        "join_p95": 5518.1,
+        "checked": 1,
+        "subjects": 1,
+        "outcomes": {
+          "ALLOW": 100
+        }
+      },
+      "burst": {
+        "decision_p50": 261.5,
+        "decision_p95": 822.4,
+        "join_p50": 779.5,
+        "join_p95": 2502.5,
+        "checked": 1000,
+        "subjects": 1000,
+        "outcomes": {
+          "ALLOW": 1000
+        }
+      }
+    },
+    "connection-guard": {
+      "start_s": 7.6,
+      "errors": 0,
+      "cold": {
+        "decision_p50": 175.8,
+        "decision_p95": 379.2,
+        "join_p50": 254.2,
+        "join_p95": 500.1,
+        "checked": 50,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "warm": {
+        "decision_p50": 4.0,
+        "decision_p95": 6.2,
+        "join_p50": 98.8,
+        "join_p95": 103.8,
+        "checked": 0,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "stampede": {
+        "decision_p50": 318.5,
+        "decision_p95": 352.7,
+        "join_p50": 4231.2,
+        "join_p95": 5310.4,
+        "checked": 1,
+        "subjects": 1,
+        "outcomes": {
+          "ALLOW": 100
+        }
+      },
+      "burst": {
+        "decision_p50": 23.1,
+        "decision_p95": 696.9,
+        "join_p50": 410.0,
+        "join_p95": 2365.0,
+        "checked": 93,
+        "subjects": 1000,
+        "outcomes": {
+          "ALLOW": 1000
+        }
+      }
+    },
+    "foxgate": {
+      "start_s": 10.7,
+      "errors": 1852,
+      "cold": {
+        "decision_p50": 1595.3,
+        "decision_p95": 10060.5,
+        "join_p50": 1748.3,
+        "join_p95": 10175.9,
+        "checked": 49,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 49,
+          "DENY_LOGIN": 1
+        }
+      },
+      "warm": {
+        "decision_p50": 576.2,
+        "decision_p95": 5199.4,
+        "join_p50": 686.4,
+        "join_p95": 5303.2,
+        "checked": 0,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 49,
+          "DENY_LOGIN": 1
+        }
+      },
+      "stampede": {
+        "decision_p50": 447.7,
+        "decision_p95": 777.5,
+        "join_p50": 1082.5,
+        "join_p95": 2324.5,
+        "checked": 1,
+        "subjects": 1,
+        "outcomes": {
+          "ALLOW": 22,
+          "DENY_LOGIN": 78
+        }
+      },
+      "burst": {
+        "decision_p50": 30001.0,
+        "decision_p95": 30003.4,
+        "join_p50": 19264.9,
+        "join_p95": 29583.2,
+        "checked": 79,
+        "subjects": 1000,
+        "outcomes": {
+          "ALLOW": 39,
+          "DENY_LOGIN": 961
+        }
+      }
+    },
+    "none": {
+      "start_s": 6.8,
+      "errors": null,
+      "cold": {
+        "decision_p50": 2.7,
+        "decision_p95": 7.8,
+        "join_p50": 98.8,
+        "join_p95": 152.6,
+        "checked": 0,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "warm": {
+        "decision_p50": 2.3,
+        "decision_p95": 3.5,
+        "join_p50": 98.8,
+        "join_p95": 104.2,
+        "checked": 0,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "stampede": {
+        "decision_p50": 74.1,
+        "decision_p95": 81.6,
+        "join_p50": 4138.9,
+        "join_p95": 5060.1,
+        "checked": 0,
+        "subjects": 1,
+        "outcomes": {
+          "ALLOW": 100
+        }
+      },
+      "burst": {
+        "decision_p50": 9.3,
+        "decision_p95": 366.8,
+        "join_p50": 399.7,
+        "join_p95": 2493.5,
+        "checked": 0,
+        "subjects": 1000,
+        "outcomes": {
+          "ALLOW": 1000
+        }
+      }
+    },
+    "proxyshield": {
+      "start_s": 20.3,
+      "errors": 0,
+      "cold": {
+        "decision_p50": 855.4,
+        "decision_p95": 1463.9,
+        "join_p50": 950.2,
+        "join_p95": 1548.8,
+        "checked": 50,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "warm": {
+        "decision_p50": 2.2,
+        "decision_p95": 3.8,
+        "join_p50": 99.2,
+        "join_p95": 103.2,
+        "checked": 0,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "stampede": {
+        "decision_p50": 972.7,
+        "decision_p95": 1149.2,
+        "join_p50": 4293.7,
+        "join_p95": 5953.1,
+        "checked": 1,
+        "subjects": 1,
+        "outcomes": {
+          "ALLOW": 100
+        }
+      },
+      "burst": {
+        "decision_p50": 1168.3,
+        "decision_p95": 7721.6,
+        "join_p50": 16384.5,
+        "join_p95": 20355.1,
+        "checked": 275,
+        "subjects": 1000,
+        "outcomes": {
+          "ALLOW": 962,
+          "DENY_LOGIN": 38
+        }
+      }
+    },
+    "vpnguard": {
+      "start_s": 7.4,
+      "errors": 0,
+      "cold": {
+        "decision_p50": 131.8,
+        "decision_p95": 289.2,
+        "join_p50": 202.9,
+        "join_p95": 402.2,
+        "checked": 50,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "warm": {
+        "decision_p50": 2.4,
+        "decision_p95": 4.0,
+        "join_p50": 99.2,
+        "join_p95": 102.9,
+        "checked": 0,
+        "subjects": 50,
+        "outcomes": {
+          "ALLOW": 50
+        }
+      },
+      "stampede": {
+        "decision_p50": 1162.4,
+        "decision_p95": 1182.9,
+        "join_p50": 4706.7,
+        "join_p95": 5883.9,
+        "checked": 1,
+        "subjects": 1,
+        "outcomes": {
+          "ALLOW": 100
+        }
+      },
+      "burst": {
+        "decision_p50": 10127.8,
+        "decision_p95": 11448.3,
+        "join_p50": 21291.5,
+        "join_p95": 25557.6,
+        "checked": 50,
+        "subjects": 1000,
+        "outcomes": {
+          "ALLOW": 1000
+        }
+      }
+    }
+  },
+  "detection": {
+    "subjects": 140,
+    "products": [
+      "connection-guard",
+      "connection-guard-candidate",
+      "foxgate",
+      "proxyshield",
+      "vpnguard"
+    ],
+    "cohorts": [
+      {
+        "id": "commercial_vpn",
+        "label": "Commercial VPNs",
+        "kind": "catch",
+        "n": 21,
+        "blocked": {
+          "connection-guard": 13,
+          "connection-guard-candidate": 21,
+          "foxgate": 21,
+          "proxyshield": 21,
+          "vpnguard": 21
+        }
+      },
+      {
+        "id": "fresh_vpn",
+        "label": "Newly added VPN servers",
+        "kind": "catch",
+        "n": 6,
+        "blocked": {
+          "connection-guard": 4,
+          "connection-guard-candidate": 6,
+          "foxgate": 6,
+          "proxyshield": 6,
+          "vpnguard": 6
+        }
+      },
+      {
+        "id": "vpn_v6",
+        "label": "VPNs over IPv6",
+        "kind": "catch",
+        "n": 12,
+        "blocked": {
+          "connection-guard": 3,
+          "connection-guard-candidate": 12,
+          "foxgate": 12,
+          "proxyshield": 12,
+          "vpnguard": 11
+        }
+      },
+      {
+        "id": "tor",
+        "label": "Tor exits",
+        "kind": "catch",
+        "n": 18,
+        "blocked": {
+          "connection-guard": 13,
+          "connection-guard-candidate": 18,
+          "foxgate": 18,
+          "proxyshield": 18,
+          "vpnguard": 16
+        }
+      },
+      {
+        "id": "proxy",
+        "label": "Public proxies",
+        "kind": "catch",
+        "n": 24,
+        "blocked": {
+          "connection-guard": 20,
+          "connection-guard-candidate": 23,
+          "foxgate": 22,
+          "proxyshield": 23,
+          "vpnguard": 20
+        }
+      },
+      {
+        "id": "residential",
+        "label": "Home connections",
+        "kind": "spare",
+        "n": 24,
+        "blocked": {
+          "connection-guard": 0,
+          "connection-guard-candidate": 1,
+          "foxgate": 1,
+          "proxyshield": 1,
+          "vpnguard": 1
+        }
+      },
+      {
+        "id": "residential_v6",
+        "label": "Home connections, IPv6",
+        "kind": "spare",
+        "n": 16,
+        "blocked": {
+          "connection-guard": 0,
+          "connection-guard-candidate": 1,
+          "foxgate": 1,
+          "proxyshield": 1,
+          "vpnguard": 1
+        }
+      },
+      {
+        "id": "mobile_cgnat",
+        "label": "Mobile networks",
+        "kind": "spare",
+        "n": 19,
+        "blocked": {
+          "connection-guard": 0,
+          "connection-guard-candidate": 1,
+          "foxgate": 0,
+          "proxyshield": 1,
+          "vpnguard": 1
+        }
+      }
+    ]
+  },
+  "failure": {
+    "connection-guard-candidate": {
+      "control": {
+        "residential": {
+          "blocked": false,
+          "ms": 492,
+          "lookups": 1
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 27,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 319,
+          "lookups": 0
+        }
+      },
+      "http_429": {
+        "residential": {
+          "blocked": false,
+          "ms": 1097,
+          "lookups": 6
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 13,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 381,
+          "lookups": 0
+        }
+      },
+      "incomplete": {
+        "residential": {
+          "blocked": false,
+          "ms": 999,
+          "lookups": 6
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 14,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 322,
+          "lookups": 0
+        }
+      },
+      "malformed": {
+        "residential": {
+          "blocked": false,
+          "ms": 1286,
+          "lookups": 6
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 9,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 401,
+          "lookups": 0
+        }
+      },
+      "timeout": {
+        "residential": {
+          "blocked": false,
+          "ms": 5007,
+          "lookups": 4
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 11,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 339,
+          "lookups": 0
+        }
+      }
+    },
+    "connection-guard": {
+      "control": {
+        "residential": {
+          "blocked": false,
+          "ms": 247,
+          "lookups": 2
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 139,
+          "lookups": 2
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 1303,
+          "lookups": 2
+        }
+      },
+      "http_429": {
+        "residential": {
+          "blocked": false,
+          "ms": 7,
+          "lookups": 0
+        },
+        "tor": {
+          "blocked": false,
+          "ms": 15,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 693,
+          "lookups": 2
+        }
+      },
+      "incomplete": {
+        "residential": {
+          "blocked": false,
+          "ms": 110,
+          "lookups": 2
+        },
+        "tor": {
+          "blocked": false,
+          "ms": 109,
+          "lookups": 2
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 803,
+          "lookups": 2
+        }
+      },
+      "malformed": {
+        "residential": {
+          "blocked": false,
+          "ms": 11,
+          "lookups": 2
+        },
+        "tor": {
+          "blocked": false,
+          "ms": 16,
+          "lookups": 2
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 676,
+          "lookups": 2
+        }
+      },
+      "timeout": {
+        "residential": {
+          "blocked": false,
+          "ms": 2511,
+          "lookups": 2
+        },
+        "tor": {
+          "blocked": false,
+          "ms": 2520,
+          "lookups": 2
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 2792,
+          "lookups": 2
+        }
+      }
+    }
+  }
+}

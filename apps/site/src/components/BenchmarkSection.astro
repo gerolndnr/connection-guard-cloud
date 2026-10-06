@@ -1,0 +1,66 @@
+---
+// Homepage proof: three measured answers, each linking to its evidence on /benchmark. Numbers come from benchmark.json.
+import { COMPARED, CURRENT, FAULT_LABELS, bench, catchCohorts, dateLabel, failure, label, ms, num, perf, preliminary, spareN, spareTotal, timedOut } from "../lib/benchmark";
+const burst = (id: string) => perf(id, "burst")!;
+const us = burst(CURRENT);
+const others = COMPARED.filter((p) => p !== CURRENT);
+const max = Math.max(...COMPARED.map((p) => burst(p).decision_p95));
+const byDecision = [CURRENT, ...[...others].sort((a, b) => burst(a).decision_p95 - burst(b).decision_p95)];
+const faults = Object.keys(FAULT_LABELS).filter((f) => failure[CURRENT]?.[f]);
+const held = faults.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length;
+const vpn = catchCohorts.filter((c) => c.id !== "proxy");
+const caught = vpn.reduce((s, c) => s + (c.blocked as Record<string, number>)[CURRENT]!, 0);
+const vpnN = vpn.reduce((s, c) => s + c.n, 0);
+---
+<section id="benchmark" aria-labelledby="bench-h" class="scroll-mt-28 border-t border-line md:scroll-mt-20">
+  <div class="container-site py-20 sm:py-28">
+    <div class="flex flex-wrap items-end justify-between gap-6">
+      <div class="max-w-2xl">
+        <h2 id="bench-h" class="section-title">Measured, not claimed.</h2>
+        <p class="lede mt-4">The same server, the same players and the same detection services for every plugin, in an open benchmark you can run yourself.</p>
+      </div>
+      <p class="text-[0.8125rem] text-fg-3">{preliminary && <span class="chip mr-2 h-5 border-warn/40 bg-warn-soft text-xs text-warn-text">Preliminary</span>}{dateLabel} · {bench.platform[0]!.toUpperCase() + bench.platform.slice(1)}</p>
+    </div>
+
+    <div class="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <a href="/benchmark#speed" class="card group block p-6 no-underline transition-colors hover:border-line-strong" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="home_speed">
+        <p class="text-[0.8125rem] font-medium text-fg-2">1,000 players join in 20 seconds</p>
+        <p class="mt-2 text-xl font-semibold tracking-[-0.02em] text-fg">Every one checked, in under a second.</p>
+        <ul class="mt-6 grid gap-3">
+          {byDecision.map((p) => {
+            const b = burst(p); const mine = p === CURRENT;
+            return (
+              <li class="grid grid-cols-[7.5rem_minmax(0,1fr)_6.5rem] items-center gap-3">
+                <span class={`truncate text-sm ${mine ? "font-medium text-fg" : "text-fg-2"}`}>{label(p)}</span>
+                <span class="relative h-5 rounded bg-subtle"><span class={`absolute inset-y-0 left-0 rounded ${mine ? "bg-accent" : "bg-line-strong"}`} style={`width:${Math.max(2, (100 * b.decision_p95) / max)}%`}></span></span>
+                <span class="text-right leading-tight">
+                  <span class={`num block text-sm font-medium ${mine ? "text-accent-text" : "text-fg"}`}>{timedOut(b.decision_p95) ? "30 s" : ms(b.decision_p95)}</span>
+                  <span class="num block text-[0.6875rem] text-fg-3">{num(b.checked)} checked</span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+        <p class="mt-5 text-[0.8125rem] text-fg-3">Decision time at the 95th percentile. Once free service limits run out, the others let most players in unchecked.</p>
+      </a>
+
+      <div class="grid gap-4">
+        <a href="/benchmark#reliability" class="card group block p-6 no-underline transition-colors hover:border-line-strong" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="home_reliability">
+          <p class="text-[0.8125rem] font-medium text-fg-2">Every detection service down</p>
+          <p class="num mt-2 text-[2rem] font-semibold leading-none tracking-[-0.03em] text-fg">{held} / {faults.length}</p>
+          <p class="mt-2 text-[0.9375rem] leading-snug text-fg-2">failure cases with VPNs and Tor still blocked. Connection Guard checks its own signed lists first.</p>
+        </a>
+        <a href="/benchmark#detection" class="card group block p-6 no-underline transition-colors hover:border-line-strong" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="home_detection">
+          <p class="text-[0.8125rem] font-medium text-fg-2">Caught, and nobody else</p>
+          <p class="num mt-2 text-[2rem] font-semibold leading-none tracking-[-0.03em] text-fg">{caught} / {vpnN}</p>
+          <p class="mt-2 text-[0.9375rem] leading-snug text-fg-2">VPN and Tor addresses blocked, with {spareTotal(CURRENT)} of {spareN} home and mobile players refused ({others.map((p) => `${label(p)} ${spareTotal(p)}`).join(", ")}).</p>
+        </a>
+      </div>
+    </div>
+
+    <p class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+      <a href="/benchmark" class="font-medium text-fg underline" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="home_more">All results and the method</a>
+      <span class="text-fg-3">Built by Connection Guard's author, with every log public. Any plugin author can contest a result.</span>
+    </p>
+  </div>
+</section>

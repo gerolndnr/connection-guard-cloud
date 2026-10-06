@@ -1,0 +1,268 @@
+---
+import Base from "../layouts/Base.astro";
+import { breadcrumbs } from "../lib/seo";
+import { BENCHMARK_LIVE, BENCHMARK_REPO } from "../data/release";
+import {
+  bench, COMPARED, CURRENT, PREVIOUS, FAULT_LABELS, blocked, catchCohorts, dateLabel, failure, label, ms, num, perf,
+  preliminary, spareCohorts, spareN, spareTotal, timedOut, versionOf,
+} from "../lib/benchmark";
+
+const burst = (id: string) => perf(id, "burst")!;
+const us = burst(CURRENT);
+const bare = perf("none", "burst")!;
+const others = COMPARED.filter((p) => p !== CURRENT);
+/** Charts list Connection Guard first, then the others by their value, best first. */
+const byDecision = [CURRENT, ...others.sort((a, b) => burst(a).decision_p95 - burst(b).decision_p95)];
+const byJoin = [CURRENT, "none", ...[...others].sort((a, b) => burst(a).join_p95 - burst(b).join_p95)];
+const maxDecision = Math.max(...COMPARED.map((p) => burst(p).decision_p95));
+const maxJoin = Math.max(...[...COMPARED, "none"].map((p) => burst(p).join_p95));
+const bestOtherChecked = Math.max(...others.map((p) => burst(p).checked));
+const faults = Object.keys(FAULT_LABELS).filter((f) => failure[CURRENT]?.[f]);
+const phases = [
+  { id: "cold", title: "First join of a new player", hint: "50 new players, one after another" },
+  { id: "warm", title: "The same players again", hint: "Answers can come from the cache" },
+  { id: "stampede", title: "100 joins from one address at once", hint: "A bot wave from one IP" },
+  { id: "burst", title: "1,000 new players in 20 seconds", hint: "50 per second, each from a new address" },
+] as const;
+const vpnCaught = (id: string) => catchCohorts.filter((c) => c.id !== "proxy").reduce((s, c) => s + (c.blocked as Record<string, number>)[id]!, 0);
+const vpnN = catchCohorts.filter((c) => c.id !== "proxy").reduce((s, c) => s + c.n, 0);
+const best = (cohort: typeof catchCohorts[number], kind: "catch" | "spare") => {
+  const values = COMPARED.map((p) => (cohort.blocked as Record<string, number>)[p]!);
+  return kind === "catch" ? Math.max(...values) : Math.min(...values);
+};
+const run = (name: string) => (bench.runs as Record<string, string>)[name];
+const runUrl = (name: string) => run(name) ? `${BENCHMARK_REPO}/actions/runs/${run(name)}` : BENCHMARK_REPO;
+const check = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-accent" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-danger-text" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>`;
+---
+<Base title="Minecraft Anti-VPN Plugin Benchmark: Speed, Detection, Reliability | Connection Guard" path="/benchmark"
+  description={`Connection Guard, FoxGate, ProxyShield and VPNGuard on the same server: login speed with 1,000 players, VPN and Tor detection, false positives and behaviour when detection services fail. Open data.`}
+  noindex={!BENCHMARK_LIVE} schema={[breadcrumbs([["Benchmark", "/benchmark"]])]} view={{ event: "benchmark_viewed" }}>
+
+  <section class="border-b border-line">
+    <div class="container-site py-16 sm:py-20">
+      <p class="flex flex-wrap items-center gap-2 text-sm text-fg-2">
+        <span class={`chip ${preliminary ? "border-warn/40 bg-warn-soft text-warn-text" : "chip-soon"}`}>{preliminary ? "Preliminary run" : "Published run"}</span>
+        <span>{dateLabel} · {bench.platform[0]!.toUpperCase() + bench.platform.slice(1)} · {bench.rounds} {bench.rounds === 1 ? "round" : "rounds"}</span>
+      </p>
+      <h1 class="display mt-5 text-[clamp(2.25rem,5vw,3.5rem)]">Measured, not claimed.</h1>
+      <p class="lede mt-5 max-w-2xl">We run the popular free anti-VPN plugins on the same server, with the same players and the same simulated detection services, and publish every number and log. Connection Guard included, so check our work.</p>
+      <div class="mt-8 flex flex-wrap items-center gap-3">
+        <a href={BENCHMARK_REPO} class="btn btn-primary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="benchmark_repo" data-ph-location="benchmark_hero">Raw data and method</a>
+        <a href="#reproduce" class="btn btn-secondary btn-lg no-underline">Run it yourself</a>
+      </div>
+      <p class="mt-6 max-w-2xl text-[0.8125rem] leading-relaxed text-fg-3">
+        Conflict of interest: the benchmark is built by Connection Guard's author. The method, the adapters and every log are public, and any plugin author can contest a result.
+        {preliminary && " This is a quick run (one round, 140 addresses); the published run repeats everything three times on the full dataset."}
+      </p>
+    </div>
+  </section>
+
+  <!-- The three answers an operator wants, each linked to its evidence below. -->
+  <section aria-label="Results at a glance" class="border-b border-line">
+    <div class="container-site grid gap-4 py-12 sm:py-14 md:grid-cols-3">
+      {[
+        { href: "#speed", k: "Join wave", big: `${num(us.checked)} / ${num(us.subjects)}`, text: `players checked when 1,000 joined in 20 seconds. The other plugins checked at most ${num(bestOtherChecked)}.` },
+        { href: "#reliability", k: "Detection services down", big: `${faults.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length} / ${faults.length}`, text: "failure cases with VPN and Tor still blocked, without a single lookup." },
+        { href: "#detection", k: "Caught, and nobody else", big: `${vpnCaught(CURRENT)} / ${vpnN}`, text: `VPN and Tor addresses blocked, while refusing ${spareTotal(CURRENT)} of ${spareN} home and mobile players.` },
+      ].map((c) => (
+        <a href={c.href} class="card group block p-6 no-underline transition-colors hover:border-line-strong">
+          <p class="text-[0.8125rem] font-medium text-fg-2">{c.k}</p>
+          <p class="num mt-3 text-[2.25rem] font-semibold leading-none tracking-[-0.03em] text-fg">{c.big}</p>
+          <p class="mt-3 text-[0.9375rem] leading-snug text-fg-2">{c.text}</p>
+          <p class="mt-4 text-[0.8125rem] font-medium text-fg group-hover:underline">See the numbers →</p>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section id="speed" aria-labelledby="speed-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site py-16 sm:py-20">
+      <h2 id="speed-h" class="section-title">1,000 players join at once.</h2>
+      <p class="lede mt-4">50 new players per second for 20 seconds. Each detection service is simulated with the same delay and its real free-tier limit, so a plugin can't look fast by asking a service that would refuse it in reality.</p>
+
+      <div class="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <div class="card p-6">
+          <h3 class="text-[0.9375rem] font-semibold">Time until the plugin decides</h3>
+          <p class="mt-1 text-[0.8125rem] text-fg-3">95th percentile, and how many of the 1,000 players it actually checked. Lower time is better.</p>
+          <ul class="mt-6 grid gap-4">
+            {byDecision.map((p) => {
+              const b = burst(p); const mine = p === CURRENT;
+              return (
+                <li class="grid grid-cols-[7.5rem_minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-[9rem_minmax(0,1fr)_9.5rem] sm:gap-4">
+                  <span class={`truncate text-sm ${mine ? "font-medium text-fg" : "text-fg-2"}`}>{label(p)}</span>
+                  <span class="relative h-7 rounded-md bg-subtle"><span class={`absolute inset-y-0 left-0 rounded-md ${mine ? "bg-accent" : "bg-line-strong"}`} style={`width:${Math.max(1.5, (100 * b.decision_p95) / maxDecision)}%`}></span></span>
+                  <span class="text-right">
+                    <span class={`num block text-[0.9375rem] font-medium ${mine ? "text-accent-text" : "text-fg"}`}>{timedOut(b.decision_p95) ? "30 s" : ms(b.decision_p95)}</span>
+                    <span class="num block text-[0.75rem] text-fg-3">{timedOut(b.decision_p95) ? "timed out · " : ""}{num(b.checked)} checked</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <div class="card p-6">
+          <h3 class="text-[0.9375rem] font-semibold">What players feel</h3>
+          <p class="mt-1 text-[0.8125rem] text-fg-3">Join time during the wave, 95th percentile, next to the same proxy with no anti-VPN plugin.</p>
+          <ul class="mt-6 grid gap-3.5">
+            {byJoin.map((p) => {
+              const b = burst(p); const mine = p === CURRENT; const ref = p === "none";
+              return (
+                <li class="grid grid-cols-[8.5rem_minmax(0,1fr)_3.5rem] items-center gap-3">
+                  <span class={`truncate text-sm ${mine ? "font-medium text-fg" : ref ? "text-fg-3" : "text-fg-2"}`}>{label(p)}</span>
+                  <span class="relative h-4 rounded bg-subtle"><span class={`absolute inset-y-0 left-0 rounded ${mine ? "bg-accent" : ref ? "border border-dashed border-line-strong bg-transparent" : "bg-line-strong"}`} style={`width:${Math.max(2, (100 * b.join_p95) / maxJoin)}%`}></span></span>
+                  <span class={`num text-right text-sm ${mine ? "font-medium text-accent-text" : ref ? "text-fg-3" : "text-fg"}`}>{ms(b.join_p95)}</span>
+                </li>
+              );
+            })}
+          </ul>
+          <p class="mt-6 border-t border-line pt-4 text-[0.8125rem] leading-relaxed text-fg-2">
+            {us.outcomes.DENY_LOGIN ? `${num(us.outcomes.DENY_LOGIN)} players refused.` : "No player in the wave was refused."} The wave uses ordinary home addresses, so every refusal here is a mistake.
+          </p>
+        </div>
+      </div>
+
+      <div class="card mt-4 overflow-x-auto">
+        <table class="w-full min-w-[44rem] text-left text-sm">
+          <caption class="sr-only">Decision time per scenario, median and 95th percentile</caption>
+          <thead class="border-b border-line text-[0.75rem] text-fg-3">
+            <tr><th class="px-5 py-3 font-medium">Scenario</th>{COMPARED.map((p) => <th class={`px-4 py-3 text-right font-medium ${p === CURRENT ? "text-fg" : ""}`}>{label(p)}<span class="block font-normal">{versionOf(p)}</span></th>)}</tr>
+          </thead>
+          <tbody>
+            {phases.map((ph) => (
+              <tr class="border-b border-line last:border-0">
+                <th scope="row" class="px-5 py-3.5 font-normal"><span class="block font-medium text-fg">{ph.title}</span><span class="text-[0.75rem] text-fg-3">{ph.hint}</span></th>
+                {COMPARED.map((p) => {
+                  const x = perf(p, ph.id)!;
+                  return <td class={`num px-4 py-3.5 text-right ${p === CURRENT ? "text-accent-text" : "text-fg-2"}`}>{ms(x.decision_p50)}<span class="block text-[0.75rem] text-fg-3">p95 {timedOut(x.decision_p95) ? "30 s, timed out" : ms(x.decision_p95)}</span></td>;
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="reliability" aria-labelledby="rel-h" class="scroll-mt-28 border-b border-line bg-subtle md:scroll-mt-20 dark:bg-surface">
+    <div class="container-site py-16 sm:py-20">
+      <h2 id="rel-h" class="section-title">When the detection services fail.</h2>
+      <p class="lede mt-4">Free detection services time out, rate-limit and break. We make every one of them fail in five ways and send a VPN, a Tor exit and a home player during the outage.</p>
+      <div class="card mt-10 overflow-x-auto">
+        <table class="w-full min-w-[40rem] text-left text-sm">
+          <caption class="sr-only">Behaviour during service failures</caption>
+          <thead class="border-b border-line text-[0.75rem] text-fg-3">
+            <tr>
+              <th class="px-5 py-3 font-medium">Failure</th>
+              {[CURRENT, PREVIOUS].map((p) => <th colspan="3" class={`px-4 py-3 font-medium ${p === CURRENT ? "text-fg" : ""}`}>{label(p)} {versionOf(p)}</th>)}
+            </tr>
+            <tr class="border-t border-line">
+              <th></th>
+              {[CURRENT, PREVIOUS].map(() => <><th class="px-4 py-2 font-normal">VPN</th><th class="px-4 py-2 font-normal">Tor</th><th class="px-4 py-2 font-normal">Home player</th></>)}
+            </tr>
+          </thead>
+          <tbody>
+            {faults.map((f) => (
+              <tr class="border-b border-line last:border-0">
+                <th scope="row" class="px-5 py-3.5 font-medium text-fg">{FAULT_LABELS[f]}</th>
+                {[CURRENT, PREVIOUS].map((p) => {
+                  const r = failure[p]?.[f];
+                  if (!r) return <td colspan="3" class="px-4 py-3.5 text-fg-3">not measured</td>;
+                  return <>
+                    {(["vpn", "tor"] as const).map((k) => <td class="px-4 py-3.5"><span class="flex items-center gap-1.5 text-fg-2"><Fragment set:html={r[k]!.blocked ? check : cross} />{r[k]!.blocked ? "Blocked" : "Let in"}</span></td>)}
+                    <td class="num px-4 py-3.5 text-fg-2"><span class="flex items-center gap-1.5"><Fragment set:html={r.residential!.blocked ? cross : check} />{r.residential!.blocked ? "Refused" : "Let in"} · {ms(r.residential!.ms)}</span></td>
+                  </>;
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-5 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
+        Why 0.6 holds: it checks its own signed lists of VPN servers and Tor exits on the server before asking any service, so a known VPN needs no lookup at all. The other plugins are added to this test in the published run.
+      </p>
+    </div>
+  </section>
+
+  <section id="detection" aria-labelledby="det-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site py-16 sm:py-20">
+      <h2 id="det-h" class="section-title">Who gets caught, who gets in.</h2>
+      <p class="lede mt-4">{num(bench.detection.subjects)} labelled addresses, each with its source: VPN servers from the providers' own lists, Tor exits from the Tor Project, and home and mobile connections from volunteers' RIPE Atlas probes.</p>
+      <div class="card mt-10 overflow-x-auto">
+        <table class="w-full min-w-[44rem] text-left text-sm">
+          <caption class="sr-only">Blocked addresses per group and plugin</caption>
+          <thead class="border-b border-line text-[0.75rem] text-fg-3">
+            <tr><th class="px-5 py-3 font-medium">Group</th>{COMPARED.map((p) => <th class={`px-4 py-3 text-right font-medium ${p === CURRENT ? "text-fg" : ""}`}>{label(p)}</th>)}</tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-line"><th colspan={COMPARED.length + 1} class="bg-subtle px-5 py-2 text-[0.75rem] font-medium text-fg-2 dark:bg-[#111]">Should be blocked: higher is better</th></tr>
+            {catchCohorts.map((c) => (
+              <tr class="border-b border-line">
+                <th scope="row" class="px-5 py-3 font-medium text-fg">{c.label}</th>
+                {COMPARED.map((p) => { const v = (c.blocked as Record<string, number>)[p]!; const top = v === best(c, "catch");
+                  return <td class={`num px-4 py-3 text-right ${p === CURRENT ? "font-medium" : ""} ${top ? "text-fg" : "text-fg-3"}`}>{v}<span class="text-fg-3"> / {c.n}</span></td>; })}
+              </tr>
+            ))}
+            <tr class="border-b border-line"><th colspan={COMPARED.length + 1} class="bg-subtle px-5 py-2 text-[0.75rem] font-medium text-fg-2 dark:bg-[#111]">Should get in: lower is better</th></tr>
+            {spareCohorts.map((c) => (
+              <tr class="border-b border-line last:border-0">
+                <th scope="row" class="px-5 py-3 font-medium text-fg">{c.label}</th>
+                {COMPARED.map((p) => { const v = (c.blocked as Record<string, number>)[p]!; const top = v === best(c, "spare");
+                  return <td class={`num px-4 py-3 text-right ${p === CURRENT ? "font-medium" : ""} ${top ? "text-fg" : "text-fg-3"}`}>{v}<span class="text-fg-3"> / {c.n}</span></td>; })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-5 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
+        Read the VPN rows with care: Connection Guard 0.6's own lists are built from the same provider lists that label these addresses, so for those groups they show coverage, not how well it finds unknown servers. Tor, proxies and the false positives are not affected.
+      </p>
+    </div>
+  </section>
+
+  <section id="method" aria-labelledby="method-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site grid gap-12 py-16 sm:py-20 lg:grid-cols-2 lg:gap-16">
+      <div>
+        <h2 id="method-h" class="section-title">How it's measured.</h2>
+        <ul class="mt-6 grid gap-3 text-[0.9375rem] leading-relaxed text-fg-2">
+          {[
+            "Unmodified plugin JARs from their official pages, with checksums, on one pinned server build.",
+            "A real Minecraft client logs in from each test address, so every plugin sees what it would see in production.",
+            "Detection services are recorded once and replayed to every plugin, with the same delay (120 ms median, 350 ms at p95) and each service's free-tier limit.",
+            "Each plugin runs with its documented settings, enforcement switched on. No plugin-specific tuning.",
+            "No combined score: speed, reliability and detection are reported separately, with every denominator.",
+          ].map((t) => <li class="flex gap-3"><Fragment set:html={check} /><span>{t}</span></li>)}
+        </ul>
+      </div>
+      <div>
+        <h2 class="section-title">What it doesn't show.</h2>
+        <ul class="mt-6 grid gap-3 text-[0.9375rem] leading-relaxed text-fg-2">
+          {[
+            `${bench.platform[0]!.toUpperCase() + bench.platform.slice(1)} only on this page; Paper, Folia and BungeeCord results are in the repository.`,
+            "Simulated services measure how a plugin handles them, not how good each service is.",
+            "The dataset is a snapshot. VPN servers and Tor exits change; we rebuild it and keep every old run.",
+            preliminary ? "This run is preliminary: one round and a 140-address sample." : "Results are the median of three rounds.",
+          ].map((t) => <li class="flex gap-3"><span aria-hidden="true" class="mt-2.5 size-1.5 shrink-0 rounded-full bg-fg-3"></span><span>{t}</span></li>)}
+        </ul>
+        <p class="mt-6 text-[0.9375rem] leading-relaxed text-fg-2">Plugin author and see something wrong? <a href={`${BENCHMARK_REPO}/blob/main/METHODOLOGY.md#10-right-of-reply`} class="font-medium text-fg underline">Contest a result</a>. Corrections are re-measured, and the original stays in the history.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="reproduce" aria-labelledby="rep-h" class="scroll-mt-28 md:scroll-mt-20">
+    <div class="container-site py-16 sm:py-20">
+      <h2 id="rep-h" class="section-title">Run it yourself.</h2>
+      <p class="lede mt-4">Docker on Linux or Docker Desktop with 6 GB, about 15 GB of disk. Or fork the repository and start the GitHub Actions workflow.</p>
+      <pre class="mono mt-8 overflow-x-auto rounded-xl border border-line bg-[#0a0a0a] px-5 py-4 text-[0.8125rem] leading-relaxed text-[#ededed]"><span class="text-[#8f8f8f]">$</span> git clone {BENCHMARK_REPO}
+<span class="text-[#8f8f8f]">$</span> cd mc-antivpn-bench
+<span class="text-[#8f8f8f]">$</span> docker build -t mc-antivpn-bench:dev harness/docker
+<span class="text-[#8f8f8f]">$</span> docker run --rm -v "$PWD:/bench" -e PYTHONPATH=/bench/harness --entrypoint python3 mc-antivpn-bench:dev -m bench.dataset materialize
+<span class="text-[#8f8f8f]">$</span> docker run --rm --cap-add NET_ADMIN -v "$PWD:/bench" -v mcbench-work:/work -e PYTHONPATH=/bench/harness \
+    --entrypoint python3 mc-antivpn-bench:dev -m bench run performance --platforms {bench.platform}</pre>
+      <p class="mt-5 text-[0.8125rem] text-fg-3">
+        This page: <a href={runUrl("performance")} class="underline">performance run</a>, <a href={runUrl("detection")} class="underline">detection run</a>, <a href={runUrl("failure")} class="underline">failure run</a>.
+        Runner: {bench.host}. Versions: {COMPARED.map((p) => `${label(p)} ${versionOf(p)}`).join(", ")}.
+      </p>
+    </div>
+  </section>
+</Base>
