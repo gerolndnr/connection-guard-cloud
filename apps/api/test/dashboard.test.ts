@@ -137,5 +137,7 @@ describe("api host", () => {
   it("keeps the plugin protocol on the API host", async () => {
     const res = await SELF.fetch("https://api.connectionguard.net/v1/health");
     expect(res.status).toBe(200);
+    // Search engines should list the website, not the dashboard or the API.
+    expect(res.headers.get("x-robots-tag")).toBe("noindex");
   });
 });

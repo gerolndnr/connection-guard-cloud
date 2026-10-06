@@ -1,0 +1,4 @@
+# The dashboard (app.) and the plugin API (api.) are not for search engines: the website connectionguard.net is.
+# noindex, not a robots.txt Disallow, so crawlers can still read it and drop pages that are already indexed.
+/*
+  X-Robots-Tag: noindex

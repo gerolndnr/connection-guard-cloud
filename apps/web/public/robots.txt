@@ -1,0 +1,4 @@
+# Crawling stays allowed so search engines see the noindex on every page (see _headers).
+# Looking for Connection Guard? https://connectionguard.net
+User-agent: *
+Allow: /

@@ -23,6 +23,8 @@ app.use("*", async (c, next) => {
   await next();
   c.header("x-content-type-options", "nosniff");
   c.header("referrer-policy", "strict-origin-when-cross-origin");
+  // Not for search engines; the dashboard's static files carry the same header (apps/web/public/_headers).
+  c.header("x-robots-tag", "noindex");
   if (c.req.path.startsWith("/api/")) c.header("cache-control", "no-store");
 });
 
