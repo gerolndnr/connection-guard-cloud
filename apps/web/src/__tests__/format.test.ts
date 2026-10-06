@@ -82,6 +82,10 @@ describe("setup assistant logic", () => {
     expect(isConfigured({ ...defaults, "provider.vpn.proxycheck.api-key": { set: true, hint: "abcd" } })).toBe(true);
     expect(isConfigured(defaults, ["operation.mode"])).toBe(true);
     expect(isConfigured(null)).toBe(false);
+    // 0.6 enforces on new installs by default: enforcing alone is no choice there.
+    const v06 = { ...defaults, "operation.mode": "ENFORCE", "provider.vpn.blackbox.enabled": true, "provider.vpn.zowi.enabled": true };
+    expect(isConfigured(v06)).toBe(false);
+    expect(hasQuotaKey(v06)).toBe(true);
   });
 
   it("knows when the free lookups can run out", () => {

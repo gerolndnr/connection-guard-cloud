@@ -5,6 +5,7 @@
 const NAMES: Record<string, string> = {
   proxycheck: "ProxyCheck", "ip-api": "IP-API", iphub: "IPHub", vpnapi: "VPNAPI", ipquery: "IPQuery",
   ipqualityscore: "IPQualityScore", "tor-list": "Tor exit list", "connectionguard-intel": "Connection Guard Intel",
+  blackbox: "Blackbox", ipcheck: "ip-check.net", zowi: "zowi",
 };
 
 /** The provider key behind a reported source ID ("proxycheckvpnprovider-0" → "proxycheck"), or the cleaned ID. */

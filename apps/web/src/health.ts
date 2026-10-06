@@ -2,7 +2,7 @@
 // Every note has a stable id and a fingerprint of the situation. Dismissing stores the fingerprint, so a
 // dismissed note comes back only when the situation changes (a server drops out again, a new day's quota...).
 import type { Install, InstallError } from "./api.ts";
-import { ago, num, serverName } from "./format.ts";
+import { ago, num, serverName, versionAtLeast } from "./format.ts";
 import { sourceLabel } from "./sources.ts";
 
 export interface Note {
@@ -97,7 +97,8 @@ export function notes(installs: Install[], now = Date.now()): Note[] {
     const problem = providerProblem(p);
     // Only plugins from 0.5.2 ask the next service when one fails or runs out; on 0.5.1 the failure policy alone decides.
     const chained = installs.filter((i) => i.status?.providers.some((x) => x.id === p.id))
-      .every((i) => i.status?.config?.["provider.vpn-failover.enabled"] === true);
+      .every((i) => i.status?.config?.["provider.vpn-failover.enabled"] === true
+        || (!Object.hasOwn(i.status?.config ?? {}, "provider.vpn-failover.enabled") && versionAtLeast(i.plugin_version, "0.5.2")));
     const meanwhile = chained
       ? "The next service in the failover chain steps in; if none can answer, your failure policy decides."
       : "Until it answers again, your failure policy decides: with \"Let in\", players get in unchecked.";

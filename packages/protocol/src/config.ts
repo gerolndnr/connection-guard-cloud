@@ -47,6 +47,10 @@ export const CONFIG_FIELDS = {
   "provider.vpn-failover.order": { kind: "list", maxItems: 16, maxLength: 64 },
   "provider.max-external-attempts": { kind: "int", min: 1, max: 16 },
   "provider.vpn.ipquery.enabled": { kind: "bool" },
+  // Keyless services of plugin 0.6.0 (ip-check.net is off by default there).
+  "provider.vpn.blackbox.enabled": { kind: "bool" },
+  "provider.vpn.ipcheck.enabled": { kind: "bool" },
+  "provider.vpn.zowi.enabled": { kind: "bool" },
   "provider.vpn.ipqualityscore.enabled": { kind: "bool" },
   "provider.vpn.ipqualityscore.api-key": { kind: "secret" },
   // Connection Guard Intel lists (connection-guard-intel): on/off, and whether a privacy relay counts as VPN.
@@ -68,6 +72,7 @@ export const GATED_PATHS: readonly ConfigPath[] = [
   "provider.vpn-failover.enabled", "provider.vpn-failover.order", "provider.max-external-attempts",
   "provider.vpn.ipquery.enabled", "provider.vpn.ipqualityscore.enabled", "provider.vpn.ipqualityscore.api-key",
   "provider.local.connectionguard-intel.enabled", "provider.local.connectionguard-intel.relay",
+  "provider.vpn.blackbox.enabled", "provider.vpn.ipcheck.enabled", "provider.vpn.zowi.enabled",
 ];
 /** Whether a server with this snapshot accepts `path` from the dashboard. */
 export const supportsPath = (snapshot: Record<string, unknown> | null | undefined, path: string) =>

@@ -21,8 +21,8 @@ export const day = (t: number) => new Date(t).toLocaleDateString("en-GB", { week
 export const dayKey = (t: number) => new Date(t).toDateString();
 
 /** "0.5.2-SNAPSHOT" ≥ "0.5.2": development builds already carry the features of their version. */
-export function versionAtLeast(version: string, min: string): boolean {
-  const parts = (x: string) => (x.match(/\d+/g) ?? []).slice(0, 3).map(Number);
+export function versionAtLeast(version: string | null | undefined, min: string): boolean {
+  const parts = (x: string | null | undefined) => ((x ?? "").match(/\d+/g) ?? []).slice(0, 3).map(Number);
   const a = parts(version), b = parts(min);
   for (let i = 0; i < 3; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
   return true;

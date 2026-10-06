@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ChevronRight, CircleAlert, CircleCheck, ExternalLink, LoaderCircle, WifiOff, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight, CircleAlert, CircleCheck, ExternalLink, LoaderCircle, Terminal, TriangleAlert, WifiOff, X } from "lucide-react";
 import { SECRET_PATHS, supportsPath, type ConfigSnapshot } from "@cg/protocol";
 import { api, ApiError, type Install, type ServerConfig } from "../api.ts";
 import { Shell } from "../components/Shell.tsx";
 import { StatusDot } from "../components/Badge.tsx";
 import { Choice, CountryPicker, Row, Section, SecretField, Segmented, Switch, TagInput, type SecretEdit } from "../components/Form.tsx";
 import { ago, configErrorHint, num, platformName, serverName, versionAtLeast } from "../format.ts";
-import { failoverOrder, providersFor, strategyOf } from "../providers.ts";
+import { failoverOrder, fixedProviders, providersFor, usesFailover } from "../providers.ts";
+import { sourceKey } from "../sources.ts";
 import { SIMULATED_PATHS, simulate, type SimulationResult } from "../simulate.ts";
 import { useHistory } from "../history.ts";
 import { usePlayerNames } from "../players.ts";
@@ -38,7 +39,19 @@ function initialValues(snapshot: ConfigSnapshot): Values {
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
-function ApplyStatus({ cfg, server }: { cfg: ServerConfig; server: string }) {
+/** Servers from 0.6 apply dashboard changes at once with this console command. */
+const canSyncNow = (install: Install) => Boolean(install.status?.capabilities?.includes("sync_command"));
+function SyncHint({ install }: { install: Install }) {
+  if (!canSyncNow(install)) return null;
+  return (
+    <p className="mt-1.5 flex items-center gap-1.5 text-[0.8125rem] text-fg-2">
+      <Terminal aria-hidden className="size-3.5 shrink-0 text-fg-3" />
+      In a hurry? Run <code className="mono rounded border border-line bg-surface px-1.5 py-0.5 text-[0.75rem] text-fg">/cg cloud sync</code> in the console to apply it right away.
+    </p>
+  );
+}
+
+function ApplyStatus({ cfg, server, install }: { cfg: ServerConfig; server: string; install: Install }) {
   if (cfg.error) {
     return (
       <div role="alert" className="flex gap-3 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3">
@@ -57,7 +70,8 @@ function ApplyStatus({ cfg, server }: { cfg: ServerConfig; server: string }) {
         {cfg.online ? <LoaderCircle aria-hidden className="mt-0.5 size-4 shrink-0 animate-spin text-fg-2 motion-reduce:animate-none" /> : <WifiOff aria-hidden className="mt-0.5 size-4 shrink-0 text-warn" />}
         <div>
           <p className="font-medium">{cfg.online ? `Waiting for ${server} to apply your changes…` : `${server} is offline`}</p>
-          <p className="mt-0.5 text-[0.8125rem] text-fg-2">{cfg.online ? "While you have the dashboard open, servers check in every 15 seconds. No restart needed." : "Your changes are saved and apply as soon as it reconnects."}</p>
+          <p className="mt-0.5 text-[0.8125rem] text-fg-2">{cfg.online ? "While this page is open, the server checks in every few seconds. No restart needed." : "Your changes are saved and apply as soon as it reconnects."}</p>
+          {cfg.online && <SyncHint install={install} />}
         </div>
       </div>
     );
@@ -213,9 +227,12 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
   const hasIntel = supportsPath(effective, INTEL);
   // 0.5.2 plugins that do not list the switch yet still use failover unless config.yml turns it off.
   const implicitFailover = !hasFailover && versionAtLeast(install.plugin_version, "0.5.2");
-  const failover = strategyOf(values) === "failover";
+  const failover = usesFailover(values, effective, install.plugin_version);
+  const healthKeys = (install.status?.providers ?? []).filter((p) => p.scope === "VPN").map((p) => sourceKey(p.id));
+  const fixed = fixedProviders(effective, healthKeys);
   const order = v<string[]>("provider.vpn-failover.order") ?? [];
   const chain = failoverOrder(enabledProviders, order);
+  const fullChain = failoverOrder([...enabledProviders, ...fixed], order);
   const moveInChain = (key: string, by: -1 | 1) => {
     const keys: string[] = chain.map((p) => p.key).filter((k) => k !== "ip-api");
     const i = keys.indexOf(key), j = i + by;
@@ -277,11 +294,11 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
           </p>
         </div>
       </div>
-      <div className="mt-6"><ApplyStatus cfg={cfg} server={name} /></div>
+      <div className="mt-6"><ApplyStatus cfg={cfg} server={name} install={install} /></div>
       {!canEdit && <p className="mt-4 text-[0.8125rem] text-fg-2">You can view these settings. Owners and admins can change them.</p>}
 
       <fieldset disabled={!canEdit || saving} className="mt-6 space-y-6">
-        <Section id="mode" title="Protection mode" managed={managed("operation.mode")} description="Start by observing. Switch to enforce when the decisions look right.">
+        <Section id="mode" title="Protection mode" managed={managed("operation.mode")} description={versionAtLeast(install.plugin_version, "0.6.0") ? "Enforce refuses flagged players; Observe only logs what would have happened." : "Start by observing. Switch to enforce when the decisions look right."}>
           <div className="px-6 py-4">
             <Choice name="Protection mode" value={v<string>("operation.mode") as "OBSERVE" | "ENFORCE"} onChange={(m) => set("operation.mode", m)} options={[
               { value: "OBSERVE", title: "Observe", body: "Check every player and log the result, but let everyone in." },
@@ -322,6 +339,11 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
                   <Switch label={`Use ${p.name}`} checked={v<boolean>(`provider.vpn.${p.key}.enabled`) ?? false} onChange={(on) => set(`provider.vpn.${p.key}.enabled`, on)} />
                   <span className="text-[0.8125rem] text-fg-2">{v<boolean>(`provider.vpn.${p.key}.enabled`) ? "On" : "Off"}</span>
                 </div>
+                {p.caution && (
+                  <p className={`flex gap-1.5 text-[0.8125rem] ${v<boolean>(`provider.vpn.${p.key}.enabled`) ? "text-warn-text" : "text-fg-3"}`}>
+                    <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />{p.caution}
+                  </p>
+                )}
                 {p.keyPath && v<boolean>(`provider.vpn.${p.key}.enabled`) && (
                   <SecretField state={secretState(p.keyPath)} edit={secretEdit(p.keyPath)} onEdit={(e) => setSecrets({ ...secrets, [p.keyPath!]: e })}
                     placeholder={`${p.name} API key${p.keyRequired ? "" : " (optional)"}`} />
@@ -358,6 +380,19 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
                     </li>
                   );
                 })}
+              </ol>
+            </Row>
+          )}
+          {!hasFailover && failover && fullChain.length > 0 && (
+            <Row label="Order" help="The first service that gives a clear answer decides. Connection Guard Intel and the Tor list are checked on the server first; IP-API is always last. This plugin version keeps the order in config.yml (provider.vpn-failover.order).">
+              <ol className="divide-y divide-line overflow-hidden rounded-lg border border-line">
+                {fullChain.map((p, i) => (
+                  <li key={p.key} className="flex items-center gap-3 px-3 py-2">
+                    <span className="num w-5 text-[0.8125rem] text-fg-3">{i + 1}</span>
+                    <span className="min-w-0 flex-1 font-medium">{p.name}</span>
+                    <span className="text-[0.75rem] text-fg-3">{p.key === "ip-api" ? "always last" : fixed.includes(p) ? "set in config.yml" : ""}</span>
+                  </li>
+                ))}
               </ol>
             </Row>
           )}
@@ -515,10 +550,11 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
                     {cfgQ.data?.online !== false && <span className="num ml-1.5 font-normal text-fg-3">{Math.max(0, Math.round((now - lastSave.at) / 1000))} s</span>}
                   </p>
                   <p className="text-fg-2">
-                    {cfgQ.data?.online === false ? "Nothing else to do." : "While you have the dashboard open, servers check in every 15 seconds, so this usually takes under half a minute and at most about a minute."}
+                    {cfgQ.data?.online === false ? "Nothing else to do." : "While this page is open, the server checks in every few seconds, so this usually takes about ten seconds."}
                     {lastSave.others > 0 && ` Also sent to ${lastSave.others} other ${lastSave.others === 1 ? "server" : "servers"}.`}
                     {(lastSave.skipped ?? 0) > 0 && ` ${lastSave.skipped} of them ${lastSave.skipped === 1 ? "runs" : "run"} an older Connection Guard and kept ${lastSave.skipped === 1 ? "its" : "their"} own values for the newer settings.`}
                   </p>
+                  {cfgQ.data?.online !== false && now - lastSave.at > 8000 && <SyncHint install={install} />}
                   <div className="mt-2 h-1 overflow-hidden rounded-full bg-subtle" aria-hidden>
                     <div className="h-full rounded-full bg-accent transition-[width] duration-1000 ease-linear" style={{ width: `${Math.min(95, ((now - lastSave.at) / 30_000) * 100)}%` }} />
                   </div>

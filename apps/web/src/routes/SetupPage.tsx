@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, CircleCheck, ExternalLink, Globe, KeyRound, LoaderCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CircleCheck, ExternalLink, Globe, Info, KeyRound, LoaderCircle, Server, ShieldCheck, Sparkles, Terminal, TriangleAlert } from "lucide-react";
 import { supportsPath, type ConfigSnapshot } from "@cg/protocol";
 import { api, ApiError, type Install, type RegisterEvent } from "../api.ts";
 import { Shell } from "../components/Shell.tsx";
@@ -9,7 +9,11 @@ import { VerdictBadge } from "../components/Badge.tsx";
 import { CountryPicker, Switch } from "../components/Form.tsx";
 import { clock, explain, isPrivateIp, ms, num, serverName, verdict, versionAtLeast } from "../format.ts";
 import { isConfigured, lookupsPerDay } from "../setup.ts";
-import { dailyCapacity, failoverCoverage, failoverOrder, isValidKey, providersFor, type ProviderInfo } from "../providers.ts";
+import { dailyCapacity, failoverCoverage, failoverOrder, fixedProviders, isValidKey, providersFor, usesFailover, type ProviderInfo } from "../providers.ts";
+import { sourceKey } from "../sources.ts";
+
+const INTEL = "provider.local.connectionguard-intel.enabled";
+const INTEL_RELAY = "provider.local.connectionguard-intel.relay";
 import { track } from "../analytics.ts";
 
 type CountryMode = "off" | "block" | "allow";
@@ -47,16 +51,18 @@ function StepFrame({ step, title, lead, children, onBack, onNext, nextLabel = "C
   );
 }
 
-function OptionCard({ checked, onToggle, icon, title, body, children, role = "checkbox" }: {
+function OptionCard({ checked, onToggle, icon, title, body, children, role = "checkbox", badge, note }: {
   checked: boolean; onToggle: () => void; icon: React.ReactNode; title: string; body: string; children?: React.ReactNode; role?: "checkbox" | "radio";
+  badge?: string | undefined; note?: string | undefined;
 }) {
   return (
     <div className={`rounded-xl border transition-colors ${checked ? "border-accent bg-accent-soft/50" : "border-line bg-surface hover:border-line-strong"}`}>
       <button type="button" role={role} aria-checked={checked} onClick={onToggle} className="flex w-full items-start gap-4 px-5 py-4 text-left">
         <span aria-hidden className={`grid size-9 shrink-0 place-items-center rounded-lg border ${checked ? "border-accent/40 bg-surface text-accent-text" : "border-line bg-subtle text-fg-2"}`}>{icon}</span>
         <span className="min-w-0 flex-1">
-          <span className="block font-medium">{title}</span>
+          <span className="flex flex-wrap items-center gap-2 font-medium">{title}{badge && <span className="rounded-full border border-accent/35 bg-accent-soft px-2 py-px text-[0.6875rem] font-medium text-accent-text">{badge}</span>}</span>
           <span className="mt-0.5 block text-[0.8125rem] leading-relaxed text-fg-2">{body}</span>
+          {note && <span className={`mt-1.5 flex gap-1.5 text-[0.8125rem] leading-relaxed ${checked ? "text-warn-text" : "text-fg-3"}`}><TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />{note}</span>}
         </span>
         <span aria-hidden className={`mt-1 grid size-5 shrink-0 place-items-center ${role === "radio" ? "rounded-full" : "rounded-md"} border ${checked ? "border-accent bg-accent text-white" : "border-line-strong"}`}>
           {checked && <Check className="size-3.5" strokeWidth={3} />}
@@ -93,18 +99,24 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
   const configured = isConfigured(snapshot, cfgQ.data?.managed);
   const available = providersFor(snapshot);
   // Plugins from 0.5.2 ask services one after another unless config.yml switches that off; the assistant keeps it as is.
-  const failover = snapshot?.["provider.vpn-failover.enabled"] === true
-    || (!supportsPath(snapshot, "provider.vpn-failover.enabled") && versionAtLeast(install.plugin_version, "0.5.2"));
+  const failover = usesFailover(snapshot, snapshot, install.plugin_version);
+  // 0.6 brings Connection Guard Intel, three more keyless services and stricter defaults for new installs.
+  const v06 = versionAtLeast(install.plugin_version, "0.6.0") || supportsPath(snapshot, "provider.vpn.blackbox.enabled");
+  const hasIntel = supportsPath(snapshot, INTEL);
+  const recommendedSet = (list: readonly ProviderInfo[]) => Object.fromEntries(list.map((p) => [p.key, v06 ? Boolean(p.recommended) : p.key === "proxycheck"]));
+  const fixed = fixedProviders(snapshot, (install.status?.providers ?? []).filter((p) => p.scope === "VPN").map((p) => sourceKey(p.id)));
 
   // Choices, prefilled with the server's current values (or the shipped defaults until it reports).
   const [vpn, setVpn] = useState(true);
   const [countryMode, setCountryMode] = useState<CountryMode>("off");
   const [countries, setCountries] = useState<string[]>([]);
   // Services: prefilled from the server; ProxyCheck alone on a fresh install.
-  const [selected, setSelected] = useState<Record<string, boolean>>({ proxycheck: true });
+  const [selected, setSelected] = useState<Record<string, boolean>>(() => recommendedSet(available.length ? available : providersFor(null)));
+  const [intel, setIntel] = useState(true);
+  const [relay, setRelay] = useState<"ALLOW" | "VPN">("ALLOW");
   const [keys, setKeys] = useState<Record<string, string>>({});
   const [votes, setVotes] = useState(1);
-  const [mode, setMode] = useState<"OBSERVE" | "ENFORCE">("OBSERVE");
+  const [mode, setMode] = useState<"OBSERVE" | "ENFORCE">(v06 ? "ENFORCE" : "OBSERVE");
   const [version, setVersion] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [since, setSince] = useState(0);
@@ -115,9 +127,11 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     const list = (snapshot["behavior.geo.list"] as string[] | undefined) ?? [];
     setCountries(list);
     setCountryMode(snapshot["behavior.geo.type"] === "WHITELIST" ? "allow" : list.length ? "block" : "off");
-    setMode((snapshot["operation.mode"] as "OBSERVE" | "ENFORCE") ?? "OBSERVE");
+    setMode((snapshot["operation.mode"] as "OBSERVE" | "ENFORCE") ?? (v06 ? "ENFORCE" : "OBSERVE"));
     const fromServer = Object.fromEntries(providersFor(snapshot).map((p) => [p.key, snapshot[`provider.vpn.${p.key}.enabled`] === true]));
-    if (Object.values(fromServer).some(Boolean)) setSelected(fromServer);
+    setSelected(Object.values(fromServer).some(Boolean) ? fromServer : recommendedSet(providersFor(snapshot)));
+    if (supportsPath(snapshot, INTEL)) setIntel(snapshot[INTEL] === true || !Object.values(fromServer).some(Boolean));
+    if (supportsPath(snapshot, INTEL_RELAY)) setRelay(snapshot[INTEL_RELAY] === "VPN" ? "VPN" : "ALLOW");
     setVotes(Number(snapshot["required-positive-flags"] ?? 1));
   }, [snapshot]);
 
@@ -142,11 +156,12 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
       "behavior.geo.list": countryMode === "off" ? [] : countries,
     };
     for (const p of available) values[`provider.vpn.${p.key}.enabled`] = on.includes(p);
+    if (hasIntel) { values[INTEL] = vpn && intel; if (supportsPath(snapshot, INTEL_RELAY)) values[INTEL_RELAY] = relay; }
     if (on.length > 0 && !failover) values["required-positive-flags"] = Math.min(Math.max(1, votes), on.length);
     const secrets = Object.fromEntries(on.filter((p) => p.keyPath && typedKey(p)).map((p) => [p.keyPath!, typedKey(p)]));
     if (countryMode !== "off" && snapshot?.["provider.geo.service"] === "Disabled") values["provider.geo.service"] = "IP-API";
     track("setup_finished", { install_id: install.id,
-      vpn, providers: on.map((p) => p.key), keys_entered: Object.keys(secrets).length, votes: on.length && !failover ? values["required-positive-flags"] : 0, failover,
+      vpn, providers: on.map((p) => p.key), intel: hasIntel ? vpn && intel : null, relay: hasIntel ? relay : null, keys_entered: Object.keys(secrets).length, votes: on.length && !failover ? values["required-positive-flags"] : 0, failover,
       country_mode: countryMode, countries: countryMode === "off" ? 0 : countries.length, mode, platform: install.platform,
     });
     try {
@@ -220,19 +235,46 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
 
   if (step === "providers") {
     const order = (snapshot?.["provider.vpn-failover.order"] as string[] | undefined) ?? [];
-    const chain = failoverOrder(chosen, order);
+    const chain = failoverOrder([...chosen, ...fixed], order);
     const coverage = failover ? failoverCoverage(chain.map((p) => ({ info: p, hasKey: willHaveKey(p) }))) : null;
     const capacity = failover
       ? (coverage && coverage.firstLimit !== null && !coverage.uncappedFallback ? { limit: coverage.firstLimit, by: coverage.first, keyless: !willHaveKey(coverage.first) } : null)
       : dailyCapacity(chosen.map((p) => ({ info: p, hasKey: willHaveKey(p) })));
     const short = capacity !== null && perDay !== null && capacity.limit < perDay * 1.2;
+    const recommended = recommendedSet(available);
+    const isRecommended = available.every((p) => Boolean(selected[p.key]) === recommended[p.key]) && (!hasIntel || intel);
+    const keyless = chosen.filter((p) => !p.keyPath);
     return (
       <>{connecting}
-        <StepFrame step="providers" title="Which services should check players?"
+        <StepFrame step="providers" title="How should players be checked?"
           lead={failover
-            ? "Each new IP address goes to the first service you pick; the next one only steps in when it fails or its limit is used up. Returning players are answered from the cache."
+            ? "A new IP address goes to the first service; the next one only steps in when it fails or its limit is used up. Returning players are answered from the cache."
             : "Each new IP address is checked by every service you pick. Returning players are answered from the cache, so most logins cost nothing."}
           onBack={() => setStep("goals")} onNext={() => setStep("mode")} nextDisabled={!providersOk}>
+          {v06 && !isRecommended && (
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-subtle px-4 py-3">
+              <p className="text-[0.8125rem] text-fg-2"><span className="font-medium text-fg">Not sure?</span> Use what Connection Guard 0.6 sets up for new servers.</p>
+              <button type="button" className="btn btn-secondary h-8" onClick={() => { setSelected(recommended); setIntel(true); setRelay("ALLOW"); track("setup_recommended_used", { install_id: install.id }); }}>Use the recommended setup</button>
+            </div>
+          )}
+
+          {hasIntel && (
+            <>
+              <h2 className="mb-2 text-[0.8125rem] font-medium text-fg-3">On your server</h2>
+              <OptionCard checked={intel} onToggle={() => setIntel(!intel)} icon={<Server className="size-4.5" />} badge="Recommended"
+                title="Connection Guard Intel"
+                body="Signed lists of VPN servers, Tor exits and privacy relays, checked on your server before any service is asked. No player address leaves it, and it keeps working when every service is down.">
+                <p className="mb-2 text-[0.8125rem] font-medium">Privacy relays such as iCloud Private Relay</p>
+                <div role="group" aria-label="Privacy relays" className="segmented">
+                  <button type="button" aria-pressed={relay === "ALLOW"} onClick={() => setRelay("ALLOW")}>Let them in</button>
+                  <button type="button" aria-pressed={relay === "VPN"} onClick={() => setRelay("VPN")}>Treat as VPN</button>
+                </div>
+                <p className="mt-2 text-[0.75rem] text-fg-3">{relay === "ALLOW" ? "Recommended. Private Relay is Apple's privacy feature for Safari, not a VPN service." : "Strict. Players behind iCloud Private Relay are refused like VPN users."} The lists are downloaded once a day from intel.connectionguard.net.</p>
+              </OptionCard>
+              <h2 className="mb-2 mt-6 text-[0.8125rem] font-medium text-fg-3">Detection services{failover ? ", asked in this order" : ""}</h2>
+            </>
+          )}
+
           <div className="space-y-3">
             {available.map((p) => {
               const on = Boolean(selected[p.key]);
@@ -240,7 +282,7 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
               return (
                 <OptionCard key={p.key} checked={on} onToggle={() => setSelected({ ...selected, [p.key]: !on })}
                   icon={p.keyPath ? <KeyRound className="size-4.5" /> : <ShieldCheck className="size-4.5" />}
-                  title={`${p.name}${p.key === "proxycheck" ? " (recommended)" : ""}`} body={p.body}>
+                  title={p.name} badge={(v06 ? p.recommended : p.key === "proxycheck") ? "Recommended" : undefined} body={p.body} note={p.caution}>
                   {p.keyPath ? (
                     <div>
                       <label className="block">
@@ -264,24 +306,19 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
             })}
           </div>
 
-          {snapshot?.["provider.local.connectionguard-intel.enabled"] === true && (
-            <div className="mt-5 flex gap-3 rounded-lg border border-line bg-subtle px-4 py-3">
-              <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-accent" />
-              <p className="text-[0.8125rem] leading-relaxed text-fg-2">
-                <span className="font-medium text-fg">Connection Guard Intel is on.</span> Known VPN servers, Tor exits and privacy relays are recognised on your server first, without asking any service, so the services below are only asked about the rest.
-              </p>
-            </div>
+          {fixed.length > 0 && (
+            <p className="mt-3 text-[0.8125rem] text-fg-3">Also asked by {name}: {fixed.map((p) => p.name).join(", ")} (set in config.yml).</p>
           )}
 
           {chosen.length === 0 && <p className="mt-4 text-[0.8125rem] text-warn-text">Pick at least one service, or turn off VPN checks in the previous step.</p>}
 
           {failover && chain.length >= 2 && (
             <div className="mt-5 rounded-lg border border-line px-4 py-3">
-              <p className="font-medium">Asked in this order</p>
+              <p className="font-medium">A new address travels this way</p>
               <p className="mt-0.5 text-[0.8125rem] text-fg-2">
-                {chain.map((p) => p.name).join(" → ")}. {coverage?.uncappedFallback
+                {hasIntel && intel ? "Connection Guard Intel → " : ""}{chain.map((p) => p.name).join(" → ")}. {coverage?.uncappedFallback
                   ? `When ${coverage.first.name}'s daily limit is used up, ${coverage.uncappedFallback.name} takes over, so players stay checked.`
-                  : "When one limit is used up, the next service takes over."} You can change the order in the settings.
+                  : "When one limit is used up, the next service takes over."}
               </p>
             </div>
           )}
@@ -314,22 +351,32 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
               </p>
             </div>
           )}
+
+          {keyless.length > 0 && (
+            <div className="mt-5 flex gap-3 rounded-lg border border-line px-4 py-3">
+              <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-fg-3" />
+              <p className="text-[0.8125rem] leading-relaxed text-fg-2">
+                The services you pick receive the IP address of each new player. Name them in your server's privacy information: {[...chosen, ...fixed].map((p) => p.name).join(", ")}.
+              </p>
+            </div>
+          )}
         </StepFrame>
       </>
     );
   }
 
   if (step === "mode") {
+    const watch = <OptionCard key="o" role="radio" checked={mode === "OBSERVE"} onToggle={() => setMode("OBSERVE")} icon={<Sparkles className="size-4.5" />}
+      title="Watch first" badge={v06 ? undefined : "Recommended"} body="Everyone gets in. You see who would have been refused, and we suggest switching once it looks right." />;
+    const protect = <OptionCard key="e" role="radio" checked={mode === "ENFORCE"} onToggle={() => setMode("ENFORCE")} icon={<ShieldCheck className="size-4.5" />}
+      title="Protect right away" badge={v06 ? "Recommended" : undefined}
+      body={v06 ? "Refuse VPNs, proxies and Tor from the next login. Every refusal is explained here, and you can let a player in with one click." : "Refuse flagged players from the next login on. Best if you already know you have a VPN problem."} />;
     return (
       <>{connecting}
-        <StepFrame step="mode" title="Start gently?" lead="Watching first shows you what would happen, so you can catch surprises before a real player is locked out."
+        <StepFrame step="mode" title={v06 ? "How strict from the start?" : "Start gently?"}
+          lead={v06 ? "New 0.6 servers protect right away. Watching first shows you what would happen before anyone is refused." : "Watching first shows you what would happen, so you can catch surprises before a real player is locked out."}
           onBack={() => setStep(vpn ? "providers" : "goals")} onNext={apply} nextLabel="Finish setup" nextDisabled={vpn && !providersOk}>
-          <div role="radiogroup" aria-label="Protection mode" className="space-y-3">
-            <OptionCard role="radio" checked={mode === "OBSERVE"} onToggle={() => setMode("OBSERVE")} icon={<Sparkles className="size-4.5" />}
-              title="Watch first (recommended)" body="Everyone gets in. You see who would have been refused, and we suggest switching once it looks right." />
-            <OptionCard role="radio" checked={mode === "ENFORCE"} onToggle={() => setMode("ENFORCE")} icon={<ShieldCheck className="size-4.5" />}
-              title="Protect right away" body="Refuse flagged players from the next login on. Best if you already know you have a VPN problem." />
-          </div>
+          <div role="radiogroup" aria-label="Protection mode" className="space-y-3">{v06 ? [protect, watch] : [watch, protect]}</div>
         </StepFrame>
       </>
     );
@@ -344,7 +391,10 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
       <div className="card px-6 py-8">
         <Progress step="apply" />
         <h1 className="mt-6 text-2xl font-semibold tracking-[-0.025em]">{rejected ? "The server refused the settings" : applied ? "You're protected" : "Applying your settings…"}</h1>
-        <p className="mt-2 text-fg-2">{rejected ? rejected : applied ? `${name} uses the new settings. No restart was needed.` : cfg?.online === false ? `${name} is offline right now. Your settings are saved and apply as soon as it reconnects.` : "Your server checks in every 15 seconds while this page is open."}</p>
+        <p className="mt-2 text-fg-2">{rejected ? rejected : applied ? `${name} uses the new settings. No restart was needed.` : cfg?.online === false ? `${name} is offline right now. Your settings are saved and apply as soon as it reconnects.` : "Your server checks in every few seconds while this page is open."}</p>
+        {!applied && !rejected && cfg?.online !== false && install.status?.capabilities?.includes("sync_command") && (
+          <p className="mt-2 flex items-center gap-1.5 text-[0.8125rem] text-fg-2"><Terminal aria-hidden className="size-3.5 shrink-0 text-fg-3" />In a hurry? Run <code className="mono rounded border border-line bg-surface px-1.5 py-0.5 text-[0.75rem] text-fg">/cg cloud sync</code> in the console.</p>
+        )}
         {error && <p role="alert" className="mt-4 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-danger-text">{error}</p>}
         <ul className="mt-6 space-y-3">
           {items.map(([label, done]) => (

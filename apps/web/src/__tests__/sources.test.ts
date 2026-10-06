@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sourceKey, sourceLabel } from "../sources.ts";
-import { failoverCoverage, failoverOrder, PROVIDERS, providersFor } from "../providers.ts";
+import { failoverCoverage, failoverOrder, fixedProviders, PROVIDERS, providersFor, usesFailover } from "../providers.ts";
 
 describe("source names", () => {
   it("maps decision, health and extension IDs to providers", () => {
@@ -22,10 +22,31 @@ describe("providers", () => {
   const p = (k: string) => PROVIDERS.find((x) => x.key === k)!;
   it("offers newer services only where the plugin reports their switch", () => {
     const old = { "provider.vpn.proxycheck.enabled": true };
-    expect(providersFor(old).map((x) => x.key)).toEqual(["proxycheck", "ip-api", "iphub", "vpnapi"]);
+    expect(providersFor(old).map((x) => x.key)).toEqual(["proxycheck", "iphub", "vpnapi", "ip-api"]);
     expect(providersFor({ ...old, "provider.vpn.ipquery.enabled": true }).map((x) => x.key)).toContain("ipquery");
     // IPQualityScore needs its key path as well.
     expect(providersFor({ ...old, "provider.vpn.ipqualityscore.enabled": false }).map((x) => x.key)).not.toContain("ipqualityscore");
+  });
+
+  it("knows the keyless services of 0.6 and keeps ip-check.net out of the recommended set", () => {
+    const v06 = { "provider.vpn.proxycheck.enabled": true, "provider.vpn.blackbox.enabled": true, "provider.vpn.ipcheck.enabled": false, "provider.vpn.zowi.enabled": true };
+    const keys = providersFor(v06).map((x) => x.key);
+    expect(keys).toEqual(["proxycheck", "blackbox", "ipcheck", "zowi", "iphub", "vpnapi", "ip-api"]);
+    expect(providersFor(v06).filter((x) => x.recommended).map((x) => x.key)).toEqual(["proxycheck", "blackbox", "zowi", "ip-api"]);
+    expect(providersFor(v06).find((x) => x.key === "ipcheck")?.caution).toBeTruthy();
+    // 0.6 runs IPQuery without a dashboard switch: it shows up from provider health as a fixed member.
+    expect(fixedProviders(v06, ["proxycheck", "blackbox", "ipquery"]).map((x) => x.key)).toEqual(["ipquery"]);
+    expect(failoverOrder([...providersFor(v06).filter((x) => v06[`provider.vpn.${x.key}.enabled` as keyof typeof v06]), ...fixedProviders(v06, ["ipquery"])], []).map((x) => x.key))
+      .toEqual(["proxycheck", "blackbox", "zowi", "ipquery"]);
+    expect(sourceLabel("blackboxvpnprovider-0")).toBe("Blackbox");
+    expect(sourceLabel("vpn-ipcheck")).toBe("ip-check.net");
+    expect(sourceLabel("zowivpnprovider-1")).toBe("zowi");
+  });
+
+  it("treats a server that does not report the strategy switch by its version's default", () => {
+    expect(usesFailover({}, {}, "0.6.0")).toBe(true);
+    expect(usesFailover({}, {}, "0.5.1")).toBe(false);
+    expect(usesFailover({ "provider.vpn-failover.enabled": false }, { "provider.vpn-failover.enabled": false }, "0.6.0")).toBe(false);
   });
 
   it("orders a failover chain like the plugin, IP-API last", () => {

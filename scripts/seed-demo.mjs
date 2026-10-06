@@ -71,23 +71,23 @@ const snapshot = (mode) => ({
   "behavior.geo.send-webhook.url": { set: false, hint: null }, "behavior.geo.type": "BLACKLIST", "behavior.geo.list": ["RU"], "behavior.geo.exemptions": [],
 });
 
-// A 0.5.2 plugin also lists its failover chain and the newer services in its snapshot.
+// A fresh 0.6.0 install, exactly as its CloudManagedConfig reports it: the keyless services and Intel switches, no
+// failover or IPQuery switch (those stay in config.yml), ip-check.net off, geo off, enforcing by default.
 const snapshotNext = (mode) => ({
   ...snapshot(mode),
   "provider.vpn.proxycheck.api-key": { set: false, hint: null }, "provider.vpn.ip-api.enabled": true, "provider.geo.service": "Disabled",
-  "provider.vpn.ipquery.enabled": true, "provider.vpn.ipqualityscore.enabled": false, "provider.vpn.ipqualityscore.api-key": { set: false, hint: null },
-  "provider.vpn-failover.enabled": true, "provider.vpn-failover.order": [], "provider.max-external-attempts": 16, "behavior.geo.list": [],
+  "provider.vpn.blackbox.enabled": true, "provider.vpn.ipcheck.enabled": false, "provider.vpn.zowi.enabled": true, "behavior.geo.list": [],
   "provider.local.connectionguard-intel.enabled": true, "provider.local.connectionguard-intel.relay": "ALLOW",
 });
 
 const servers = [
   { platform: "VELOCITY", platform_version: "Velocity 3.4.0-SNAPSHOT (git-a1b2c3)", name: "Proxy", mode: "ENFORCE", rate: 26, vpnRate: 0.07, plugin: "0.5.0" },
   { platform: "BUKKIT", platform_version: "Paper 1.21.11-132", name: "Survival", mode: "OBSERVE", rate: 9, vpnRate: 0.2, plugin: "0.5.0" },
-  { platform: "BUKKIT", platform_version: "Paper 1.21.11-132", name: "Lobby", mode: "ENFORCE", rate: 6, vpnRate: 0.1, plugin: "0.5.2-SNAPSHOT", next: true },
+  { platform: "BUKKIT", platform_version: "Paper 1.21.11-132", name: "Lobby", mode: "ENFORCE", rate: 6, vpnRate: 0.1, plugin: "0.6.0", next: true },
 ];
 
-// Every fifth flagged login on the 0.5.2 server is a Tor exit, answered by its bundled list before any service.
-// The other flagged logins on the 0.5.2 server are answered by Connection Guard Intel's VPN list, locally.
+// Every fifth flagged login on the 0.6.0 server is a Tor exit, answered by its bundled list before any service.
+// The other flagged logins on the 0.6.0 server are answered by Connection Guard Intel's VPN list, locally.
 const intelHit = (e, at) => ({ ...e, sources: [{ id: "connectionguard-intel", scope: "VPN", status: "POSITIVE", reason: "NONE", duration_ms: 0, voting: true,
   from_cache: false, country: e.sources[0].country, asn: e.sources[0].asn, isp: e.sources[0].isp, risk: null, types: ["VPN", "HOSTING"],
   data_as_of: at - 5 * H }, e.sources[1]] });
@@ -129,7 +129,10 @@ for (const s of servers) {
         mode: s.mode, uptime_seconds: 172_800 - h * 3600,
         providers: s.next ? [
           { id: "proxycheck", scope: "VPN", attempts: 100, successes: 100, last_reason: h < 6 ? "BUDGET_EXHAUSTED" : null, paused: false, daily_used: h < 6 ? 100 : 64, daily_budget: 100 },
-          { id: "vpn-ipquery", scope: "VPN", attempts: 31, successes: 31, last_reason: null, paused: false, daily_used: null, daily_budget: null },
+          { id: "vpn-blackbox", scope: "VPN", attempts: 22, successes: 22, last_reason: null, paused: false, daily_used: null, daily_budget: null },
+          { id: "vpn-zowi", scope: "VPN", attempts: 6, successes: 6, last_reason: null, paused: false, daily_used: null, daily_budget: null },
+          { id: "vpn-ipquery", scope: "VPN", attempts: 3, successes: 3, last_reason: null, paused: false, daily_used: null, daily_budget: null },
+          { id: "ip-api", scope: "VPN", attempts: 0, successes: 0, last_reason: null, paused: false, daily_used: null, daily_budget: null },
         ] : [
           { id: "proxycheck", scope: "VPN", attempts: 412, successes: 405, last_reason: "TIMEOUT", paused: false, daily_used: s.platform === "VELOCITY" ? 846 : 212, daily_budget: 1000 },
           { id: "ip-api", scope: "GEO", attempts: 398, successes: 398, last_reason: null, paused: false, daily_used: null, daily_budget: null },
@@ -137,12 +140,12 @@ for (const s of servers) {
         warnings: s.mode === "OBSERVE" ? ["mode.observe"] : [], config_version: null, cache_type: "SQLITE", buffered_events: 0, dropped_events: 0,
         config: s.next ? snapshotNext(s.mode) : snapshot(s.mode), managed: [], config_result: null,
         // The proxy runs a plugin that can end time-limited rules; the backend an older one that cannot.
-        capabilities: ["rule_expiry"], // every 0.5.0 server reports it
+        capabilities: s.next ? ["rule_expiry", "sync_command"] : ["rule_expiry"], // 0.6.0 adds /cg cloud sync
       },
       counters: { window_start: end - H, window_end: end, ...c,
         latency_ms_p50: durations[Math.floor(durations.length / 2)] ?? null, latency_ms_p95: durations[Math.floor(durations.length * 0.95)] ?? null },
       events, command_results: [],
-      // The 0.5.2 server reports one of the plugin's own errors (class names and own frames only, no message).
+      // The 0.6.0 server reports one of the plugin's own errors (class names and own frames only, no message).
       ...(s.next && h <= 2 ? { errors: [{ fingerprint: "3f9c0a1b2d4e5f60", type: "java.lang.IllegalStateException", cause_type: "java.net.SocketTimeoutException",
         frames: [{ class: "com.github.gerolndnr.connectionguard.core.vpn.IpQueryVpnProvider", method: "parse", line: 88 },
           { class: "com.github.gerolndnr.connectionguard.core.ConnectionGuard", method: "lambda$lookupVpn$4", line: 301 }],

@@ -4,16 +4,19 @@ import { api, type Install } from "./api.ts";
 
 type Secret = { set: boolean; hint: string | null };
 const secret = (s: ConfigSnapshot | null | undefined, path: string) => (s?.[path] as Secret | undefined)?.set ?? false;
+/** Plugins from 0.6 report the switches of their keyless services. */
+const is06 = (s: ConfigSnapshot) => Object.hasOwn(s, "provider.vpn.blackbox.enabled");
 
 /**
  * A server counts as configured when it no longer runs the shipped defaults: enforcing, a key or
  * keyed provider, country rules, or any dashboard-managed value. The assistant never pushes itself
- * onto such a server; it offers the settings page instead.
+ * onto such a server; it offers the settings page instead. From 0.6 (recognised by its keyless service
+ * switches) new installs enforce by default, so enforcing alone no longer counts as a choice.
  */
 export function isConfigured(snapshot: ConfigSnapshot | null | undefined, managed: string[] = []): boolean {
   if (!snapshot) return false;
   return managed.length > 0
-    || snapshot["operation.mode"] === "ENFORCE"
+    || (snapshot["operation.mode"] === "ENFORCE" && !is06(snapshot))
     || secret(snapshot, "provider.vpn.proxycheck.api-key")
     || snapshot["provider.vpn.iphub.enabled"] === true
     || snapshot["provider.vpn.vpnapi.enabled"] === true
@@ -24,12 +27,13 @@ export function isConfigured(snapshot: ConfigSnapshot | null | undefined, manage
 
 /**
  * True when VPN detection cannot run out of free lookups quickly: a ProxyCheck key, a keyed provider, or a failover
- * chain with a keyless service without a daily cap (IPQuery) behind ProxyCheck.
+ * chain with a keyless service without a daily cap (IPQuery; from 0.6 also Blackbox, ip-check.net or zowi) behind ProxyCheck.
  */
 export function hasQuotaKey(snapshot: ConfigSnapshot | null | undefined): boolean {
   if (!snapshot) return false;
   if (snapshot["provider.vpn.proxycheck.enabled"] === false) return true;
   if (snapshot["provider.vpn-failover.enabled"] === true && snapshot["provider.vpn.ipquery.enabled"] === true) return true;
+  if (is06(snapshot) && ["blackbox", "ipcheck", "zowi"].some((k) => snapshot[`provider.vpn.${k}.enabled`] === true)) return true;
   return secret(snapshot, "provider.vpn.proxycheck.api-key")
     || (snapshot["provider.vpn.iphub.enabled"] === true && secret(snapshot, "provider.vpn.iphub.api-key"))
     || (snapshot["provider.vpn.vpnapi.enabled"] === true && secret(snapshot, "provider.vpn.vpnapi.api-key"))
