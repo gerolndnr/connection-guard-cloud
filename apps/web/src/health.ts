@@ -58,12 +58,17 @@ export function notes(installs: Install[], now = Date.now()): Note[] {
   for (const i of installs) {
     if (!i.online) out.push({ id: `offline:${i.id}`, fingerprint: String(i.last_seen_at), installId: i.id, tone: "action", title: `${serverName(i)} stopped reporting`, detail: `Last seen ${ago(i.last_seen_at, now)}. If the server is running, check that it can reach api.connectionguard.net.` });
   }
+  // Only plugins from 0.5.2 ask the next service when one fails or runs out; on 0.5.1 the failure policy alone decides.
+  const chained = installs.some((i) => i.status?.config?.["provider.vpn-failover.enabled"] === true);
+  const meanwhile = chained
+    ? "The next service in the failover chain steps in; if none can answer, your failure policy decides."
+    : "Until it answers again, your failure policy decides: with \"Let in\", players get in unchecked.";
   for (const p of providers(installs)) {
     const problem = providerProblem(p);
     const usage = p.daily_used !== null && p.daily_budget ? `${p.daily_used} of ${p.daily_budget} locally counted lookups today${p.servers > 1 ? ` across ${p.servers} servers` : ""}. ` : "";
-    const quotaDetail = `${usage}Counts are per-server estimates, not the provider account's remaining balance. Check /cg doctor and the provider account. Configured failover and failure policy determine how checks continue.`;
+    const quotaDetail = `${usage}Counts are per-server estimates, not the provider account's remaining balance. Check /cg doctor and the provider account. ${meanwhile}`;
     if (problem && problem !== "Quota exhausted") {
-      out.push({ id: `failing:${p.id}`, fingerprint: `${utcDay(now)}:${problem}`, tone: "action", title: `${sourceLabel(p.id)}: ${problem.toLowerCase()}`, detail: `${p.successes} of ${p.attempts} lookups answered${p.last_reason ? `, last error: ${p.last_reason.toLowerCase().replace(/_/g, " ")}` : ""}. Check /cg doctor. Configured failover and failure policy determine how checks continue.` });
+      out.push({ id: `failing:${p.id}`, fingerprint: `${utcDay(now)}:${problem}`, tone: "action", title: `${sourceLabel(p.id)}: ${problem.toLowerCase()}`, detail: `${p.successes} of ${p.attempts} lookups answered${p.last_reason ? `, last error: ${p.last_reason.toLowerCase().replace(/_/g, " ")}` : ""}. Check /cg doctor. ${meanwhile}` });
     }
     if (problem === "Quota exhausted" || (p.daily_budget && p.daily_used !== null && p.daily_used / p.daily_budget >= 0.8)) {
       const exhausted = problem === "Quota exhausted";
