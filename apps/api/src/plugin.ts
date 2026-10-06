@@ -58,10 +58,10 @@ async function authenticate(env: Env, header: string | undefined) {
   const [, installId, secret] = match;
   const row = await env.DB.prepare(
     "SELECT i.id, i.secret_hash, i.network_id, i.last_seq, i.last_seen_at, i.created_at, i.status_json, i.plugin_version, i.platform, " +
-    "i.platform_version, i.java_version, n.name AS network_name, COALESCE(n.watched_until, 0) AS watched_until FROM installs i LEFT JOIN networks n ON n.id = i.network_id WHERE i.id = ?",
+    "i.platform_version, i.java_version, n.name AS network_name, COALESCE(n.watched_until, 0) AS watched_until, i.hot_until FROM installs i LEFT JOIN networks n ON n.id = i.network_id WHERE i.id = ?",
   ).bind(installId).first<{
     id: string; secret_hash: string; network_id: string | null; last_seq: number; last_seen_at: number; created_at: number;
-    status_json: string | null; plugin_version: string; platform: string; platform_version: string; java_version: string; network_name: string | null; watched_until: number;
+    status_json: string | null; plugin_version: string; platform: string; platform_version: string; java_version: string; network_name: string | null; watched_until: number; hot_until: number;
   }>();
   if (!row) return null;
   if (!timingSafeEqualHex(row.secret_hash, await sha256Hex(secret!))) return null;
@@ -237,7 +237,7 @@ plugin.post("/v1/sync", async (c) => {
     capture(c, {
       event: "sync_partly_unreadable", distinct_id: install.id, person: false,
       properties: { plugin_version: parsed.data.plugin_version, dropped_events: tolerated.dropped_events,
-        dropped_reasons: tolerated.dropped_reasons, dropped_errors: tolerated.dropped_errors },
+        dropped_reasons: tolerated.dropped_reasons, dropped_errors: tolerated.dropped_errors, issues: tolerated.issues },
     });
   }
   const req = parsed.data;
@@ -348,7 +348,8 @@ plugin.post("/v1/sync", async (c) => {
   // The governor's floor already assumes every active install syncs at that interval, so the free-plan budget holds.
   const busy = claimed || req.counters.checks > 0 || req.events.length > 0 || req.status.buffered_events > 0;
   const body: SyncResponse = {
-    next_sync_in: nextSyncIn(gov, { busy, live: false, fast: onboarding || configPending || install.watched_until > now }),
+    next_sync_in: nextSyncIn(gov, { busy, live: false, fast: onboarding || configPending || install.watched_until > now,
+      hot: claimed && install.hot_until > now }),
     live: false,
     claimed,
     network_name: install.network_name,

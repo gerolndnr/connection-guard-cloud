@@ -19,6 +19,7 @@ describe("free-tier governor", () => {
     expect(nextSyncIn(state, { busy: true, live: false })).toBe(60);
     expect(nextSyncIn(state, { busy: false, live: false })).toBe(300);
     expect(nextSyncIn(state, { busy: false, live: true })).toBe(5);
+    expect(nextSyncIn(state, { busy: true, live: false, fast: true, hot: true })).toBe(5);
   });
 
   it("recomputes from active installs and stores the result in KV", async () => {

@@ -45,6 +45,9 @@ export const CAPABILITY = {
 export const Capability = z.string().regex(/^[a-z][a-z0-9_.-]{0,31}$/);
 const CountryCode = z.string().regex(/^[A-Z]{2}$/);
 const Ip = z.string().min(2).max(45).regex(/^[0-9a-fA-F:.]+$/);
+// Any Java UUID string, not only RFC 4122 ones: Floodgate (Bedrock) players have version-0 UUIDs such as
+// 00000000-0000-0000-0009-01f64f65c7c3, which z.uuid() rejects.
+const JavaUuid = z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/);
 
 // ---- install ---------------------------------------------------------------
 
@@ -148,7 +151,7 @@ export const EventRule = z.object({
 
 // One login decision. Only sent once the install is linked to a network.
 export const DecisionEvent = z.object({
-  id: z.string().uuid(),
+  id: JavaUuid,
   at: z.number().int(),
   platform: Platform,
   phase: Phase,
@@ -156,7 +159,7 @@ export const DecisionEvent = z.object({
   outcome: Outcome,
   reason: DecisionReason,
   identity_trust: IdentityTrust,
-  uuid: z.string().uuid().nullable(),
+  uuid: JavaUuid.nullable(),
   ip: Ip,
   vpn: Check,
   geo: Check,
@@ -223,12 +226,18 @@ export type SyncRequest = z.infer<typeof SyncRequest>;
  * unknown reason keys leave the counters; both are counted so the dashboard can say so. Everything else stays
  * strict.
  */
-export function tolerateSync(json: unknown): { json: unknown; dropped_events: number; dropped_reasons: number; dropped_errors: number } {
-  if (typeof json !== "object" || json === null || Array.isArray(json)) return { json, dropped_events: 0, dropped_reasons: 0, dropped_errors: 0 };
+/** Where a dropped event failed, as "sources[].types[]:invalid_value": field path and zod code, never a value. */
+function issueKeys(error: z.ZodError): string[] {
+  return error.issues.map((i) => `${i.path.map((p) => (typeof p === "number" ? "[]" : String(p))).join(".").replace(/\.\[\]/g, "[]")}:${i.code}`);
+}
+
+export function tolerateSync(json: unknown): { json: unknown; dropped_events: number; dropped_reasons: number; dropped_errors: number; issues: string[] } {
+  if (typeof json !== "object" || json === null || Array.isArray(json)) return { json, dropped_events: 0, dropped_reasons: 0, dropped_errors: 0, issues: [] };
   const body = { ...(json as Record<string, unknown>) };
   let droppedEvents = 0;
   let droppedReasons = 0;
   let droppedErrors = 0;
+  const issues = new Set<string>();
   // Error reports are optional diagnostics: a frame that is not the plugin's own is removed, a report that is still
   // unreadable is dropped on its own, and more than the limit are cut. They never cost the sync.
   if (Array.isArray(body.errors)) {
@@ -244,7 +253,11 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
     delete body.errors;
   }
   if (Array.isArray(body.events) && body.events.length <= MAX_EVENTS_PER_SYNC) {
-    const kept = body.events.filter((e) => DecisionEvent.safeParse(e).success);
+    const kept = body.events.filter((e) => {
+      const r = DecisionEvent.safeParse(e);
+      if (!r.success) for (const key of issueKeys(r.error)) issues.add(key);
+      return r.success;
+    });
     droppedEvents = body.events.length - kept.length;
     body.events = kept;
   }
@@ -272,7 +285,8 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
       body.counters = { ...counters, reasons: Object.fromEntries(known) };
     }
   }
-  return { json: body, dropped_events: droppedEvents, dropped_reasons: droppedReasons, dropped_errors: droppedErrors };
+  return { json: body, dropped_events: droppedEvents, dropped_reasons: droppedReasons, dropped_errors: droppedErrors,
+    issues: [...issues].sort().slice(0, 10) };
 }
 
 // Commands the dashboard queues for one install. The plugin only executes

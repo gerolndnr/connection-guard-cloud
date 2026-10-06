@@ -93,6 +93,22 @@ describe("protocol v1", () => {
     expect(tolerateSync({ ...syncRequest, events: [bad] }).dropped_events).toBe(1);
   });
 
+  it("accepts Floodgate (Bedrock) player UUIDs, which are not RFC 4122", () => {
+    const event = { ...syncRequest.events[0]!, identity_trust: "FLOODGATE" as const, uuid: "00000000-0000-0000-0009-01f64f65c7c3" };
+    expect(SyncRequest.safeParse({ ...syncRequest, events: [event] }).success).toBe(true);
+    expect(tolerateSync({ ...syncRequest, events: [event] }).dropped_events).toBe(0);
+    expect(SyncRequest.safeParse({ ...syncRequest, events: [{ ...event, uuid: "not-a-uuid" }] }).success).toBe(false);
+  });
+
+  it("names where a dropped event failed, without its values", () => {
+    const src = syncRequest.events[0]!.sources[0]!;
+    const bad = { ...syncRequest.events[0]!, ip: "fe80::1%eth0", sources: [{ ...src, types: ["SOMETHING"] }] };
+    const t = tolerateSync({ ...syncRequest, events: [bad] });
+    expect(t.dropped_events).toBe(1);
+    expect(t.issues).toEqual(["ip:invalid_format", "sources[].types[]:invalid_value"]);
+    expect(JSON.stringify(t.issues)).not.toContain("fe80");
+  });
+
   it("still rejects unknown top-level and status fields after tolerating", () => {
     expect(SyncRequest.safeParse(tolerateSync({ ...syncRequest, player_names: ["x"] }).json).success).toBe(false);
     expect(SyncRequest.safeParse(tolerateSync({ ...syncRequest, status: { ...syncRequest.status, extra: 1 } }).json).success).toBe(false);

@@ -48,6 +48,15 @@ describe("dashboard-managed settings", () => {
     expect(next.config!.values).toEqual({ "operation.mode": "OBSERVE" });
   });
 
+  it("syncs every 5 s while an editor has the server's Settings page open", async () => {
+    const { ins, cookie } = await linked();
+    expect((await syncOk(ins, { seq: 1 })).next_sync_in).toBe(15);
+    await api(cookie, `/installs/${ins.install_id}/config`);
+    expect((await syncOk(ins, { seq: 2 })).next_sync_in).toBe(5);
+    await env.DB.prepare("UPDATE installs SET hot_until = ? WHERE id = ?").bind(Date.now() - 1, ins.install_id).run();
+    expect((await syncOk(ins, { seq: 3 })).next_sync_in).toBe(15);
+  });
+
   it("records a rejected config and stops resending it", async () => {
     const { ins, cookie } = await linked();
     const { versions } = await (await api(cookie, `/installs/${ins.install_id}/config`, { method: "PUT", json: { values: { "required-positive-flags": 3 } } })).json<{ versions: Record<string, number> }>();

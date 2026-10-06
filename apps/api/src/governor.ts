@@ -17,6 +17,8 @@ export const MAX_INTERVAL = 3600;
 export const LIVE_INTERVAL = 5;
 /** While a config change is pending or the settings page is open (bounded to minutes). */
 export const FAST_INTERVAL = 15;
+/** How long a Settings page poll keeps its server at LIVE_INTERVAL; the page polls every 30 s while visible. */
+export const HOT_WINDOW = 90_000;
 /** How long a network stays in fast mode after someone who can change settings opens it in the dashboard. */
 export const WATCH_WINDOW = 10 * 60_000;
 const KV_KEY = "governor:v1";
@@ -41,8 +43,8 @@ export async function governorState(env: Env, now = Date.now()): Promise<Governo
   return state;
 }
 
-export function nextSyncIn(state: GovernorState, opts: { busy: boolean; live: boolean; fast?: boolean }): number {
-  if (opts.live) return LIVE_INTERVAL;
+export function nextSyncIn(state: GovernorState, opts: { busy: boolean; live: boolean; fast?: boolean; hot?: boolean }): number {
+  if (opts.live || opts.hot) return LIVE_INTERVAL;
   if (opts.fast) return FAST_INTERVAL;
   if (opts.busy) return state.floor;
   return Math.min(MAX_INTERVAL, Math.max(IDLE_INTERVAL, state.floor * 3));

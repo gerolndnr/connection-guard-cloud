@@ -4,7 +4,7 @@ import { capture } from "./analytics.ts";
 import { z } from "zod";
 import { CONFIG_FIELDS, ConfigValues, SECRET_PATHS, fieldSchema, isConfigPath, supportsPath, type ConfigPath, type Status } from "@cg/protocol";
 import type { AppEnv, Env } from "./env.ts";
-import { WATCH_WINDOW } from "./governor.ts";
+import { HOT_WINDOW, WATCH_WINDOW } from "./governor.ts";
 import { openSecrets, sealSecrets } from "./secrets.ts";
 
 type Role = "owner" | "admin" | "viewer";
@@ -64,6 +64,11 @@ export function registerSettings(app: Hono<AppEnv>) {
     // Someone is looking at settings: let this network's servers sync faster for a while (one write per minute at most).
     await env.DB.prepare("UPDATE networks SET watched_until = ? WHERE id = ? AND watched_until < ?")
       .bind(now + WATCH_WINDOW, access.network_id, now + WATCH_WINDOW - 60_000).run();
+    // Someone who can change this server's settings has the page open: it syncs every 5 s while the page polls.
+    if (access.role !== "viewer") {
+      await env.DB.prepare("UPDATE installs SET hot_until = ? WHERE id = ? AND hot_until < ?")
+        .bind(now + HOT_WINDOW, access.id, now + HOT_WINDOW - 20_000).run();
+    }
     const status = access.status_json ? (JSON.parse(access.status_json) as Status) : null;
     const row = await loadRow(env, access.id);
     const appliedVersion = Math.max(row?.applied_version ?? 0, status?.config_version ?? 0);
