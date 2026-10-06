@@ -9,6 +9,26 @@ describe("protocol v1", () => {
     expect(SyncResponse.parse(syncResponse)).toEqual(syncResponse);
   });
 
+  it("accepts bounded anonymous VPN coverage while older plugins may omit it", () => {
+    const coverage = { total: 52, since_summary: 52, window_seconds: 300, reasons: { BUDGET_EXHAUSTED: 52 } };
+    const body = { ...syncRequest, status: { ...syncRequest.status, vpn_unchecked_allowed: coverage } };
+    expect(SyncRequest.parse(body).status.vpn_unchecked_allowed).toEqual(coverage);
+    expect(SyncRequest.safeParse(syncRequest).success).toBe(true);
+    for (const invalid of [
+      { ...coverage, total: -1 }, { ...coverage, total: 1.5 }, { ...coverage, total: 1_000_000_001 },
+      { ...coverage, since_summary: 53 }, { ...coverage, reasons: { "192.0.2.1": 1 } },
+      { ...coverage, ip: "192.0.2.1" }, { ...coverage, reasons: { BUDGET_EXHAUSTED: "52" } },
+    ]) expect(SyncRequest.safeParse({ ...body, status: { ...body.status, vpn_unchecked_allowed: invalid } }).success).toBe(false);
+  });
+
+  it("keeps the sync when the unchecked-admission block is newer or unreadable", () => {
+    const coverage = { total: 3, since_summary: 1, window_seconds: 300, reasons: { BUDGET_EXHAUSTED: 2, SOMETHING_NEW: 1 } };
+    const parsed = SyncRequest.parse(tolerateSync({ ...syncRequest, status: { ...syncRequest.status, vpn_unchecked_allowed: coverage } }).json);
+    expect(parsed.status.vpn_unchecked_allowed).toEqual({ ...coverage, reasons: { BUDGET_EXHAUSTED: 2 } });
+    const broken = SyncRequest.parse(tolerateSync({ ...syncRequest, status: { ...syncRequest.status, vpn_unchecked_allowed: { total: "x" } } }).json);
+    expect(broken.status).not.toHaveProperty("vpn_unchecked_allowed");
+  });
+
   it("rejects unknown fields so the plugin cannot leak extra data", () => {
     expect(SyncRequest.safeParse({ ...syncRequest, player_names: ["x"] }).success).toBe(false);
     expect(SyncRequest.safeParse({ ...syncRequest, events: [{ ...syncRequest.events[0], name: "Notch" }] }).success).toBe(false);

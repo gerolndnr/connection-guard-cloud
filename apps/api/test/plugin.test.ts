@@ -137,3 +137,19 @@ describe("onboarding pace", () => {
     expect((await syncOk(ins, { seq: 3, ...quiet })).next_sync_in).toBe(15);
   });
 });
+
+
+describe("anonymous VPN coverage status", () => {
+  it("stores the reported lifetime counter without recounting it on retried syncs", async () => {
+    const ins = await install();
+    const coverage = { total: 52, since_summary: 52, window_seconds: 300, reasons: { BUDGET_EXHAUSTED: 52 } };
+    const body = { seq: 500, status: { ...syncRequest.status, vpn_unchecked_allowed: coverage }, events: [] };
+    await syncOk(ins, body); await syncOk(ins, body);
+    const row = await env.DB.prepare("SELECT status_json FROM installs WHERE id = ?").bind(ins.install_id).first<{ status_json: string }>();
+    expect(JSON.parse(row!.status_json).vpn_unchecked_allowed).toEqual(coverage);
+    const next = { ...coverage, total: 53, since_summary: 1, reasons: { BUDGET_EXHAUSTED: 52, CIRCUIT_OPEN: 1 } };
+    await syncOk(ins, { ...body, seq: 501, status: { ...body.status, vpn_unchecked_allowed: next } });
+    const after = await env.DB.prepare("SELECT status_json FROM installs WHERE id = ?").bind(ins.install_id).first<{ status_json: string }>();
+    expect(JSON.parse(after!.status_json).vpn_unchecked_allowed).toEqual(next);
+  });
+});

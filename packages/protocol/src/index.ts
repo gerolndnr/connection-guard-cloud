@@ -84,6 +84,16 @@ export const ProviderStatus = z.object({
   daily_budget: count.nullable(),
 }).strict();
 
+// Cumulative plugin-lifetime counts, never a delta to add again on each heartbeat.
+// Deliberate exemptions and CG-denied connections are excluded. No player data.
+export const VpnUncheckedAllowed = z.object({
+  total: count,
+  since_summary: count,
+  window_seconds: count,
+  reasons: z.partialRecord(DetectionReason, count),
+}).strict().refine((v) => v.since_summary <= v.total, "window exceeds lifetime total");
+export type VpnUncheckedAllowed = z.infer<typeof VpnUncheckedAllowed>;
+
 export const Status = z.object({
   mode: Mode,
   uptime_seconds: count,
@@ -93,6 +103,7 @@ export const Status = z.object({
   cache_type: z.enum(["NONE", "SQLITE", "REDIS"]),
   buffered_events: count,
   dropped_events: count,
+  vpn_unchecked_allowed: VpnUncheckedAllowed.optional(),
   // Only once linked: effective values of the dashboard-configurable settings, and which come from the dashboard.
   config: ConfigSnapshot.nullable(),
   managed: z.array(z.string()).max(64),
@@ -268,6 +279,16 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
     if (typeof s.config === "object" && s.config !== null && !Array.isArray(s.config)) {
       s.config = Object.fromEntries(Object.entries(s.config).filter(([path]) => isConfigPath(path)));
     }
+    // Unchecked-admission counts are optional diagnostics: a newer reason is left out, and a block this version
+    // still cannot read is dropped on its own rather than costing the sync.
+    if (typeof s.vpn_unchecked_allowed === "object" && s.vpn_unchecked_allowed !== null && !Array.isArray(s.vpn_unchecked_allowed)) {
+      const v = { ...(s.vpn_unchecked_allowed as Record<string, unknown>) };
+      if (typeof v.reasons === "object" && v.reasons !== null && !Array.isArray(v.reasons)) {
+        v.reasons = Object.fromEntries(Object.entries(v.reasons).filter(([key]) => DetectionReason.safeParse(key).success));
+      }
+      s.vpn_unchecked_allowed = v;
+    }
+    if ("vpn_unchecked_allowed" in s && !VpnUncheckedAllowed.safeParse(s.vpn_unchecked_allowed).success) delete s.vpn_unchecked_allowed;
     // A new failure reason on a provider reads as "no reason given" rather than losing the status.
     if (Array.isArray(s.providers)) {
       s.providers = s.providers.map((p) => (typeof p === "object" && p !== null && "last_reason" in p
