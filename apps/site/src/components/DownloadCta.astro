@@ -8,6 +8,8 @@ import { DOWNLOAD_FLOW } from "../data/release";
 interface Props { location: string; class?: string }
 const { location, class: cls = "" } = Astro.props;
 const file = DOWNLOAD_FLOW === "page" ? null : (stats.latest as { file?: { name: string; size: number; url: string } | null } | null)?.file ?? null;
+// Where the direct download comes from: Modrinth's CDN, or a GitHub release that is ahead of the stores.
+const fileSource = (stats.latest as { source?: string } | null)?.source === "github" ? "github_file" : "modrinth_file";
 const version = stats.latest?.version;
 const mb = file ? (file.size / 1_000_000).toFixed(1) : null;
 const icon = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12m0 0 5-5m-5 5-5-5M5 20h14"/></svg>`;
@@ -18,7 +20,7 @@ const icon = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4" fill="n
       data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location={location}>Download free<Fragment set:html={icon} /></a>
     {file && (
       <a href={file.url} download={file.name} class="dl-direct btn btn-primary btn-lg no-underline" data-dl-direct
-        data-ph-event="download_clicked" data-ph-destination="modrinth_file" data-ph-location={location}>Download v{version}<Fragment set:html={icon} /></a>
+        data-ph-event="download_clicked" data-ph-destination={fileSource} data-ph-location={location}>Download v{version}<Fragment set:html={icon} /></a>
     )}
     <slot />
   </div>

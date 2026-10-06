@@ -7,18 +7,18 @@
   "runs": {
     "performance": "37529160056",
     "detection": "37529164268",
-    "failure": "37526896017"
+    "failure": "37540309049"
   },
   "products": {
     "connection-guard": {
       "name": "Connection Guard",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "us": true,
       "previous": true
     },
     "connection-guard-candidate": {
       "name": "Connection Guard",
-      "version": "0.6 build",
+      "version": "0.6.0",
       "us": true
     },
     "foxgate": {
@@ -453,85 +453,85 @@
       "control": {
         "residential": {
           "blocked": false,
-          "ms": 492,
+          "ms": 500,
           "lookups": 1
         },
         "tor": {
           "blocked": true,
-          "ms": 27,
+          "ms": 4,
           "lookups": 0
         },
         "vpn": {
           "blocked": true,
-          "ms": 319,
+          "ms": 150,
           "lookups": 0
         }
       },
       "http_429": {
         "residential": {
           "blocked": false,
-          "ms": 1097,
-          "lookups": 6
+          "ms": 1234,
+          "lookups": 5
         },
         "tor": {
           "blocked": true,
-          "ms": 13,
+          "ms": 3,
           "lookups": 0
         },
         "vpn": {
           "blocked": true,
-          "ms": 381,
+          "ms": 148,
           "lookups": 0
         }
       },
       "incomplete": {
         "residential": {
           "blocked": false,
-          "ms": 999,
-          "lookups": 6
+          "ms": 1403,
+          "lookups": 5
         },
         "tor": {
           "blocked": true,
-          "ms": 14,
+          "ms": 4,
           "lookups": 0
         },
         "vpn": {
           "blocked": true,
-          "ms": 322,
+          "ms": 161,
           "lookups": 0
         }
       },
       "malformed": {
         "residential": {
           "blocked": false,
-          "ms": 1286,
-          "lookups": 6
+          "ms": 801,
+          "lookups": 5
         },
         "tor": {
           "blocked": true,
-          "ms": 9,
+          "ms": 4,
           "lookups": 0
         },
         "vpn": {
           "blocked": true,
-          "ms": 401,
+          "ms": 158,
           "lookups": 0
         }
       },
       "timeout": {
         "residential": {
           "blocked": false,
-          "ms": 5007,
+          "ms": 5005,
           "lookups": 4
         },
         "tor": {
           "blocked": true,
-          "ms": 11,
+          "ms": 4,
           "lookups": 0
         },
         "vpn": {
           "blocked": true,
-          "ms": 339,
+          "ms": 156,
           "lookups": 0
         }
       }
@@ -540,88 +540,354 @@
       "control": {
         "residential": {
           "blocked": false,
-          "ms": 247,
+          "ms": 428,
           "lookups": 2
         },
         "tor": {
           "blocked": true,
-          "ms": 139,
+          "ms": 481,
           "lookups": 2
         },
         "vpn": {
           "blocked": true,
-          "ms": 1303,
+          "ms": 842,
           "lookups": 2
         }
       },
       "http_429": {
         "residential": {
           "blocked": false,
-          "ms": 7,
+          "ms": 4,
           "lookups": 0
         },
         "tor": {
           "blocked": false,
-          "ms": 15,
+          "ms": 5,
           "lookups": 0
         },
         "vpn": {
           "blocked": false,
-          "ms": 693,
+          "ms": 337,
           "lookups": 2
         }
       },
       "incomplete": {
         "residential": {
           "blocked": false,
-          "ms": 110,
+          "ms": 92,
           "lookups": 2
         },
         "tor": {
           "blocked": false,
-          "ms": 109,
+          "ms": 96,
           "lookups": 2
         },
         "vpn": {
           "blocked": false,
-          "ms": 803,
+          "ms": 376,
           "lookups": 2
         }
       },
       "malformed": {
         "residential": {
           "blocked": false,
-          "ms": 11,
+          "ms": 7,
           "lookups": 2
         },
         "tor": {
           "blocked": false,
-          "ms": 16,
+          "ms": 49,
           "lookups": 2
         },
         "vpn": {
           "blocked": false,
-          "ms": 676,
+          "ms": 342,
           "lookups": 2
         }
       },
       "timeout": {
         "residential": {
           "blocked": false,
-          "ms": 2511,
+          "ms": 2505,
           "lookups": 2
         },
         "tor": {
           "blocked": false,
-          "ms": 2520,
+          "ms": 2506,
           "lookups": 2
         },
         "vpn": {
           "blocked": false,
-          "ms": 2792,
+          "ms": 2630,
           "lookups": 2
         }
       }
+    },
+    "foxgate": {
+      "control": {
+        "residential": {
+          "blocked": false,
+          "ms": 11203,
+          "lookups": 12
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 548,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 1463,
+          "lookups": 12
+        }
+      },
+      "http_429": {
+        "residential": {
+          "blocked": false,
+          "ms": 9933,
+          "lookups": 11
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 506,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 1100,
+          "lookups": 11
+        }
+      },
+      "incomplete": {
+        "residential": {
+          "blocked": false,
+          "ms": 11137,
+          "lookups": 11
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 437,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 1253,
+          "lookups": 11
+        }
+      },
+      "malformed": {
+        "residential": {
+          "blocked": false,
+          "ms": 6995,
+          "lookups": 11
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 558,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 1268,
+          "lookups": 11
+        }
+      },
+      "timeout": {
+        "residential": {
+          "blocked": false,
+          "ms": 11973,
+          "lookups": 11
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 449,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 2193,
+          "lookups": 11
+        }
+      }
+    },
+    "proxyshield": {
+      "control": {
+        "residential": {
+          "blocked": false,
+          "ms": 1372,
+          "lookups": 8
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 3,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 99,
+          "lookups": 0
+        }
+      },
+      "http_429": {
+        "residential": {
+          "blocked": false,
+          "ms": 894,
+          "lookups": 7
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 5,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 119,
+          "lookups": 0
+        }
+      },
+      "incomplete": {
+        "residential": {
+          "blocked": false,
+          "ms": 1090,
+          "lookups": 7
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 3,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 106,
+          "lookups": 0
+        }
+      },
+      "malformed": {
+        "residential": {
+          "blocked": false,
+          "ms": 799,
+          "lookups": 7
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 3,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 104,
+          "lookups": 0
+        }
+      },
+      "timeout": {
+        "residential": {
+          "blocked": false,
+          "ms": 6710,
+          "lookups": 7
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 3,
+          "lookups": 0
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 102,
+          "lookups": 0
+        }
+      }
+    },
+    "vpnguard": {
+      "control": {
+        "residential": {
+          "blocked": false,
+          "ms": 1040,
+          "lookups": 1
+        },
+        "tor": {
+          "blocked": true,
+          "ms": 1014,
+          "lookups": 1
+        },
+        "vpn": {
+          "blocked": true,
+          "ms": 154,
+          "lookups": 1
+        }
+      },
+      "http_429": {
+        "residential": {
+          "blocked": false,
+          "ms": 4,
+          "lookups": 1
+        },
+        "tor": {
+          "blocked": false,
+          "ms": 7,
+          "lookups": 1
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 125,
+          "lookups": 1
+        }
+      },
+      "incomplete": {
+        "residential": {
+          "blocked": false,
+          "ms": 4,
+          "lookups": 1
+        },
+        "tor": {
+          "blocked": false,
+          "ms": 5,
+          "lookups": 1
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 139,
+          "lookups": 1
+        }
+      },
+      "malformed": {
+        "residential": {
+          "blocked": false,
+          "ms": 4,
+          "lookups": 1
+        },
+        "tor": {
+          "blocked": false,
+          "ms": 6,
+          "lookups": 1
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 118,
+          "lookups": 1
+        }
+      },
+      "timeout": {
+        "residential": {
+          "blocked": false,
+          "ms": 5008,
+          "lookups": 1
+        },
+        "tor": {
+          "blocked": false,
+          "ms": 5010,
+          "lookups": 1
+        },
+        "vpn": {
+          "blocked": false,
+          "ms": 5126,
+          "lookups": 1
+        }
+      }
     }
+  },
+  "notes": {
+    "performance": "Connection Guard 0.6 build (42e1594) in a quick run on 6 Oct 2026: one round",
+    "detection": "Connection Guard 0.6 build (42e1594) in a quick run on 6 Oct 2026: 140 of the 692 addresses",
+    "failure": "Connection Guard 0.6.0 as released, 7 Oct 2026"
   }
 }

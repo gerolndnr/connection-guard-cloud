@@ -14,7 +14,8 @@ const { p } = Astro.props as { p: Platform };
 const proxy = p.slug !== "paper";
 const where = proxy ? "the proxy's" : "the server's";
 const features = [
-  ["VPN and proxy checks", "ProxyCheck, IP-API, IPHub, VPNAPI, IPQualityScore or your own REST API. With several services, choose how many must agree."],
+  ["Own VPN lists", "Connection Guard Intel: signed lists of VPN servers, Tor exits and privacy relays, checked on the server. No quota, and it works when every API is down."],
+  ["Detection services, one after another", "ProxyCheck, Blackbox, zowi, IPQuery and IP-API without a key; IPHub, VPNAPI, IPQualityScore or your own REST API with one. If one fails, the next answers."],
   ["Country rules", "A blocklist or an allowlist of countries, with its own action and message."],
   ["Your response", "Refuse the connection, alert staff in chat, post to a Discord webhook or run a console command."],
   ["Caching", "With caching enabled, unexpired SQLite or Redis results can be reused for the same address, reducing repeat lookups."],
@@ -24,8 +25,8 @@ const features = [
 const steps: [string, string][] = [
   ["Download the JAR", "The same file runs on every platform: Modrinth, Hangar, SpigotMC or GitHub."],
   [`Put it into ${where} plugins folder`, proxy ? "Only on the proxy. Remove older Connection Guard JARs first." : "Remove older Connection Guard JARs first."],
-  [`Start the ${proxy ? "proxy" : "server"} and review config.yml`, "New 0.5.0 installs start in OBSERVE with an empty country blocklist. Existing configs without operation.mode retain ENFORCE."],
-  ["Watch before you block", "Keep operation.mode at OBSERVE while you review decisions. Choose country rules and actions, then switch to ENFORCE when ready."],
+  [`Start the ${proxy ? "proxy" : "server"}`, "New 0.6 installs protect right away with Connection Guard Intel and the keyless services. Upgrading keeps your mode, services and keys."],
+  ["Set it up", "Open the console link for the dashboard's setup assistant, or edit config.yml. To watch before blocking, set operation.mode to OBSERVE."],
   ["Check an address", "Run the command below to see what each service reports for an address."],
 ];
 const others = PLATFORMS.filter((o) => o.slug !== p.slug);

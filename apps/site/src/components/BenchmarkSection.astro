@@ -48,7 +48,7 @@ const vpnN = vpn.reduce((s, c) => s + c.n, 0);
         <a href="/benchmark#reliability" class="card group block p-6 no-underline transition-colors hover:border-line-strong" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="home_reliability">
           <p class="text-[0.8125rem] font-medium text-fg-2">Every detection service down</p>
           <p class="num mt-2 text-[2rem] font-semibold leading-none tracking-[-0.03em] text-fg">{held} / {faults.length}</p>
-          <p class="mt-2 text-[0.9375rem] leading-snug text-fg-2">failure cases with VPNs and Tor still blocked. Connection Guard checks its own signed lists first.</p>
+          <p class="mt-2 text-[0.9375rem] leading-snug text-fg-2">failure cases with VPNs and Tor still blocked. Connection Guard checks its own signed lists first. {others.filter((p) => failure[p]).map((p) => `${label(p)} ${faults.filter((f) => failure[p]?.[f]?.vpn?.blocked && failure[p]?.[f]?.tor?.blocked).length}`).join(", ")}.</p>
         </a>
         <a href="/benchmark#detection" class="card group block p-6 no-underline transition-colors hover:border-line-strong" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="home_detection">
           <p class="text-[0.8125rem] font-medium text-fg-2">Caught, and nobody else</p>

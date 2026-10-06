@@ -32,12 +32,25 @@ for (const [id, s] of Object.entries(sources)) {
     if (last) result.sources[id] = { ...last, stale: true };
   }
 }
+// The newest release wins, wherever it is published first (GitHub releases can precede the plugin stores).
+const newer = (a, b) => { const p = (x) => (x.match(/\d+/g) ?? []).slice(0, 3).map(Number); const x = p(a), y = p(b);
+  for (let i = 0; i < 3; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) > (y[i] ?? 0); return false; };
+let modrinth = null, github = null;
 try {
   const [v] = await get("https://api.modrinth.com/v2/project/connectionguard/version");
   // The primary file, for the direct download button: Modrinth's CDN URL, so the download still counts there.
   const f = v.files.find((x) => x.primary) ?? v.files[0];
-  result.latest = { version: v.version_number, published: v.date_published, loaders: v.loaders,
+  modrinth = { version: v.version_number, published: v.date_published, loaders: v.loaders, source: "modrinth",
     file: f ? { name: f.filename, size: f.size, url: f.url } : null };
-} catch (e) { console.warn("stats: latest version unavailable; keeping last known"); }
+} catch (e) { console.warn("stats: Modrinth version unavailable"); }
+try {
+  const r = await get("https://api.github.com/repos/gerolndnr/connection-guard/releases/latest");
+  const f = r.assets.find((a) => /^connection-guard-[\d.]+-all\.jar$/.test(a.name));
+  github = { version: r.tag_name.replace(/^v/, ""), published: r.published_at, loaders: modrinth?.loaders ?? [], source: "github",
+    url: r.html_url, file: f ? { name: f.name, size: f.size, url: f.browser_download_url } : null };
+} catch (e) { console.warn("stats: GitHub release unavailable"); }
+const best = github?.file && (!modrinth || newer(github.version, modrinth.version)) ? github : modrinth;
+if (best) result.latest = best;
+else console.warn("stats: latest version unavailable; keeping last known");
 writeFileSync(out, JSON.stringify(result, null, 2) + "\n");
 console.log("stats:", Object.entries(result.sources).map(([k, v]) => `${k}=${v.downloads}${v.stale ? " (stale)" : ""}`).join(" "), "latest", result.latest?.version);

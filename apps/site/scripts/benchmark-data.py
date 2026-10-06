@@ -103,11 +103,17 @@ def main():
     ap.add_argument('--failure', action='append', default=[])
     ap.add_argument('--run', action='append', default=[], help='name=github-run-id')
     ap.add_argument('--rounds', type=int, default=1)
+    ap.add_argument('--note', action='append', default=[], help='section=text, e.g. "failure=Connection Guard 0.6.0, 7 Oct 2026"')
     args = ap.parse_args()
     perf = performance(args.performance)
     det = detection(args.detection)
     manifest = json.load(open(os.path.join(args.performance, 'manifest.json')))
-    ids = [p for p in manifest['products']]
+    ids = list(manifest['products'])
+    # Products of the failure runs too (they may cover more plugins than the speed run).
+    for folder in args.failure:
+        for p in json.load(open(os.path.join(folder, 'manifest.json')))['products']:
+            if p not in ids:
+                ids.append(p)
     data = dict(
         status=args.status,
         date=manifest['environment']['started'][:10],
@@ -119,6 +125,8 @@ def main():
         performance={p: v for p, v in perf.items() if p in ids or p == 'none'},
         detection=det,
         failure=failure(args.failure),
+        # What each section was measured with, when the sections come from different runs.
+        notes=dict(n.split('=', 1) for n in args.note),
     )
     with open(OUT, 'w') as handle:
         json.dump(data, handle, indent=2)

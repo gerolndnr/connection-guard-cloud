@@ -14,7 +14,7 @@ import { DASHBOARD_RELEASED, DASHBOARD_URL } from "../data/release";
 const live = DASHBOARD_RELEASED;
 const faq = [
   { q: "What is Connection Guard?", a: "Connection Guard is a free, open-source anti-VPN plugin for Minecraft servers. It checks players' IP addresses at login for VPNs, proxies and country rules, and then refuses them, alerts staff or posts to Discord, as you choose." },
-  { q: "Is Connection Guard free?", a: "Yes. It's MIT licensed and needs no Connection Guard account. The detection services it uses have their own free plans and limits; the default VPN service, ProxyCheck, works without a key." },
+  { q: "Is Connection Guard free?", a: "Yes. It's MIT licensed and needs no Connection Guard account. Its own VPN lists are free and need no key, and the default detection services (ProxyCheck, Blackbox, zowi, IPQuery and IP-API) work without one; each service has its own free plan and limits." },
   { q: "Which server software does it support?", a: "Paper, Spigot and compatible servers (Java 8 or newer), BungeeCord and Waterfall (Java 8 or newer) and Velocity (Java 17 or newer), all from one JAR. On a network, install it on the proxy." },
   { q: "Isn't prevent-proxy-connections in server.properties enough?", a: "No. It only kicks players whose network differs from the one that signed in at Mojang. A player who runs the whole game through a VPN passes it. An anti-VPN plugin checks the address itself." },
   { q: "Will it slow down logins?", a: "A new address is checked once during login. Answers are cached (24 hours for VPN results and 72 hours for countries by default), so repeat logins from the same address need no lookup." },
@@ -39,9 +39,11 @@ const steps = [
   <div class="border-b border-line bg-surface">
     <p class="container-site flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-2.5 text-center text-[0.8125rem] text-fg-2">
       {live ? <>
-        <span class="chip chip-soon h-5 text-xs">New in 0.5</span>
-        See who was refused and why, and let the right players in with one click.
-        <a href={DASHBOARD_URL} class="font-medium text-fg no-underline hover:underline" data-ph-event="cta_clicked" data-ph-cta="dashboard" data-ph-location="announcement">Try the free dashboard →</a>
+        <span class="chip chip-soon h-5 text-xs">New in 0.6</span>
+        Our own VPN lists, checked on your server, and services that step in for each other.
+        {showBenchmark
+          ? <a href="/benchmark" class="font-medium text-fg no-underline hover:underline" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="announcement">See the benchmark →</a>
+          : <a href="/download" class="font-medium text-fg no-underline hover:underline" data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location="announcement">Get 0.6 →</a>}
       </> : <>
         <span class="chip chip-soon h-5 text-xs">Coming in 0.5</span>
         A free dashboard and a two-minute setup assistant.
@@ -120,7 +122,7 @@ const steps = [
         <p class="lede mt-4">No account, no external service you have to trust with your server. If a detection service is down, your rules decide, and players are never stuck waiting.</p>
         <figure class="mt-8">
           <pre class="mono whitespace-pre-wrap break-words rounded-xl border border-line bg-[#0a0a0a] px-4 py-3.5 text-[0.75rem] leading-relaxed text-[#a1a1a1]"><span class="text-[#8f8f8f]">[12:04:51 INFO] </span>[connection-guard] Enabled Connection Guard v{stats.latest?.version ?? "0.4"}
-<span class="text-[#8f8f8f]">[12:04:51 INFO] </span>[connection-guard] VPN check: ProxyCheck · country check: IP-API
+<span class="text-[#8f8f8f]">[12:04:51 INFO] </span>[connection-guard] Connection Guard Intel: lists loaded (VPN, Tor, relays) · services: ProxyCheck → Blackbox → zowi → IPQuery → IP-API
 <span class="text-[#8f8f8f]">[12:05:07 INFO] </span>[connection-guard] <span class="text-[#34d399]">Link this server to your dashboard: https://app.connectionguard.net/link/7KQM-4P2X</span></pre>
           <figcaption class="mt-2 text-[0.75rem] text-fg-3">{live ? "Illustrative console output." : "Illustrative console output. The dashboard link appears from 0.5."}</figcaption>
         </figure>

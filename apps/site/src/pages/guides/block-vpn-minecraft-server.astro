@@ -3,7 +3,7 @@ import Guide from "../../layouts/Guide.astro";
 const faq = [
   { q: "Does prevent-proxy-connections block VPNs?", a: "Not reliably. The setting kicks a player when the network the server sees differs from the one that signed in at Mojang's authentication server. A player who runs the whole game through a VPN signs in and connects from the same VPN address, so the check passes." },
   { q: "Can an anti-VPN plugin catch every VPN?", a: "No. Plugins ask IP intelligence services whether an address belongs to a VPN, proxy, Tor exit or data center. New ranges, residential proxies and mobile networks can be missed, and a few legitimate addresses can be flagged. Treat a flag as strong evidence, not proof." },
-  { q: "Do I need an API key?", a: "Not to start. Connection Guard's default VPN service, ProxyCheck, works without a key. A free registered ProxyCheck account raises the daily allowance; on 2 October 2026 its free plan advertised 1,000 queries per day. Check each service's current plans before you rely on them." },
+  { q: "Do I need an API key?", a: "No. Connection Guard 0.6 checks its own signed VPN lists first and then asks ProxyCheck, Blackbox, zowi, IPQuery and IP-API in turn, all without a key. A free registered ProxyCheck account raises its daily allowance; on 2 October 2026 its free plan advertised 1,000 queries per day. Check each service's current plans before you rely on them." },
   { q: "Will blocking VPNs lock out real players?", a: "Some legitimate players use VPNs for privacy, at school or at work. Start by alerting staff instead of kicking, write a kick message that says how to ask for an exemption, and exempt trusted players by UUID." },
   { q: "Where do I install the plugin on a network?", a: "On the proxy (Velocity or BungeeCord) that receives player connections. The proxy sees the real address, and one installation covers every backend server." },
   { q: "What happens if the detection service is down?", a: "Unavailable evidence is UNKNOWN. Your scoped OPEN, OBSERVE or CLOSED failure policy controls the response; global OBSERVE suppresses Connection Guard enforcement. Country rules and other plugins also apply." },
@@ -63,23 +63,25 @@ const toc: [string, string][] = [
   <p>On a single server, put the JAR into that server's <code>plugins</code> folder. On a network, install it <strong>only on the proxy</strong> that players connect to. The proxy sees their real address and one installation protects every backend. Platform notes: <a href="/paper-anti-vpn">Paper and Spigot</a>, <a href="/bungeecord-anti-vpn">BungeeCord and Waterfall</a>, <a href="/velocity-anti-vpn">Velocity</a>.</p>
 
   <h3 id="services">2. Choose your detection services</h3>
-  <p>Out of the box, Connection Guard checks VPNs with <strong>ProxyCheck</strong> and looks up countries with <strong>IP-API</strong>. You can also enable IPHub, VPNAPI, IPQualityScore, or a REST API you configure yourself.</p>
+  <p>Out of the box, Connection Guard 0.6 first checks its own signed lists of VPN servers, Tor exits and privacy relays on your server (<strong>Connection Guard Intel</strong>). Addresses it doesn't know go to <strong>ProxyCheck</strong>, then <strong>Blackbox</strong>, <strong>zowi</strong>, <strong>IPQuery</strong> and <strong>IP-API</strong>, one after another: when one fails or runs out of free lookups, the next answers. You can also enable IPHub, VPNAPI, IPQualityScore, or a REST API you configure yourself. Country lookups are off until you add a country rule.</p>
   <div class="table-wrap">
     <table>
       <thead><tr><th scope="col">Service</th><th scope="col">Used for</th><th scope="col">Good to know</th></tr></thead>
       <tbody>
-        <tr><td>ProxyCheck</td><td>VPN/proxy and country</td><td>Default VPN service. Works without a key; a free account raises the daily allowance.</td></tr>
-        <tr><td>IP-API</td><td>VPN/proxy and country</td><td>Default country service. The free endpoint is non-commercial, uses HTTP and allows 45 requests per minute.</td></tr>
+        <tr><td>Connection Guard Intel</td><td>VPN, Tor, privacy relays</td><td>Lists downloaded once a day and checked on your server; no player address leaves it. <a href="https://github.com/gerolndnr/connection-guard-intel">Sources are public</a>.</td></tr>
+        <tr><td>ProxyCheck</td><td>VPN/proxy and country</td><td>Asked first. Works without a key; a free account raises the daily allowance.</td></tr>
+        <tr><td>Blackbox, zowi, IPQuery</td><td>VPN/proxy</td><td>No key. Blackbox also lists hosting networks; zowi is run by the developer of FoxGate.</td></tr>
+        <tr><td>IP-API</td><td>VPN/proxy and country</td><td>Asked last. The free endpoint is non-commercial, uses HTTP and allows 45 requests per minute.</td></tr>
         <tr><td>IPHub</td><td>VPN/proxy</td><td>Needs an API key.</td></tr>
         <tr><td>VPNAPI</td><td>VPN/proxy</td><td>Needs an API key.</td></tr>
         <tr><td>Custom</td><td>VPN/proxy</td><td>Any GET or POST API; you map the response fields.</td></tr>
       </tbody>
     </table>
   </div>
-  <p>Limits and terms change, so check each service's own pages before going live. If you enable several VPN services, <code>required-positive-flags</code> sets how many must agree before a player is flagged.</p>
+  <p>Limits and terms change, so check each service's own pages before going live. Every service that is asked learns the player's IP address, so name the ones you use in your server's privacy information.</p>
 
-  <h3 id="observe">3. Watch before you block</h3>
-  <p>New 0.5.0 installs start in OBSERVE with an empty country blocklist. Existing files without operation.mode retain ENFORCE. To review decisions before blocking, use OBSERVE and staff notifications:</p>
+  <h3 id="observe">3. Watch before you block, if you like</h3>
+  <p>New 0.6 installs refuse flagged players right away; upgrades keep the mode you had. To review decisions before blocking, use OBSERVE and staff notifications:</p>
   <pre><code>operation:
   mode: 'OBSERVE'
 behavior:

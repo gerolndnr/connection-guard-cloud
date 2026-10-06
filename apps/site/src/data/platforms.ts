@@ -80,12 +80,12 @@ export const PLATFORMS: Platform[] = [
     where: [
       "On a single Paper or Spigot server, install Connection Guard in that server's plugins folder.",
       "Running a network behind BungeeCord or Velocity? Install it on the proxy instead. The proxy sees the real player address and one installation covers every backend.",
-      "The plugin builds against the Spigot 1.8.8 API. 0.5.0 has native login/rule fixtures on Paper and Folia 1.21.11, plus startup, help, reload and shutdown checks on Paper 26.3 build 151 and Folia 26.2 build 7 with Java 25. Build targets do not prove every intermediate version was tested.",
+      "The plugin builds against the Spigot 1.8.8 API. 0.6.0 passed startup, help, reload and shutdown checks on Paper 26.3 build 159 and Folia 26.2 build 7 with Java 25, and on Paper 1.21.11 with Java 21. Build targets do not prove every intermediate version was tested.",
     ],
     console: "/cg info 203.0.113.7",
     faq: [
-      { q: "Which Minecraft versions are supported?", a: "The 0.5.0 listings reach Minecraft 26.3. Native login/rule fixtures cover Paper/Folia 1.21.11 with Java 21; additional startup, help, reload and shutdown checks cover Paper 26.3 and Folia 26.2 with Java 25. This does not prove every intermediate version or authenticated-account scenario." },
-      { q: "Does it work on Folia?", a: "0.5.0 passed native login/rule fixtures on Folia 1.21.11 and startup, help, reload and shutdown checks on Folia 26.2 build 7 with Java 25. These checks do not prove every server version or authenticated-account scenario." },
+      { q: "Which Minecraft versions are supported?", a: "The 0.6.0 listings reach Minecraft 26.3. 0.6.0 passed startup, help, reload and shutdown checks on Paper 26.3 build 159 and Folia 26.2 build 7 with Java 25, and on Paper 1.21.11 with Java 21. These checks do not prove every server version or authenticated-account scenario." },
+      { q: "Does it work on Folia?", a: "Yes. 0.6.0 passed startup, help, reload and shutdown checks on Paper 26.3 build 159 and Folia 26.2 build 7 with Java 25, and on Paper 1.21.11 with Java 21. These checks do not prove every server version or authenticated-account scenario." },
       ...shared,
     ],
   },
