@@ -31,6 +31,16 @@ describe("register language", () => {
     expect(explain(tor)).toContain("Tor exit list the server keeps itself");
   });
 
+  it("says which list Intel found an address on, and from when", () => {
+    const src = decisionEvent.sources[0]!;
+    const intel = { ...decisionEvent, mode: "ENFORCE" as const, outcome: "DENY" as const, reason: "VPN_FLAG" as const,
+      sources: [{ ...src, id: "connectionguard-intel", country: null, types: ["VPN" as const, "HOSTING" as const], data_as_of: Date.UTC(2026, 9, 6) }] };
+    expect(explain(intel)).toMatch(/^Refused: Connection Guard Intel listed the address as a VPN \(data from .*6 Oct\)\.$/);
+    const relay = { ...decisionEvent, mode: "ENFORCE" as const, outcome: "ALLOW" as const, reason: "CHECKS_COMPLETE" as const, flags: [],
+      sources: [{ ...src, id: "connectionguard-intel", status: "NEGATIVE" as const, types: ["RELAY" as const] }] };
+    expect(explain(relay)).toContain("privacy relay");
+  });
+
   it("explains changes a server refuses because a local policy version owns its decisions", () => {
     expect(configErrorHint("Local policy owns decision settings; release its revision before changing config/dashboard policy (values redacted).")!.command).toBe("/cg policy status");
     expect(configErrorHint("Setting cannot be set from the dashboard (path/value redacted).")!.text).toContain("Update the plugin");

@@ -1,7 +1,7 @@
 import { displayNetwork, ruleKind, ruleValue } from "@cg/protocol/rules";
 import type { DecisionEvent } from "@cg/protocol";
 import type { Install } from "./api.ts";
-import { isTorList, sourceLabel } from "./sources.ts";
+import { isTorList, sourceLabel, typesText } from "./sources.ts";
 
 const nf = new Intl.NumberFormat("en-US");
 export const num = (n: number) => nf.format(n);
@@ -85,7 +85,12 @@ export function explain(e: DecisionEvent): string {
     case "refused":
       if (e.reason === "ACCESS_RULE") return "A manual deny rule matched this connection, so it was refused before any lookup.";
       if (e.reason === "VPN_FLAG" && positiveSources.some((s) => isTorList(s.id))) return "Refused: the address is on the Tor exit list the server keeps itself, so no service had to be asked.";
-      if (e.reason === "VPN_FLAG") return `Refused: ${positives.length ? positives.join(" and ") : "the providers"} reported a VPN or proxy${country ? ` in ${countryName(country)}` : ""}.`;
+      if (e.reason === "VPN_FLAG") {
+        // 0.5.2+ sources say what they found (Intel: which list), and when their data is from.
+        const found = typesText([...new Set(positiveSources.flatMap((s) => s.types ?? []))].filter((t) => t !== "HOSTING"));
+        const asOf = positiveSources.find((s) => s.data_as_of)?.data_as_of;
+        return `Refused: ${positives.length ? positives.join(" and ") : "the providers"} ${found ? `listed the address as a ${found}` : "reported a VPN or proxy"}${country ? ` in ${countryName(country)}` : ""}${asOf ? ` (data from ${day(asOf)})` : ""}.`;
+      }
       if (e.reason === "GEO_FLAG") return `Refused: your country rules do not allow connections from ${country ? countryName(country) : "this country"}.`;
       if (e.reason === "LOOKUP_UNAVAILABLE") return "Refused because no provider answered in time and the failure policy is CLOSED.";
       if (e.reason === "OVERLOAD") return "Refused by overload protection: too many logins arrived at once.";
@@ -101,6 +106,9 @@ export function explain(e: DecisionEvent): string {
       if (e.reason === "EXTERNAL_UNAVAILABLE") return "Another plugin's check did not answer; its failure policy lets such players in.";
       if (e.reason === "UNKNOWN_ALLOWED") return "The providers could not give an answer in time; your failure policy lets such players in.";
       if (e.reason === "FLAG_ALLOWED") return `Connection Guard found ${flags}, and your settings let such players in.`;
+      if (e.sources.some((s) => s.types?.includes("RELAY") && s.status !== "POSITIVE")) {
+        return "The address belongs to a privacy relay such as iCloud Private Relay. Your settings let relays in; the checks found nothing else.";
+      }
       return "Every check came back clean.";
   }
 }

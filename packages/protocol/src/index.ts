@@ -118,6 +118,9 @@ export const Counters = z.object({
 }).strict();
 export type Counters = z.infer<typeof Counters>;
 
+/** What a source said the address is (Intel: the lists it appears on; APIs: their type fields). */
+export const SourceType = z.enum(["VPN", "PROXY", "TOR", "RELAY", "HOSTING"]);
+
 export const EventSource = z.object({
   id: SourceId,
   scope: Scope,
@@ -130,6 +133,9 @@ export const EventSource = z.object({
   asn: z.number().int().min(0).max(4_294_967_295).nullable(),
   isp: z.string().max(128).nullable(),
   risk: z.number().int().min(0).max(100).nullable(),
+  // Plugins from 0.5.2; absent when unknown.
+  types: z.array(SourceType).max(5).optional(),
+  data_as_of: z.number().int().nullable().optional(),
 }).strict();
 
 export const EventRule = z.object({

@@ -4,7 +4,7 @@ import { api, ApiError, type Install, type RegisterEvent, type RuleEffect, type 
 import { track } from "../analytics.ts";
 import { RULE_DURATIONS, ago, clock, countryName, day, explain, ms, reasonLabel, serverName, supportsExpiry, verdict } from "../format.ts";
 import { VerdictBadge } from "./Badge.tsx";
-import { isTorList, sourceLabel } from "../sources.ts";
+import { isLocalList, sourceLabel, sourceVerdict } from "../sources.ts";
 
 const trustText: Record<RegisterEvent["identity_trust"], string> = {
   UNTRUSTED: "Not verified",
@@ -157,14 +157,12 @@ export function WhySheet({ event, installs, onClose, networkId, canManage = fals
                 <li key={`${s.id}-${s.scope}`} className="px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-medium" title={s.id}>{sourceLabel(s.id)}</span>
-                    <span className={`badge ${s.status === "POSITIVE" ? "badge-refused" : s.status === "NEGATIVE" ? "badge-admitted" : "badge-neutral"}`}>
-                      {s.status === "POSITIVE" ? (s.scope === "GEO" ? "Country not allowed" : "VPN / proxy") : s.status === "NEGATIVE" ? "Clean" : "No answer"}
-                    </span>
+                    <span className={`badge badge-${sourceVerdict(s).tone}`}>{sourceVerdict(s).text}</span>
                   </div>
                   <p className="num mt-1 text-[0.8125rem] text-fg-2">
                     {[s.country && countryName(s.country), s.isp, s.asn !== null && `AS${s.asn}`, s.risk !== null && `risk ${s.risk}`,
                       s.from_cache ? "from cache" : ms(s.duration_ms), s.reason !== "NONE" && s.reason.toLowerCase().replace(/_/g, " "),
-                      !s.voting && "not voting"].filter(Boolean).join(" · ")}
+                      !s.voting && "not voting", s.data_as_of && `data from ${day(s.data_as_of)}`].filter(Boolean).join(" · ")}
                   </p>
                 </li>
               ))}
@@ -271,8 +269,8 @@ function Fixes({ event, networkId, playerName, installs }: { event: RegisterEven
             )}
           </li>
         ))}
-        {/* A Tor-list hit is answered from the server's own list, not a cache: checking again changes nothing. */}
-        {!event.sources.some((x) => isTorList(x.id) && x.status === "POSITIVE") && <li>
+        {/* A hit on a list the server keeps (Tor list, Intel) is not a cached answer: checking again changes nothing. */}
+        {!event.sources.some((x) => isLocalList(x.id) && x.status === "POSITIVE") && <li>
           {done.recheck
             ? <p role="status" className="flex items-start gap-2 rounded-lg border border-line bg-subtle px-3 py-2.5 text-[0.8125rem]"><Check aria-hidden className="mt-0.5 size-3.5 shrink-0 text-accent" />{done.recheck}</p>
             : <button type="button" disabled={busy !== null} onClick={recheck} className="flex w-full items-start gap-3 rounded-lg border border-line px-3 py-2.5 text-left transition-colors hover:bg-subtle disabled:opacity-60">

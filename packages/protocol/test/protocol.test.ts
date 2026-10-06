@@ -85,6 +85,14 @@ describe("protocol v1", () => {
     expect(SyncRequest.parse(tolerateSync({ ...syncRequest, errors: "nope" }).json).errors).toBeUndefined();
   });
 
+  it("accepts source categories and data dates from Intel and other providers", () => {
+    const src = { ...syncRequest.events[0]!.sources[0]!, id: "connectionguard-intel", types: ["RELAY" as const], data_as_of: 1_791_100_000_000 };
+    const event = { ...syncRequest.events[0]!, sources: [src] };
+    expect(SyncRequest.safeParse({ ...syncRequest, events: [event] }).success).toBe(true);
+    const bad = { ...event, sources: [{ ...src, types: ["SOMETHING"] }] };
+    expect(tolerateSync({ ...syncRequest, events: [bad] }).dropped_events).toBe(1);
+  });
+
   it("still rejects unknown top-level and status fields after tolerating", () => {
     expect(SyncRequest.safeParse(tolerateSync({ ...syncRequest, player_names: ["x"] }).json).success).toBe(false);
     expect(SyncRequest.safeParse(tolerateSync({ ...syncRequest, status: { ...syncRequest.status, extra: 1 } }).json).success).toBe(false);

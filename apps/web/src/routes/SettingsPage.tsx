@@ -15,6 +15,8 @@ import { usePlayerNames } from "../players.ts";
 import type { RegisterEvent } from "../api.ts";
 
 type Values = Record<string, boolean | number | string | string[]>;
+const INTEL = "provider.local.connectionguard-intel.enabled";
+const INTEL_RELAY = "provider.local.connectionguard-intel.relay";
 type Secrets = Record<string, SecretEdit>;
 type SecretState = { set: boolean; hint: string | null };
 
@@ -208,6 +210,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
   const enabledProviders = providers.filter((p) => v<boolean>(`provider.vpn.${p.key}.enabled`));
   // Failover (plugin 0.5.2+) asks one service after another; voting asks all and counts. Older plugins only vote.
   const hasFailover = supportsPath(effective, "provider.vpn-failover.enabled");
+  const hasIntel = supportsPath(effective, INTEL);
   // 0.5.2 plugins that do not list the switch yet still use failover unless config.yml turns it off.
   const implicitFailover = !hasFailover && versionAtLeast(install.plugin_version, "0.5.2");
   const failover = strategyOf(values) === "failover";
@@ -293,6 +296,23 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
         <Section id="vpn" title="VPN and proxy detection" description={failover
           ? "Enabled services are asked one after another about new IP addresses. Results are cached, so most logins cost no lookup at all."
           : "Each enabled service is asked about new IP addresses. Results are cached, so most logins cost no lookup at all."}>
+          {hasIntel && (
+            <Row label="Connection Guard Intel" managed={managed(INTEL)}
+              help="Daily lists of VPN servers, Tor exits and privacy relays, checked on your server before any service is asked. Player addresses never leave it.">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Switch label="Use Connection Guard Intel" checked={v<boolean>(INTEL) ?? false} onChange={(on) => set(INTEL, on)} />
+                  <span className="text-[0.8125rem] text-fg-2">{v<boolean>(INTEL) ? "On" : "Off"}</span>
+                </div>
+                {v<boolean>(INTEL) && supportsPath(effective, INTEL_RELAY) && (
+                  <Segmented name="Privacy relays" value={(v<string>(INTEL_RELAY) ?? "ALLOW") as "ALLOW" | "VPN"} onChange={(x) => set(INTEL_RELAY, x)} options={[
+                    { value: "ALLOW", title: "Let relays in", body: "Recommended. iCloud Private Relay is Apple's privacy feature for Safari and DNS, not a VPN service." },
+                    { value: "VPN", title: "Treat as VPN", body: "Strict. Players behind iCloud Private Relay are refused like VPN users." },
+                  ]} />
+                )}
+              </div>
+            </Row>
+          )}
           {providers.map((p) => (
             <Row key={p.key} managed={managed(`provider.vpn.${p.key}.enabled`)} error={errors[`provider.vpn.${p.key}.enabled`]}
               label={<>{p.name}{p.signup && <a href={p.signup} target="_blank" rel="noreferrer" className="text-fg-3 hover:text-fg" aria-label={`${p.name} website`}><ExternalLink className="size-3.5" /></a>}</>}

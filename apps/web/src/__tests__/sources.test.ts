@@ -39,3 +39,16 @@ describe("providers", () => {
     expect(failoverCoverage([{ info: p("proxycheck"), hasKey: true }, { info: p("ipqualityscore"), hasKey: true }])!.uncappedFallback).toBeNull();
   });
 });
+
+describe("source categories", () => {
+  it("names what a source found, including Intel's relay and data-centre answers", async () => {
+    const { sourceVerdict, typesText, sourceLabel } = await import("../sources.ts");
+    expect(sourceLabel("connectionguard-intel")).toBe("Connection Guard Intel");
+    expect(sourceVerdict({ status: "POSITIVE", scope: "VPN", types: ["TOR"] }).text).toBe("Tor exit");
+    expect(sourceVerdict({ status: "POSITIVE", scope: "VPN", types: ["VPN", "HOSTING"] }).text).toBe("VPN");
+    expect(sourceVerdict({ status: "NEGATIVE", scope: "VPN", types: ["RELAY"] })).toEqual({ text: "Privacy relay, allowed", tone: "neutral" });
+    expect(sourceVerdict({ status: "UNKNOWN", scope: "VPN", types: ["HOSTING"] }).text).toBe("Data centre, not blocked");
+    expect(sourceVerdict({ status: "POSITIVE", scope: "VPN" }).text).toBe("VPN / proxy");
+    expect(typesText(["VPN", "PROXY"])).toBe("VPN and proxy");
+  });
+});

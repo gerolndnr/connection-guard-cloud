@@ -77,6 +77,7 @@ const snapshotNext = (mode) => ({
   "provider.vpn.proxycheck.api-key": { set: false, hint: null }, "provider.vpn.ip-api.enabled": true, "provider.geo.service": "Disabled",
   "provider.vpn.ipquery.enabled": true, "provider.vpn.ipqualityscore.enabled": false, "provider.vpn.ipqualityscore.api-key": { set: false, hint: null },
   "provider.vpn-failover.enabled": true, "provider.vpn-failover.order": [], "provider.max-external-attempts": 16, "behavior.geo.list": [],
+  "provider.local.connectionguard-intel.enabled": true, "provider.local.connectionguard-intel.relay": "ALLOW",
 });
 
 const servers = [
@@ -86,6 +87,10 @@ const servers = [
 ];
 
 // Every fifth flagged login on the 0.5.2 server is a Tor exit, answered by its bundled list before any service.
+// The other flagged logins on the 0.5.2 server are answered by Connection Guard Intel's VPN list, locally.
+const intelHit = (e, at) => ({ ...e, sources: [{ id: "connectionguard-intel", scope: "VPN", status: "POSITIVE", reason: "NONE", duration_ms: 0, voting: true,
+  from_cache: false, country: e.sources[0].country, asn: e.sources[0].asn, isp: e.sources[0].isp, risk: null, types: ["VPN", "HOSTING"],
+  data_as_of: at - 5 * H }, e.sources[1]] });
 const torExit = (e) => ({ ...e, sources: [{ id: "torexitlist", scope: "VPN", status: "POSITIVE", reason: "NONE", duration_ms: 0, voting: true, from_cache: false,
   country: null, asn: null, isp: null, risk: null }] });
 
@@ -107,7 +112,7 @@ for (const s of servers) {
     const load = Math.max(1, Math.round(s.rate * (0.35 + 0.9 * Math.exp(-((evening - 20) ** 2) / 18)) * (0.7 + rand() * 0.6)));
     let flaggedCount = 0;
     const events = Array.from({ length: load }, () => event(end - Math.floor(rand() * H), s.platform, s.mode, s.vpnRate))
-      .map((e) => (s.next && e.vpn === "POSITIVE" && ++flaggedCount % 5 === 1 ? torExit(e) : e)).sort((a, b) => a.at - b.at);
+      .map((e) => (s.next && e.vpn === "POSITIVE" ? (++flaggedCount % 5 === 1 ? torExit(e) : intelHit(e, end)) : e)).sort((a, b) => a.at - b.at);
     const c = { checks: 0, allowed: 0, denied: 0, errors: 0, vpn_positive: 0, geo_flagged: 0, cache_hits: 0, lookups: 0, countries: {}, reasons: {} };
     for (const e of events) {
       c.checks++; c[e.outcome === "DENY" ? "denied" : "allowed"]++;

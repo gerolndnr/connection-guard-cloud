@@ -264,6 +264,15 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
             })}
           </div>
 
+          {snapshot?.["provider.local.connectionguard-intel.enabled"] === true && (
+            <div className="mt-5 flex gap-3 rounded-lg border border-line bg-subtle px-4 py-3">
+              <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-accent" />
+              <p className="text-[0.8125rem] leading-relaxed text-fg-2">
+                <span className="font-medium text-fg">Connection Guard Intel is on.</span> Known VPN servers, Tor exits and privacy relays are recognised on your server first, without asking any service, so the services below are only asked about the rest.
+              </p>
+            </div>
+          )}
+
           {chosen.length === 0 && <p className="mt-4 text-[0.8125rem] text-warn-text">Pick at least one service, or turn off VPN checks in the previous step.</p>}
 
           {failover && chain.length >= 2 && (
