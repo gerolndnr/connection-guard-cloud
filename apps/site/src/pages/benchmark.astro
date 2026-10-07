@@ -57,7 +57,9 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
       </div>
       <p class="mt-6 max-w-2xl text-[0.8125rem] leading-relaxed text-fg-3">
         Conflict of interest: the benchmark is built by Connection Guard's author. The method, the adapters and every log are public, and any plugin author can contest a result.
-        {preliminary && " These are preliminary results: speed and detection come from a quick run. The published run repeats everything three times on all 692 addresses and replaces them here."}
+        {preliminary
+          ? " These are preliminary results: speed and detection come from a quick run. The published run repeats everything three times on all 692 addresses and replaces them here."
+          : " Every plugin runs as it ships, without API keys. A second pass with the same free ProxyCheck key for every plugin follows."}
       </p>
     </div>
   </section>
@@ -68,7 +70,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
       {[
         { href: "#speed", k: "Join wave", big: `${num(us.checked)} / ${num(us.subjects)}`, text: `players checked when 1,000 joined in 20 seconds. The other plugins checked at most ${num(bestOtherChecked)}.` },
         { href: "#reliability", k: "Detection services down", big: `${faults.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length} / ${faults.length}`, text: "failure cases with VPN and Tor still blocked, without a single lookup." },
-        { href: "#detection", k: "Caught, and nobody else", big: `${vpnCaught(CURRENT)} / ${vpnN}`, text: `VPN and Tor addresses blocked, while refusing ${spareTotal(CURRENT)} of ${spareN} home and mobile players.` },
+        { href: "#detection", k: "Caught", big: `${vpnCaught(CURRENT)} / ${vpnN}`, text: `VPN and Tor addresses blocked. ${spareTotal(CURRENT)} of ${spareN} home and mobile players were refused too; most of them by every plugin.` },
       ].map((c) => (
         <a href={c.href} class="card group block p-6 no-underline transition-colors hover:border-line-strong">
           <p class="text-[0.8125rem] font-medium text-fg-2">{c.k}</p>
@@ -227,6 +229,11 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
       <p class="mt-5 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
         Read the VPN rows with care: Connection Guard 0.6's own lists are built from the same provider lists that label these addresses, so for those groups they show coverage, not how well it finds unknown servers. Tor, proxies and the false positives are not affected.
       </p>
+      {!preliminary && (
+        <p class="mt-3 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
+          Connection Guard refused {spareTotal(CURRENT)} home and mobile players here, more than the others. We looked at every one. Six are refused by every plugin: their traffic leaves through a data centre, Cloudflare WARP or an IPv6 tunnel, so they are not home connections in the way they are labelled. The other four came from one detection service, Blackbox, answering alone after ProxyCheck's 100 free daily lookups had run out. Connection Guard Intel caused none of them. Making a Blackbox answer need a second opinion is in progress.
+        </p>
+      )}
     </div>
   </section>
 

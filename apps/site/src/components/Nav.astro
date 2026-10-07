@@ -14,7 +14,7 @@ const links = [
 ];
 ---
 <header class="sticky top-0 z-30 border-b border-line bg-surface">
-  <div class="container-site flex h-14 items-center gap-6">
+  <div class="container-site flex h-14 items-center gap-3 sm:gap-6">
     <a href="/" class="flex items-center gap-2 whitespace-nowrap text-[0.9375rem] font-semibold tracking-[-0.01em] text-fg no-underline"><Mark class="size-[1.15rem]" />Connection Guard</a>
     <nav aria-label="Main" class="hidden items-center gap-5 lg:flex">
       {links.map((l) => <a href={l.href} class="text-sm text-fg-2 no-underline transition-colors hover:text-fg">{l.label}</a>)}

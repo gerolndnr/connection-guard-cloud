@@ -45,12 +45,12 @@ const fmt = new Intl.NumberFormat("en-US");
   <section aria-labelledby="src-h">
     <div class="container-site py-14 sm:py-16">
       <h2 id="src-h" class="sr-only">Download sources</h2>
-      <ul class="grid gap-3 sm:grid-cols-2">
+      <ul class="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
         {sources.map((x) => (
           <li>
-            <a href={x.url} data-ph-event="download_clicked" data-ph-destination={x.key} data-ph-location="download_page" class={`card group flex h-full items-center justify-between gap-6 p-5 no-underline transition-colors hover:border-line-strong ${x.primary ? "border-[color-mix(in_srgb,var(--accent)_45%,transparent)]" : ""}`}>
-              <span>
-                <span class="flex items-center gap-2 text-base font-semibold tracking-[-0.015em]">
+            <a href={x.url} data-ph-event="download_clicked" data-ph-destination={x.key} data-ph-location="download_page" class={`card group flex h-full items-center justify-between gap-4 p-5 sm:gap-6 no-underline transition-colors hover:border-line-strong ${x.primary ? "border-[color-mix(in_srgb,var(--accent)_45%,transparent)]" : ""}`}>
+              <span class="min-w-0">
+                <span class="flex flex-wrap items-center gap-2 text-base font-semibold tracking-[-0.015em]">
                   {x.name}
                   {x.primary && <span class="chip chip-soon h-5 text-xs">Recommended</span>}
                 </span>

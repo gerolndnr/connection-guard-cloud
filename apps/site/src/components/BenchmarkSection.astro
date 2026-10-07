@@ -1,6 +1,6 @@
 ---
 // Homepage proof: three measured answers, each linking to its evidence on /benchmark. Numbers come from benchmark.json.
-import { COMPARED, CURRENT, FAULT_LABELS, bench, catchCohorts, dateLabel, failure, label, ms, num, perf, preliminary, spareN, spareTotal, timedOut } from "../lib/benchmark";
+import { COMPARED, CURRENT, blocked, FAULT_LABELS, bench, catchCohorts, dateLabel, failure, label, ms, num, perf, preliminary, spareN, spareTotal, timedOut } from "../lib/benchmark";
 const burst = (id: string) => perf(id, "burst")!;
 const us = burst(CURRENT);
 const others = COMPARED.filter((p) => p !== CURRENT);
@@ -51,9 +51,9 @@ const vpnN = vpn.reduce((s, c) => s + c.n, 0);
           <p class="mt-2 text-[0.9375rem] leading-snug text-fg-2">failure cases with VPNs and Tor still blocked. Connection Guard checks its own signed lists first. {others.filter((p) => failure[p]).map((p) => `${label(p)} ${faults.filter((f) => failure[p]?.[f]?.vpn?.blocked && failure[p]?.[f]?.tor?.blocked).length}`).join(", ")}.</p>
         </a>
         <a href="/benchmark#detection" class="card group block p-6 no-underline transition-colors hover:border-line-strong" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="home_detection">
-          <p class="text-[0.8125rem] font-medium text-fg-2">Caught, and nobody else</p>
+          <p class="text-[0.8125rem] font-medium text-fg-2">Caught</p>
           <p class="num mt-2 text-[2rem] font-semibold leading-none tracking-[-0.03em] text-fg">{caught} / {vpnN}</p>
-          <p class="mt-2 text-[0.9375rem] leading-snug text-fg-2">VPN and Tor addresses blocked, with {spareTotal(CURRENT)} of {spareN} home and mobile players refused ({others.map((p) => `${label(p)} ${spareTotal(p)}`).join(", ")}).</p>
+          <p class="mt-2 text-[0.9375rem] leading-snug text-fg-2">VPN and Tor addresses blocked, and {blocked("proxy", CURRENT)} of {bench.detection.cohorts.find((c) => c.id === "proxy")?.n} public proxies. Home and mobile players refused: {spareTotal(CURRENT)} of {spareN} ({others.map((p) => `${label(p)} ${spareTotal(p)}`).join(", ")}).</p>
         </a>
       </div>
     </div>

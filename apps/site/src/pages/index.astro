@@ -116,7 +116,7 @@ const steps = [
   </section>
 
   <section id="setup" class="scroll-mt-28 md:scroll-mt-20 border-b border-line">
-    <div class="container-site grid gap-12 py-20 sm:py-28 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
+    <div class="container-site grid grid-cols-[minmax(0,1fr)] gap-12 py-20 sm:py-28 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
       <div>
         <h2 class="section-title">Protected in four steps.</h2>
         <p class="lede mt-4">No account, no external service you have to trust with your server. If a detection service is down, your rules decide, and players are never stuck waiting.</p>
@@ -167,14 +167,14 @@ const steps = [
         <h2 id="oss-h" class="section-title">Security software shouldn't be a black box.</h2>
         <p class="lede mt-4">Connection Guard sees every login on your server. Every check it runs, every request it sends to a detection service and everything the dashboard stores is public code. Read it, audit it, fork it, self-host it.</p>
       </div>
-      <div class="mt-10 grid gap-4 md:grid-cols-2">
+      <div class="mt-10 grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
         {[
           { name: "connection-guard", license: "MIT", body: "The plugin: detection, country rules, caching, failure policies and the optional cloud link.", href: "https://github.com/gerolndnr/connection-guard" },
           { name: "connection-guard-cloud", license: "AGPL-3.0", body: "The dashboard and its API on Cloudflare Workers. Self-hostable; point the plugin at your own copy.", href: "https://github.com/gerolndnr/connection-guard-cloud" },
         ].map((r) => (
           <a href={r.href} class="card group flex flex-col p-6 no-underline transition-colors hover:border-line-strong">
             <span class="flex items-center justify-between gap-3">
-              <span class="mono text-[0.9375rem] font-medium">gerolndnr/{r.name}</span>
+              <span class="mono min-w-0 break-all text-[0.9375rem] font-medium">gerolndnr/{r.name}</span>
               <span class="chip">{r.license}</span>
             </span>
             <span class="mt-3 leading-relaxed text-fg-2">{r.body}</span>

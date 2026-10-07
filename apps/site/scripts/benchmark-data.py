@@ -48,19 +48,32 @@ def product_meta(bench, product_id, candidate_label):
 
 
 def performance(folder):
-    out = {}
-    for path in sorted(glob.glob(os.path.join(folder, 'performance', '*-r0-*.json'))):
+    """Per product and phase, the median across rounds (r0, r1, r2...) of each value."""
+    import statistics
+    rounds = {}
+    for path in sorted(glob.glob(os.path.join(folder, 'performance', '*-r[0-9]-*.json'))):
         d = json.load(open(path))
-        entry = dict(start_s=round(d.get('start', {}).get('ready_s', 0), 1), errors=d.get('product_error_lines'))
+        rounds.setdefault(d['product'], []).append(d)
+    med = lambda values: statistics.median(values) if values else None
+    out = {}
+    for product, ds in rounds.items():
+        entry = dict(rounds=len(ds), start_s=round(med([d.get('start', {}).get('ready_s', 0) for d in ds]), 1),
+                     errors=med([d['product_error_lines'] for d in ds if d.get('product_error_lines') is not None]))
         for phase in PHASES:
-            x = d.get(phase)
-            if not x:
+            xs = [d[phase] for d in ds if phase in d]
+            if not xs:
                 continue
-            entry[phase] = dict(decision_p50=x['decision_ms']['p50'], decision_p95=x['decision_ms']['p95'],
-                                join_p50=x['join_ms']['p50'], join_p95=x['join_ms']['p95'],
-                                checked=x.get('subjects_with_lookup'), subjects=x.get('distinct_subjects'),
-                                outcomes=x.get('outcomes', {}))
-        out[d['product']] = entry
+            outcomes = {}
+            for k in {k for x in xs for k in x.get('outcomes', {})}:
+                outcomes[k] = round(med([x.get('outcomes', {}).get(k, 0) for x in xs]))
+            entry[phase] = dict(decision_p50=round(med([x['decision_ms']['p50'] for x in xs]), 1),
+                                decision_p95=round(med([x['decision_ms']['p95'] for x in xs]), 1),
+                                join_p50=round(med([x['join_ms']['p50'] for x in xs]), 1),
+                                join_p95=round(med([x['join_ms']['p95'] for x in xs]), 1),
+                                checked=round(med([x.get('subjects_with_lookup') or 0 for x in xs])),
+                                subjects=round(med([x.get('distinct_subjects') or 0 for x in xs])),
+                                outcomes=outcomes)
+        out[product] = entry
     return out
 
 

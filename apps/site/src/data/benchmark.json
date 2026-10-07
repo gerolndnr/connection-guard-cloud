@@ -1,12 +1,12 @@
 {
-  "status": "preliminary",
+  "status": "published",
   "date": "2026-10-06",
   "platform": "velocity",
-  "rounds": 1,
-  "host": "GitHub-hosted 2 vCPU, 7 GB, AMD EPYC 7763 64-Core Processor",
+  "rounds": 3,
+  "host": "GitHub-hosted 4 vCPU, 15 GB, AMD EPYC 7763 64-Core Processor",
   "runs": {
-    "performance": "37529160056",
-    "detection": "37529164268",
+    "performance": "37540317765",
+    "detection": "37540326121",
     "failure": "37540309049"
   },
   "products": {
@@ -39,13 +39,14 @@
   },
   "performance": {
     "connection-guard-candidate": {
-      "start_s": 7.9,
+      "rounds": 3,
+      "start_s": 7.1,
       "errors": 0,
       "cold": {
-        "decision_p50": 134.6,
-        "decision_p95": 292.3,
-        "join_p50": 244.5,
-        "join_p95": 417.0,
+        "decision_p50": 131.2,
+        "decision_p95": 288.3,
+        "join_p50": 201.5,
+        "join_p95": 399.0,
         "checked": 50,
         "subjects": 50,
         "outcomes": {
@@ -53,10 +54,10 @@
         }
       },
       "warm": {
-        "decision_p50": 3.6,
-        "decision_p95": 6.8,
-        "join_p50": 98.6,
-        "join_p95": 103.9,
+        "decision_p50": 2.8,
+        "decision_p95": 3.8,
+        "join_p50": 99.1,
+        "join_p95": 102.3,
         "checked": 0,
         "subjects": 50,
         "outcomes": {
@@ -64,10 +65,10 @@
         }
       },
       "stampede": {
-        "decision_p50": 123.0,
-        "decision_p95": 187.0,
-        "join_p50": 3975.2,
-        "join_p95": 5518.1,
+        "decision_p50": 222.7,
+        "decision_p95": 260.3,
+        "join_p50": 3268.5,
+        "join_p95": 3986.6,
         "checked": 1,
         "subjects": 1,
         "outcomes": {
@@ -75,10 +76,10 @@
         }
       },
       "burst": {
-        "decision_p50": 261.5,
-        "decision_p95": 822.4,
-        "join_p50": 779.5,
-        "join_p95": 2502.5,
+        "decision_p50": 214.5,
+        "decision_p95": 501.8,
+        "join_p50": 437.0,
+        "join_p95": 852.4,
         "checked": 1000,
         "subjects": 1000,
         "outcomes": {
@@ -87,13 +88,14 @@
       }
     },
     "connection-guard": {
-      "start_s": 7.6,
+      "rounds": 3,
+      "start_s": 6.9,
       "errors": 0,
       "cold": {
-        "decision_p50": 175.8,
-        "decision_p95": 379.2,
-        "join_p50": 254.2,
-        "join_p95": 500.1,
+        "decision_p50": 171.7,
+        "decision_p95": 375.4,
+        "join_p50": 251.1,
+        "join_p95": 450.4,
         "checked": 50,
         "subjects": 50,
         "outcomes": {
@@ -101,10 +103,10 @@
         }
       },
       "warm": {
-        "decision_p50": 4.0,
-        "decision_p95": 6.2,
-        "join_p50": 98.8,
-        "join_p95": 103.8,
+        "decision_p50": 2.9,
+        "decision_p95": 4.0,
+        "join_p50": 99.2,
+        "join_p95": 101.6,
         "checked": 0,
         "subjects": 50,
         "outcomes": {
@@ -112,10 +114,10 @@
         }
       },
       "stampede": {
-        "decision_p50": 318.5,
-        "decision_p95": 352.7,
-        "join_p50": 4231.2,
-        "join_p95": 5310.4,
+        "decision_p50": 314.7,
+        "decision_p95": 349.1,
+        "join_p50": 3396.8,
+        "join_p95": 4038.7,
         "checked": 1,
         "subjects": 1,
         "outcomes": {
@@ -123,10 +125,10 @@
         }
       },
       "burst": {
-        "decision_p50": 23.1,
-        "decision_p95": 696.9,
-        "join_p50": 410.0,
-        "join_p95": 2365.0,
+        "decision_p50": 45.3,
+        "decision_p95": 361.2,
+        "join_p50": 264.9,
+        "join_p95": 693.0,
         "checked": 93,
         "subjects": 1000,
         "outcomes": {
@@ -135,13 +137,14 @@
       }
     },
     "foxgate": {
-      "start_s": 10.7,
-      "errors": 1852,
+      "rounds": 3,
+      "start_s": 9.1,
+      "errors": 1590,
       "cold": {
-        "decision_p50": 1595.3,
-        "decision_p95": 10060.5,
-        "join_p50": 1748.3,
-        "join_p95": 10175.9,
+        "decision_p50": 879.7,
+        "decision_p95": 9531.5,
+        "join_p50": 950.7,
+        "join_p95": 9601.7,
         "checked": 49,
         "subjects": 50,
         "outcomes": {
@@ -150,10 +153,10 @@
         }
       },
       "warm": {
-        "decision_p50": 576.2,
-        "decision_p95": 5199.4,
-        "join_p50": 686.4,
-        "join_p95": 5303.2,
+        "decision_p50": 421.6,
+        "decision_p95": 5021.8,
+        "join_p50": 500.5,
+        "join_p95": 5099.1,
         "checked": 0,
         "subjects": 50,
         "outcomes": {
@@ -162,38 +165,39 @@
         }
       },
       "stampede": {
-        "decision_p50": 447.7,
-        "decision_p95": 777.5,
-        "join_p50": 1082.5,
-        "join_p95": 2324.5,
+        "decision_p50": 375.9,
+        "decision_p95": 524.3,
+        "join_p50": 588.0,
+        "join_p95": 1048.0,
         "checked": 1,
         "subjects": 1,
         "outcomes": {
-          "ALLOW": 22,
-          "DENY_LOGIN": 78
+          "ALLOW": 16,
+          "DENY_LOGIN": 84
         }
       },
       "burst": {
-        "decision_p50": 30001.0,
-        "decision_p95": 30003.4,
-        "join_p50": 19264.9,
-        "join_p95": 29583.2,
-        "checked": 79,
+        "decision_p50": 30000.9,
+        "decision_p95": 30003.6,
+        "join_p50": 15301.8,
+        "join_p95": 27394.2,
+        "checked": 219,
         "subjects": 1000,
         "outcomes": {
-          "ALLOW": 39,
-          "DENY_LOGIN": 961
+          "ALLOW": 150,
+          "DENY_LOGIN": 850
         }
       }
     },
     "none": {
-      "start_s": 6.8,
+      "rounds": 3,
+      "start_s": 6.3,
       "errors": null,
       "cold": {
-        "decision_p50": 2.7,
-        "decision_p95": 7.8,
-        "join_p50": 98.8,
-        "join_p95": 152.6,
+        "decision_p50": 1.8,
+        "decision_p95": 3.6,
+        "join_p50": 99.0,
+        "join_p95": 134.3,
         "checked": 0,
         "subjects": 50,
         "outcomes": {
@@ -201,10 +205,10 @@
         }
       },
       "warm": {
-        "decision_p50": 2.3,
-        "decision_p95": 3.5,
+        "decision_p50": 1.6,
+        "decision_p95": 2.1,
         "join_p50": 98.8,
-        "join_p95": 104.2,
+        "join_p95": 101.9,
         "checked": 0,
         "subjects": 50,
         "outcomes": {
@@ -212,10 +216,10 @@
         }
       },
       "stampede": {
-        "decision_p50": 74.1,
-        "decision_p95": 81.6,
-        "join_p50": 4138.9,
-        "join_p95": 5060.1,
+        "decision_p50": 44.5,
+        "decision_p95": 51.0,
+        "join_p50": 3108.0,
+        "join_p95": 4136.4,
         "checked": 0,
         "subjects": 1,
         "outcomes": {
@@ -223,10 +227,10 @@
         }
       },
       "burst": {
-        "decision_p50": 9.3,
-        "decision_p95": 366.8,
-        "join_p50": 399.7,
-        "join_p95": 2493.5,
+        "decision_p50": 27.4,
+        "decision_p95": 161.3,
+        "join_p50": 245.5,
+        "join_p95": 481.0,
         "checked": 0,
         "subjects": 1000,
         "outcomes": {
@@ -235,13 +239,14 @@
       }
     },
     "proxyshield": {
-      "start_s": 20.3,
+      "rounds": 3,
+      "start_s": 19.2,
       "errors": 0,
       "cold": {
-        "decision_p50": 855.4,
-        "decision_p95": 1463.9,
-        "join_p50": 950.2,
-        "join_p95": 1548.8,
+        "decision_p50": 727.8,
+        "decision_p95": 1077.3,
+        "join_p50": 799.1,
+        "join_p95": 1151.5,
         "checked": 50,
         "subjects": 50,
         "outcomes": {
@@ -249,10 +254,10 @@
         }
       },
       "warm": {
-        "decision_p50": 2.2,
-        "decision_p95": 3.8,
-        "join_p50": 99.2,
-        "join_p95": 103.2,
+        "decision_p50": 1.6,
+        "decision_p95": 2.5,
+        "join_p50": 99.3,
+        "join_p95": 102.0,
         "checked": 0,
         "subjects": 50,
         "outcomes": {
@@ -260,10 +265,10 @@
         }
       },
       "stampede": {
-        "decision_p50": 972.7,
-        "decision_p95": 1149.2,
-        "join_p50": 4293.7,
-        "join_p95": 5953.1,
+        "decision_p50": 2039.1,
+        "decision_p95": 2183.7,
+        "join_p50": 4796.4,
+        "join_p95": 5631.0,
         "checked": 1,
         "subjects": 1,
         "outcomes": {
@@ -271,11 +276,11 @@
         }
       },
       "burst": {
-        "decision_p50": 1168.3,
-        "decision_p95": 7721.6,
-        "join_p50": 16384.5,
-        "join_p95": 20355.1,
-        "checked": 275,
+        "decision_p50": 1008.1,
+        "decision_p95": 7273.1,
+        "join_p50": 6343.5,
+        "join_p95": 11976.3,
+        "checked": 217,
         "subjects": 1000,
         "outcomes": {
           "ALLOW": 962,
@@ -284,13 +289,14 @@
       }
     },
     "vpnguard": {
-      "start_s": 7.4,
+      "rounds": 3,
+      "start_s": 6.7,
       "errors": 0,
       "cold": {
-        "decision_p50": 131.8,
-        "decision_p95": 289.2,
-        "join_p50": 202.9,
-        "join_p95": 402.2,
+        "decision_p50": 131.1,
+        "decision_p95": 287.5,
+        "join_p50": 203.4,
+        "join_p95": 400.6,
         "checked": 50,
         "subjects": 50,
         "outcomes": {
@@ -298,10 +304,10 @@
         }
       },
       "warm": {
-        "decision_p50": 2.4,
-        "decision_p95": 4.0,
+        "decision_p50": 1.6,
+        "decision_p95": 2.3,
         "join_p50": 99.2,
-        "join_p95": 102.9,
+        "join_p95": 101.6,
         "checked": 0,
         "subjects": 50,
         "outcomes": {
@@ -309,10 +315,10 @@
         }
       },
       "stampede": {
-        "decision_p50": 1162.4,
-        "decision_p95": 1182.9,
-        "join_p50": 4706.7,
-        "join_p95": 5883.9,
+        "decision_p50": 1129.1,
+        "decision_p95": 1151.1,
+        "join_p50": 4369.7,
+        "join_p95": 5229.0,
         "checked": 1,
         "subjects": 1,
         "outcomes": {
@@ -320,11 +326,11 @@
         }
       },
       "burst": {
-        "decision_p50": 10127.8,
-        "decision_p95": 11448.3,
-        "join_p50": 21291.5,
-        "join_p95": 25557.6,
-        "checked": 50,
+        "decision_p50": 10366.7,
+        "decision_p95": 11522.1,
+        "join_p50": 14928.1,
+        "join_p95": 19114.3,
+        "checked": 51,
         "subjects": 1000,
         "outcomes": {
           "ALLOW": 1000
@@ -333,7 +339,7 @@
     }
   },
   "detection": {
-    "subjects": 140,
+    "subjects": 692,
     "products": [
       "connection-guard",
       "connection-guard-candidate",
@@ -346,104 +352,104 @@
         "id": "commercial_vpn",
         "label": "Commercial VPNs",
         "kind": "catch",
-        "n": 21,
+        "n": 125,
         "blocked": {
-          "connection-guard": 13,
-          "connection-guard-candidate": 21,
-          "foxgate": 21,
-          "proxyshield": 21,
-          "vpnguard": 21
+          "connection-guard": 18,
+          "connection-guard-candidate": 125,
+          "foxgate": 125,
+          "proxyshield": 125,
+          "vpnguard": 124
         }
       },
       {
         "id": "fresh_vpn",
         "label": "Newly added VPN servers",
         "kind": "catch",
-        "n": 6,
+        "n": 37,
         "blocked": {
-          "connection-guard": 4,
-          "connection-guard-candidate": 6,
-          "foxgate": 6,
-          "proxyshield": 6,
-          "vpnguard": 6
+          "connection-guard": 5,
+          "connection-guard-candidate": 37,
+          "foxgate": 37,
+          "proxyshield": 37,
+          "vpnguard": 37
         }
       },
       {
         "id": "vpn_v6",
         "label": "VPNs over IPv6",
         "kind": "catch",
-        "n": 12,
+        "n": 40,
         "blocked": {
-          "connection-guard": 3,
-          "connection-guard-candidate": 12,
-          "foxgate": 12,
-          "proxyshield": 12,
-          "vpnguard": 11
+          "connection-guard": 6,
+          "connection-guard-candidate": 40,
+          "foxgate": 39,
+          "proxyshield": 39,
+          "vpnguard": 36
         }
       },
       {
         "id": "tor",
         "label": "Tor exits",
         "kind": "catch",
-        "n": 18,
+        "n": 80,
         "blocked": {
-          "connection-guard": 13,
-          "connection-guard-candidate": 18,
-          "foxgate": 18,
-          "proxyshield": 18,
-          "vpnguard": 16
+          "connection-guard": 17,
+          "connection-guard-candidate": 80,
+          "foxgate": 80,
+          "proxyshield": 80,
+          "vpnguard": 78
         }
       },
       {
         "id": "proxy",
         "label": "Public proxies",
         "kind": "catch",
-        "n": 24,
+        "n": 100,
         "blocked": {
-          "connection-guard": 20,
-          "connection-guard-candidate": 23,
-          "foxgate": 22,
-          "proxyshield": 23,
-          "vpnguard": 20
+          "connection-guard": 16,
+          "connection-guard-candidate": 99,
+          "foxgate": 92,
+          "proxyshield": 96,
+          "vpnguard": 89
         }
       },
       {
         "id": "residential",
         "label": "Home connections",
         "kind": "spare",
-        "n": 24,
+        "n": 150,
         "blocked": {
           "connection-guard": 0,
-          "connection-guard-candidate": 1,
-          "foxgate": 1,
-          "proxyshield": 1,
-          "vpnguard": 1
+          "connection-guard-candidate": 5,
+          "foxgate": 3,
+          "proxyshield": 4,
+          "vpnguard": 3
         }
       },
       {
         "id": "residential_v6",
         "label": "Home connections, IPv6",
         "kind": "spare",
-        "n": 16,
+        "n": 60,
         "blocked": {
           "connection-guard": 0,
-          "connection-guard-candidate": 1,
-          "foxgate": 1,
-          "proxyshield": 1,
-          "vpnguard": 1
+          "connection-guard-candidate": 4,
+          "foxgate": 3,
+          "proxyshield": 3,
+          "vpnguard": 3
         }
       },
       {
         "id": "mobile_cgnat",
         "label": "Mobile networks",
         "kind": "spare",
-        "n": 19,
+        "n": 100,
         "blocked": {
           "connection-guard": 0,
           "connection-guard-candidate": 1,
-          "foxgate": 0,
-          "proxyshield": 1,
-          "vpnguard": 1
+          "foxgate": 1,
+          "proxyshield": 2,
+          "vpnguard": 2
         }
       }
     ]
@@ -886,8 +892,8 @@
     }
   },
   "notes": {
-    "performance": "Connection Guard 0.6 build (42e1594) in a quick run on 6 Oct 2026: one round",
-    "detection": "Connection Guard 0.6 build (42e1594) in a quick run on 6 Oct 2026: 140 of the 692 addresses",
-    "failure": "Connection Guard 0.6.0 as released, 7 Oct 2026"
+    "performance": "Connection Guard 0.6.0 as released; median of three rounds",
+    "detection": "Connection Guard 0.6.0 as released; all 692 addresses, every plugin without API keys",
+    "failure": "Connection Guard 0.6.0 as released"
   }
 }
