@@ -32,7 +32,7 @@ describe("providers", () => {
     const v06 = { "provider.vpn.proxycheck.enabled": true, "provider.vpn.blackbox.enabled": true, "provider.vpn.ipcheck.enabled": false, "provider.vpn.zowi.enabled": true };
     const keys = providersFor(v06).map((x) => x.key);
     expect(keys).toEqual(["proxycheck", "blackbox", "ipcheck", "zowi", "iphub", "vpnapi", "ip-api"]);
-    expect(providersFor(v06).filter((x) => x.recommended).map((x) => x.key)).toEqual(["proxycheck", "blackbox", "zowi", "ip-api"]);
+    expect(providersFor(v06).filter((x) => x.recommended).map((x) => x.key)).toEqual(["proxycheck", "blackbox", "zowi"]);
     expect(providersFor(v06).find((x) => x.key === "ipcheck")?.caution).toBeTruthy();
     // 0.6 runs IPQuery without a dashboard switch: it shows up from provider health as a fixed member.
     expect(fixedProviders(v06, ["proxycheck", "blackbox", "ipquery"]).map((x) => x.key)).toEqual(["ipquery"]);

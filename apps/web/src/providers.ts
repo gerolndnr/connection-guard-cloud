@@ -41,8 +41,11 @@ export const PROVIDERS: readonly ProviderInfo[] = [
     signup: "https://vpnapi.io/", daily: { withoutKey: 0, withKey: 1000 } },
   { key: "ipqualityscore", name: "IPQualityScore", body: "Needs your own key. Check the credits and terms of your account.", keyPath: "provider.vpn.ipqualityscore.api-key", keyRequired: true,
     signup: "https://www.ipqualityscore.com/", daily: { withoutKey: 0, withKey: null } },
-  { key: "ip-api", name: "IP-API", body: "Free, no key, 45 checks a minute. Non-commercial use only. Always asked last.", keyPath: null, keyRequired: false,
-    signup: null, daily: { withoutKey: null, withKey: null }, nonCommercial: true, recommended: true },
+  // Not in the recommended setup since 7 Oct 2026: its free use is non-commercial only, and in the benchmark it added no
+  // detection the services before it did not already have (mc-antivpn-bench providers run 37594252642).
+  { key: "ip-api", name: "IP-API", body: "Free, no key, 45 checks a minute, over HTTP. Non-commercial use only. Always asked last.", keyPath: null, keyRequired: false,
+    signup: null, daily: { withoutKey: null, withKey: null }, nonCommercial: true,
+    caution: "Free use is for non-commercial servers only. In our benchmark it caught nothing the other services had missed, so it is off in the recommended setup." },
 ];
 
 /** Services this server can switch from the dashboard: each plugin version offers its own set (0.6.0 has no IPQuery switch). */
