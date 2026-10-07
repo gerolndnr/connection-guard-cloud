@@ -39,8 +39,8 @@ const runUrl = (name: string) => run(name) ? `${BENCHMARK_REPO}/actions/runs/${r
 const check = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-accent" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-danger-text" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>`;
 ---
-<Base title="Minecraft Anti-VPN Plugin Benchmark: Speed, Detection, Reliability | Connection Guard" path="/benchmark"
-  description={`Connection Guard, FoxGate, ProxyShield and VPNGuard on the same server: login speed with 1,000 players, VPN and Tor detection, false positives and behaviour when detection services fail. Open data.`}
+<Base title="Anti-VPN Plugin Benchmark for Minecraft | Connection Guard" path="/benchmark"
+  description={`Connection Guard, FoxGate, ProxyShield and VPNGuard on one server: speed with 1,000 players, VPN and Tor detection, false positives, service outages. Open data.`}
   noindex={!BENCHMARK_LIVE} schema={[breadcrumbs([["Benchmark", "/benchmark"]])]} view={{ event: "benchmark_viewed" }}>
 
   <section class="border-b border-line">
@@ -190,7 +190,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         </table>
       </div>
       <p class="mt-5 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
-        A check means the VPN or Tor exit was still refused while every detection service failed that way. Connection Guard 0.6 checks its own signed lists of VPN servers and Tor exits on the server before asking any service, so a known VPN needs no lookup at all. When several services hang at once, a home player's first login can take up to about 5 seconds; services that time out are then skipped for a while.
+        A check means the VPN or Tor exit was still refused while every detection service failed that way. Connection Guard 0.6 checks its own signed lists of VPN servers and Tor exits (<a href="/intel" class="underline">Connection Guard Intel</a>) on the server before asking any service, so a known VPN needs no lookup at all. When several services hang at once, a home player's first login can take up to about 5 seconds; services that time out are then skipped for a while.
       </p>
     </div>
   </section>

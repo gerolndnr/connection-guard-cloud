@@ -1,0 +1,381 @@
+---
+import Base from "../layouts/Base.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import DownloadCta from "../components/DownloadCta.astro";
+import Faq from "../components/Faq.astro";
+import { breadcrumbs, faq as faqSchema, software } from "../lib/seo";
+import { BENCHMARK_REPO } from "../data/release";
+import { OPERATOR } from "../data/operator";
+import { CURRENT, FAULT_LABELS, failure } from "../lib/benchmark";
+import data from "../data/intel.json";
+
+const INTEL = "https://intel.connectionguard.net";
+const INTEL_REPO = "https://github.com/gerolndnr/connection-guard-intel";
+const METHOD = `${BENCHMARK_REPO}/blob/main/METHODOLOGY.md#79-detection-services-on-their-own-providers`;
+const RUN = `${BENCHMARK_REPO}/actions/runs/${data.benchmark.run}`;
+const num = (n: number) => n.toLocaleString("en-US");
+const day = (iso: string) => new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+const short = (iso: string) => new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+const ms = (v: number | null) => v === null ? "–" : v < 0.1 ? "< 0.1 ms" : v < 1 ? `${v.toFixed(1)} ms` : `${Math.round(v)} ms`;
+
+// Benchmark: the top of the provider table, each service from its newest run in which it answered.
+const services = data.benchmark.services;
+const ranked = services.filter((s) => s.score !== null);
+const top = ranked.slice(0, 6);
+const intel = services.find((s) => s.id === "cg-intel")!;
+const leader = ranked[0]!;
+const runnerUp = ranked.find((s) => s.id !== "cg-intel")!;
+const overlapping = ranked.filter((s) => s.id !== "cg-intel" && s.range![1] >= intel.range![0]).map((s) => s.name);
+const SCALE = [60, 100] as const;
+const at = (v: number) => `${(100 * (Math.min(Math.max(v, SCALE[0]), SCALE[1]) - SCALE[0])) / (SCALE[1] - SCALE[0])}%`;
+const online = ranked.filter((s) => !s.local && s.caught >= s.bad / 2 && s.ms !== null).map((s) => s.ms!);
+const cohorts = data.benchmark.intel_cohorts;
+const caughtCohorts = cohorts.filter((c) => !c.id.startsWith("residential") && c.id !== "mobile_cgnat");
+const spared = cohorts.filter((c) => c.id.startsWith("residential") || c.id === "mobile_cgnat");
+const sparedN = spared.reduce((s, c) => s + c.n, 0);
+const sparedHit = spared.reduce((s, c) => s + c.hit, 0);
+
+// Failure test of the released plugin (Connection Guard 0.6.0): VPN and Tor still refused while every service fails.
+const faults = Object.keys(FAULT_LABELS).filter((f) => f !== "control" && failure[CURRENT]?.[f]);
+const heldFaults = faults.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length;
+
+// The lists, as of the build snapshot; a small script refreshes counts and age from the live manifest.
+const m = data.manifest;
+const sources = m.sources;
+const by = (cat: string) => sources.filter((s) => s.category === cat);
+const operators = by("VPN").filter((s) => !s.id.startsWith("operator-asn"));
+const operatorNetworks = by("VPN").filter((s) => s.id.startsWith("operator-asn"));
+const proxyMaintainers = new Set(by("PROXY").map((s) => s.name.split("/")[0])).size;
+const lists = [
+  { key: "VPN", name: "VPN servers", what: `Servers from ${operators.length} VPN operators' own server lists, and the ${operatorNetworks.length} networks those operators run themselves.`,
+    count: m.lists.VPN.networks, unit: "networks", verdict: "refused", word: "Refused" },
+  { key: "TOR", name: "Tor exits", what: `Exit relays from the Tor Project, kept ${m.tor_history_days} days after they were last listed.`,
+    count: m.lists.TOR.addresses ?? m.lists.TOR.networks, unit: "exits", verdict: "refused", word: "Refused" },
+  { key: "PROXY", name: "Open proxies", what: `Addresses that public proxy lists of at least two of ${proxyMaintainers} independent maintainers name, kept ${m.proxy_history_days} days.`,
+    count: m.lists.PROXY.addresses, unit: "addresses", verdict: "refused", word: "Refused", soon: "0.6.1" },
+  { key: "RELAY", name: "Privacy relays", what: "Apple iCloud Private Relay and Cloudflare WARP. Ordinary players use them without choosing a VPN.",
+    count: m.lists.RELAY.networks, unit: "networks", verdict: "admitted", word: "Let in" },
+  { key: "HOSTING", name: "Hosting networks", what: "Cloud and hosting ranges: AWS, Google Cloud, Oracle, Hetzner, OVH and more. A hint, never a verdict on its own.",
+    count: m.lists.HOSTING.networks, unit: "networks", verdict: "neutral", word: "Evidence only" },
+];
+const sourceGroups = [
+  { key: "VPN", title: "VPN servers", note: "The operators' public server lists and APIs, resolved by DNS where they publish host names, plus the networks registered to those operators (RIPEstat)." },
+  { key: "TOR", title: "Tor exits", note: "Published by the Tor Project for exactly this use." },
+  { key: "PROXY", title: "Open proxies", note: "Public proxy lists. An address goes in only when lists of two different maintainers name it on the same day. The three lists the benchmark's proxy group comes from (monosans, proxifly, vakhov) are deliberately not used." },
+  { key: "RELAY", title: "Privacy relays", note: "Apple's published egress ranges, and Cloudflare's WARP prefixes from RIPEstat." },
+  { key: "HOSTING", title: "Hosting networks", note: "The providers' own published ranges and geofeeds, and the networks of hosting companies from RIPEstat." },
+];
+const unlicensed = sources.filter((s) => s.licence !== "MIT" && s.category === "PROXY").length;
+
+const faq = [
+  { q: "Does Connection Guard Intel send my players' IP addresses anywhere?", a: "No. Your server downloads the lists once a day and checks every login against them in memory. The download sends no player IP, UUID or name; the list server only sees your server's own download request, like any other file download." },
+  { q: "Is it free?", a: "Yes. No account, no key, no quota. It is on by default in new Connection Guard 0.6 installs. Intel publishes its compilation under CC BY 4.0, so other projects may use it with attribution; each source keeps its own terms, listed in SOURCES.md and the manifest." },
+  { q: "How fresh are the lists?", a: `A new build is published every day and Connection Guard checks for it every 24 hours. Tor exits stay listed ${m.tor_history_days} days and proxies ${m.proxy_history_days} days after they were last seen. Lists older than 72 hours stop deciding, so stale data never refuses anyone.` },
+  { q: "A real player is on a list. What now?", a: "Run /cg explain with their address to see which list matched, and let them in with an allow rule. Please also report the address on GitHub, so the next build can correct it for everyone." },
+  { q: "Does it replace the detection services?", a: "No, it goes first. A listed VPN, Tor exit or proxy is refused without any lookup, and a privacy relay is let in. An address on no list is unknown, never clean, so Connection Guard asks the detection services you chose, as before." },
+  { q: "Which version do I need?", a: "Connection Guard 0.6 uses the VPN, Tor, relay and hosting lists. The proxy list is read from 0.6.1 on; 0.6.0 ignores it safely." },
+];
+const check = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+const ban = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M6.5 6.5l11 11"/></svg>`;
+const dot = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="7.5"/><path d="M12 8.5v4M12 15.5v.01"/></svg>`;
+const icon = { refused: ban, admitted: check, neutral: dot } as Record<string, string>;
+const title = "Connection Guard Intel: Free VPN and Proxy Lists for Minecraft";
+const description = `Signed VPN, Tor and proxy lists for Minecraft servers, checked on the server: no API key, no quota, no player IP sent. First of ${services.length} services in an open benchmark.`;
+const dataset = {
+  "@type": "Dataset",
+  "@id": "https://connectionguard.net/intel#dataset",
+  name: "Connection Guard Intel",
+  description: "Daily, signed lists of VPN server networks, Tor exit relays, open proxies, privacy relays (iCloud Private Relay, Cloudflare WARP) and hosting networks, built from public sources for checking players' addresses on a game server.",
+  url: "https://connectionguard.net/intel",
+  license: "https://creativecommons.org/licenses/by/4.0/",
+  isAccessibleForFree: true,
+  creator: { "@id": "https://connectionguard.net/#org" },
+  dateModified: m.as_of,
+  keywords: ["VPN IP list", "Tor exit list", "proxy list", "anti-VPN", "Minecraft"],
+  distribution: ["vpn", "tor", "proxy", "relay", "hosting"].map((k) => ({ "@type": "DataDownload", encodingFormat: "text/plain", contentUrl: `${INTEL}/${k}.txt` })),
+  isBasedOn: INTEL_REPO,
+};
+---
+<Base {title} {description} path="/intel" og="/og/intel.png"
+  schema={[breadcrumbs([["Connection Guard Intel", "/intel"]]), dataset, software(), faqSchema(faq)]} view={{ event: "intel_viewed" }}>
+
+  <!-- The measured result leads: Intel's place in the provider table, with its range, in the first viewport. -->
+  <section class="border-b border-line">
+    <div class="container-site grid grid-cols-[minmax(0,1fr)] items-center gap-12 py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-14 lg:py-20">
+      <div>
+        <Breadcrumbs items={[["Connection Guard Intel", "/intel"]]} />
+        <h1 class="display mt-6 text-[clamp(2.375rem,5vw,3.5rem)]">VPN and Tor lists, checked on your server.</h1>
+        <p class="lede mt-6 max-w-xl">Connection Guard Intel is a signed set of VPN, Tor, relay and proxy lists. Your server downloads them once a day and checks every login against them itself: no API key, no daily quota, and checking a list sends no player's IP anywhere. Connection Guard 0.6 reads the VPN, Tor and relay lists; the proxy list follows in 0.6.1.</p>
+        <DownloadCta location="intel_hero" class="mt-9">
+          <a href="#measured" class="btn btn-secondary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="intel_measured" data-ph-location="intel_hero">How it's measured</a>
+        </DownloadCta>
+        <ul class="mt-9 flex flex-wrap gap-x-6 gap-y-2 text-[0.8125rem] text-fg-2">
+          {["In Connection Guard 0.6, on for new installs", "Signed, rebuilt daily", "Every source named, with its terms"].map((t) => (
+            <li class="flex items-center gap-2"><span class="text-accent"><Fragment set:html={check} /></span>{t}</li>
+          ))}
+        </ul>
+      </div>
+
+      <figure class="rounded-2xl border border-line bg-surface">
+        <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line px-5 py-4">
+          <figcaption class="text-[0.9375rem] font-semibold tracking-[-0.01em]">Detection services, measured on their own</figcaption>
+          <span class="num text-[0.75rem] text-fg-3">{num(data.benchmark.subjects)} addresses · {day(data.benchmark.date)}</span>
+        </div>
+        <table class="w-full text-left text-sm">
+          <caption class="sr-only">Top {top.length} of {services.length} detection services by score, with the 95 % range of each score</caption>
+          <thead class="text-[0.75rem] text-fg-3">
+            <tr class="border-b border-line">
+              <th scope="col" class="w-8 py-2.5 pl-5 font-medium"><span class="sr-only">Rank</span></th>
+              <th scope="col" class="py-2.5 pr-3 font-medium">Service</th>
+              <th scope="col" class="whitespace-nowrap py-2.5 pr-3 text-right font-medium">Score<span class="font-normal sm:hidden"> · range</span></th>
+              <th scope="col" class="hidden w-[34%] py-2.5 pr-5 font-medium sm:table-cell"><span class="flex justify-between"><span>95 % range</span><span class="num">{SCALE[0]}–{SCALE[1]}</span></span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {top.map((s, i) => {
+              const mine = s.id === "cg-intel";
+              return (
+                <tr class={`border-b border-line last:border-0 ${mine ? "bg-accent-soft/60" : ""}`}>
+                  <td class="num py-3 pl-5 align-top text-[0.8125rem] leading-[1.45rem] text-fg-3">{i + 1}</td>
+                  <th scope="row" class="py-3 pr-3 font-normal">
+                    <span class={mine ? "font-medium text-fg" : "text-fg"}>{s.name}</span>
+                    <span class="block text-[0.75rem] text-fg-3"><span class="whitespace-nowrap">{s.caught}/{s.bad} caught</span> · <span class="whitespace-nowrap">{s.refused}/{s.good} refused</span>{s.earlier && <> · <span class="whitespace-nowrap">earlier run, {short(s.date)}</span></>}</span>
+                  </th>
+                  <td class={`num py-3 pr-3 text-right text-[0.9375rem] font-semibold ${mine ? "text-accent-text" : "text-fg"}`}>{s.score!.toFixed(1)}<span class="block whitespace-nowrap text-[0.75rem] font-normal text-fg-3 sm:hidden">{s.range![0].toFixed(0)}–{s.range![1].toFixed(0)}</span></td>
+                  <td class="hidden py-3 pr-5 sm:table-cell">
+                    <span class="relative block h-5" aria-label={`${s.range![0].toFixed(1)} to ${s.range![1].toFixed(1)}`}>
+                      <span class="absolute inset-x-0 top-1/2 h-px bg-line"></span>
+                      <span class={`absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full ${mine ? "bg-accent/45" : "bg-line-strong"}`} style={`left:${at(s.range![0])};right:calc(100% - ${at(s.range![1])})`}></span>
+                      <span class={`absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface ${mine ? "bg-accent" : "bg-fg-2"}`} style={`left:${at(s.score!)}`}></span>
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div class="border-t border-line px-5 py-4 text-[0.8125rem] leading-relaxed text-fg-2">
+          <p>Score = 100 × (share caught − 3 × share of home players refused) − 5 per second of answer time. {leader.id === "cg-intel" ? `Intel leads, but its range overlaps ${overlapping.slice(0, 2).join(" and ")}${overlapping.length > 2 ? " and others" : ""}: leading, not clearly best.` : ""}</p>
+          <p class="mt-2 text-fg-3">Intel is our own project, and its VPN and Tor lists come from the same sources that label those addresses. The score includes the proxy list, which Connection Guard reads from 0.6.1; 0.6.0 uses the VPN, Tor, relay and hosting lists. <a href="#measured" class="font-medium text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg">What that means</a></p>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section id="why" aria-labelledby="why-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site py-16 sm:py-20">
+      <h2 id="why-h" class="section-title max-w-2xl">Why a list on your server beats a lookup.</h2>
+      <p class="lede mt-4">A detection service sees every player's address, limits how often you may ask, and sometimes doesn't answer. A list on your server has none of those problems.</p>
+      <dl class="mt-12 divide-y divide-line border-y border-line">
+        {[
+          { t: "Checking a list sends nothing.", d: "The daily download sends no player IP, UUID or name, and every login is checked in memory against the lists already on your server. A listed address is decided right there; only addresses on no list go on to the detection services you chose.", proof: ["How the download works", "/privacy#intel"] },
+          { t: "No key, no quota.", d: "Free detection services answer 100 to 1,000 lookups a day; after that, new players go unchecked or wait for another service. A list has no limit: the thousandth new player of the day is checked like the first." },
+          { t: "Keeps refusing VPNs when services fail.", d: `In the benchmark, every detection service was made to time out, rate-limit and return broken answers. Connection Guard 0.6 still refused the VPN and the Tor exit in ${heldFaults} of ${faults.length} cases, without a single lookup. If a list download fails, the last good lists stay active.`, proof: ["Failure results", "/benchmark#reliability"] },
+          { t: "Answers in under 0.1 ms.", d: `An online detection service took ${ms(Math.min(...online))} to ${ms(Math.max(...online))} per answer in the same benchmark. A list lookup is a memory read, so a listed VPN adds no waiting to the login.` },
+        ].map((r) => (
+          <div class="grid grid-cols-[minmax(0,1fr)] gap-2 py-6 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-10">
+            <dt class="text-[1.0625rem] font-semibold tracking-[-0.015em] text-fg">{r.t}</dt>
+            <dd class="max-w-[36rem] text-[0.9375rem] leading-relaxed text-fg-2">
+              {r.d}
+              {r.proof && <a href={r.proof[1]} class="mt-2 block text-[0.8125rem] font-medium text-fg no-underline hover:underline">{r.proof[0]} →</a>}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section id="lists" aria-labelledby="lists-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site py-16 sm:py-20">
+      <div class="flex flex-wrap items-end justify-between gap-6">
+        <div class="max-w-2xl">
+          <h2 id="lists-h" class="section-title">Five lists, five answers.</h2>
+          <p class="lede mt-4">Each list has its own job. A privacy relay is not a VPN, and a hosting network alone is not a reason to refuse anyone.</p>
+        </div>
+        <p class="flex items-center gap-2 text-[0.8125rem] text-fg-2" data-intel-status>
+          <span class="relative flex size-2"><span class="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-40 motion-reduce:animate-none"></span><span class="relative inline-flex size-2 rounded-full bg-accent"></span></span>
+          <span>Current build: <time datetime={m.as_of} data-intel-asof>{day(m.as_of)}</time> · signed</span>
+        </p>
+      </div>
+      <ul class="card mt-10 divide-y divide-line sm:hidden">
+        {lists.map((l) => (
+          <li class="px-4 py-4">
+            <p class="flex flex-wrap items-center gap-2"><span class="mr-auto font-medium text-fg">{l.name}</span><span class={`badge badge-${l.verdict}`}><Fragment set:html={icon[l.verdict]} />{l.word}</span>{l.soon && <span class="chip chip-soon h-5 text-xs">From {l.soon}</span>}</p>
+            <p class="mt-1 text-[0.8125rem] text-fg-3"><span class="num font-medium text-fg" data-intel-count={l.key}>{num(l.count!)}</span> {l.unit}</p>
+            <p class="mt-2 text-[0.875rem] leading-relaxed text-fg-2">{l.what}</p>
+          </li>
+        ))}
+      </ul>
+      <div class="card mt-10 hidden overflow-x-auto sm:block">
+        <table class="w-full min-w-[42rem] text-left text-sm">
+          <caption class="sr-only">The five Connection Guard Intel lists, their size and what Connection Guard does with a match</caption>
+          <thead class="border-b border-line text-[0.75rem] text-fg-3">
+            <tr>
+              <th scope="col" class="px-5 py-3 font-medium">List</th>
+              <th scope="col" class="px-4 py-3 font-medium">What's in it</th>
+              <th scope="col" class="px-4 py-3 text-right font-medium">Size</th>
+              <th scope="col" class="px-5 py-3 font-medium">A match is</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lists.map((l) => (
+              <tr class="border-b border-line align-top last:border-0">
+                <th scope="row" class="whitespace-nowrap px-5 py-4 font-medium text-fg">{l.name}</th>
+                <td class="max-w-[30rem] px-4 py-4 leading-relaxed text-fg-2">{l.what}</td>
+                <td class="whitespace-nowrap px-4 py-4 text-right"><span class="num font-medium text-fg" data-intel-count={l.key}>{num(l.count!)}</span><span class="block text-[0.75rem] text-fg-3">{l.unit}</span></td>
+                <td class="whitespace-nowrap px-5 py-4">
+                  <span class={`badge badge-${l.verdict}`}><Fragment set:html={icon[l.verdict]} />{l.word}</span>
+                  {l.soon && <span class="chip chip-soon ml-2 h-5 text-xs">From {l.soon}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-5 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
+        A network is an address range. An address on no list is unknown, never clean: Connection Guard then asks the detection services you chose. Privacy relays are let in by default; <code class="mono text-fg-2">relay: VPN</code> treats them like a VPN. Lists older than 72 hours stop deciding.
+        The files and their signature are at <a href={`${INTEL}/manifest.json`} class="underline">intel.connectionguard.net</a>.
+      </p>
+    </div>
+  </section>
+
+  <section id="measured" aria-labelledby="measured-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site grid grid-cols-[minmax(0,1fr)] gap-12 py-16 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+      <div>
+        <h2 id="measured-h" class="section-title">How it's measured.</h2>
+        <p class="lede mt-4">The open benchmark <a href={BENCHMARK_REPO} class="text-fg underline">mc-antivpn-bench</a> sends the same {num(data.benchmark.subjects)} labelled addresses to {services.length} detection services and reads Intel's lists the way the plugin does.</p>
+        <div class="card mt-8 overflow-hidden">
+          <table class="w-full text-left text-sm">
+            <caption class="sr-only">Connection Guard Intel per address group</caption>
+            <thead class="border-b border-line text-[0.75rem] text-fg-3"><tr><th scope="col" class="px-5 py-2.5 font-medium">Group</th><th scope="col" class="px-5 py-2.5 text-right font-medium">On Intel's lists</th></tr></thead>
+            <tbody>
+              <tr class="border-b border-line"><th colspan="2" scope="colgroup" class="bg-subtle px-5 py-2 text-[0.75rem] font-medium text-fg-2 dark:bg-[#111]">Should be caught</th></tr>
+              {caughtCohorts.map((c) => <tr class="border-b border-line"><th scope="row" class="px-5 py-2.5 font-normal text-fg">{c.label}</th><td class="num px-5 py-2.5 text-right text-fg">{c.hit}<span class="text-fg-3"> / {c.n}</span></td></tr>)}
+              <tr class="border-b border-line"><th colspan="2" scope="colgroup" class="bg-subtle px-5 py-2 text-[0.75rem] font-medium text-fg-2 dark:bg-[#111]">Should get in</th></tr>
+              {spared.map((c) => <tr class="border-b border-line last:border-0"><th scope="row" class="px-5 py-2.5 font-normal text-fg">{c.label}</th><td class="num px-5 py-2.5 text-right text-fg">{c.hit}<span class="text-fg-3"> / {c.n}</span></td></tr>)}
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-4 text-[0.8125rem] text-fg-3"><a href={RUN} class="underline">Provider run of {day(data.benchmark.date)}</a>, Intel lists as they were that day.</p>
+      </div>
+      <div>
+        <h3 class="text-[1.0625rem] font-semibold tracking-[-0.015em]">Read it with these in mind.</h3>
+        <ul class="mt-5 grid gap-4 text-[0.9375rem] leading-relaxed text-fg-2">
+          {[
+            "Intel and the benchmark are both built by Connection Guard's author. The method, the data and every log are public, and any service can contest its result.",
+            "The VPN and Tor rows show coverage, not skill: Intel's VPN and Tor lists come from the same operator lists and Tor Project list that label those addresses. A new VPN server that no operator list names yet is a harder test.",
+            `The proxy row is independent: Intel uses none of the three lists the proxy group was built from. It caught ${cohorts.find((c) => c.id === "proxy")!.hit} of ${cohorts.find((c) => c.id === "proxy")!.n}.`,
+            `${sparedHit === 0 ? "None" : num(sparedHit)} of the ${num(sparedN)} home and mobile addresses ${sparedHit === 1 || sparedHit === 0 ? "was" : "were"} on a list. These are volunteers' RIPE Atlas probes, not every kind of home connection.`,
+            `The ${(intel.range![1] - intel.range![0]).toFixed(0)}-point range comes from the sample size. ${overlapping.length ? `${overlapping.join(", ")} overlap with it, so Intel leads but is not clearly better.` : ""} ${runnerUp.name} catches more on its own, but also refuses more home players.`,
+            "The plugin reads the proxy list from Connection Guard 0.6.1; 0.6.0 uses the VPN, Tor, relay and hosting lists.",
+          ].map((t) => <li class="flex gap-3"><span aria-hidden="true" class="mt-2.5 size-1.5 shrink-0 rounded-full bg-fg-3"></span><span>{t}</span></li>)}
+        </ul>
+        <p class="mt-6 text-[0.9375rem] text-fg-2"><a href={METHOD} class="font-medium text-fg underline">Method and score</a> · <a href="/benchmark" class="font-medium text-fg underline">Plugin benchmark</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="configure" aria-labelledby="configure-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site grid grid-cols-[minmax(0,1fr)] gap-12 py-16 sm:py-20 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+      <div>
+        <h2 id="configure-h" class="section-title">On for new installs. One line to change.</h2>
+        <p class="lede mt-4">New Connection Guard 0.6 installs use Intel from the first start. A server upgraded from 0.5 keeps its old settings, so Intel stays off there until you add it.</p>
+        <ul class="mt-8 grid gap-3 text-[0.9375rem] leading-relaxed text-fg-2">
+          <li><code class="mono text-fg">/cg local status</code> shows the lists, their size and build date.</li>
+          <li><code class="mono text-fg">/cg explain &lt;ip&gt;</code> shows which list matched a player.</li>
+          <li><code class="mono text-fg">/cg local update connectionguard-intel</code> fetches a new build now.</li>
+        </ul>
+      </div>
+      <figure>
+        <pre class="mono overflow-x-auto rounded-xl border border-line bg-[#0a0a0a] px-5 py-4 text-[0.8125rem] leading-relaxed text-[#ededed]"><span class="text-[#8f8f8f]"># plugins/…/config.yml</span>
+provider:
+  local:
+    connectionguard-intel:
+      enabled: <span class="text-[#34d399]">true</span>      <span class="text-[#8f8f8f]"># false switches Intel off</span>
+      update-hours: <span class="text-[#34d399]">24</span>   <span class="text-[#8f8f8f]"># 0: no automatic download</span>
+      max-age-hours: <span class="text-[#34d399]">72</span>  <span class="text-[#8f8f8f]"># older lists stop deciding</span>
+      relay: <span class="text-[#34d399]">ALLOW</span>       <span class="text-[#8f8f8f]"># VPN: treat iCloud Relay and WARP as VPN</span></pre>
+        <figcaption class="mt-2 text-[0.8125rem] text-fg-3">The defaults of a new 0.6 install. The list address and the signing key are built into the plugin and can't be changed.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="sources" aria-labelledby="sources-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site py-16 sm:py-20">
+      <div class="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+        <div>
+          <h2 id="sources-h" class="section-title">Where the data comes from.</h2>
+          <p class="lede mt-4">Only public sources, {sources.length} of them in the current build, each named with its terms. Intel publishes its compilation under CC BY 4.0 and the code that builds it under MIT; each source keeps its own terms.</p>
+          <div class="mt-8 rounded-lg border border-line bg-surface p-5">
+            <h3 class="text-[0.9375rem] font-semibold">Maintain one of these lists?</h3>
+            <p class="mt-2 text-[0.9375rem] leading-relaxed text-fg-2">Intel includes every source listed here, also {unlicensed} proxy lists that publish no licence, a GPL licence or their own terms. If you'd rather your list wasn't used, tell us and it leaves with the next daily build.</p>
+            <p class="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[0.875rem]">
+              <a href={`mailto:${OPERATOR.email}?subject=Connection%20Guard%20Intel%20source%20removal`} class="font-medium text-fg underline">{OPERATOR.email}</a>
+              <a href={`${INTEL_REPO}/issues`} class="font-medium text-fg underline">Open an issue</a>
+            </p>
+          </div>
+        </div>
+        <div class="divide-y divide-line border-y border-line">
+          {sourceGroups.map((g) => {
+            const list = by(g.key);
+            return (
+              <details class="group py-1">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-6 py-4 [&::-webkit-details-marker]:hidden">
+                  <span><span class="text-base font-medium tracking-[-0.01em]">{g.title}</span> <span class="num text-[0.8125rem] text-fg-3">{list.length} {list.length === 1 ? "source" : "sources"}</span></span>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 shrink-0 text-fg-3 transition-transform group-open:rotate-45" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+                </summary>
+                <p class="max-w-[38rem] pb-3 text-[0.875rem] leading-relaxed text-fg-2">{g.note}</p>
+                <ul class="grid grid-cols-[minmax(0,1fr)] gap-x-6 pb-5 text-[0.8125rem] sm:grid-cols-2">
+                  {list.map((s) => (
+                    <li class="flex items-baseline justify-between gap-3 border-b border-line py-1.5">
+                      <a href={s.url ?? undefined} class="min-w-0 truncate text-fg-2 no-underline hover:text-fg hover:underline" title={s.terms ?? undefined}>{s.name}</a>
+                      <span class={`shrink-0 ${s.licence === "MIT" ? "text-fg-2" : "text-fg-3"}`}>{s.licence}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            );
+          })}
+        </div>
+      </div>
+      <p class="mt-8 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
+        Attribution: Tor Project; Apple; RIPE NCC (RIPEstat); Amazon Web Services, Google Cloud, Oracle, DigitalOcean, Akamai; the VPN operators and proxy list maintainers named above. Every source's exact terms are in the signed manifest and in <a href={`${INTEL_REPO}/blob/main/SOURCES.md`} class="underline">SOURCES.md</a>.
+      </p>
+    </div>
+  </section>
+
+  <div class="container-site py-16 sm:py-20"><Faq items={faq} id="intel-faq" title="Questions about Intel." /></div>
+
+  <section aria-labelledby="get-h" class="border-t border-line">
+    <div class="container-site flex flex-col items-start gap-8 py-16 sm:py-20 md:flex-row md:items-end md:justify-between">
+      <div class="max-w-xl">
+        <h2 id="get-h" class="section-title">Get it with Connection Guard.</h2>
+        <p class="lede mt-4">Intel comes with the free plugin for Paper, Spigot, BungeeCord and Velocity. Nothing to sign up for.</p>
+      </div>
+      <DownloadCta location="intel_footer" />
+    </div>
+  </section>
+</Base>
+
+<script is:inline define:vars={{ url: `${INTEL}/manifest.json` }}>
+  // Live status: the build age and list sizes from the current signed manifest. The page shows the build-time snapshot
+  // until this answers, and keeps it if it doesn't.
+  (function () {
+    var asOf = document.querySelector("[data-intel-asof]");
+    if (!asOf || !window.fetch) return;
+    var fmt = new Intl.NumberFormat("en-US");
+    fetch(url, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (m) {
+      if (!m || !m.as_of) return;
+      var hours = Math.max(0, Math.round((Date.now() - Date.parse(m.as_of)) / 3600000));
+      asOf.setAttribute("datetime", m.as_of);
+      asOf.textContent = hours < 1 ? "less than an hour ago" : hours < 48 ? hours + (hours === 1 ? " hour ago" : " hours ago") : Math.round(hours / 24) + " days ago";
+      var lists = m.lists || {}, proxy = (m.additional_lists || {}).PROXY;
+      var value = { VPN: lists.VPN && lists.VPN.networks, TOR: lists.TOR && (lists.TOR.addresses || lists.TOR.networks),
+        RELAY: lists.RELAY && lists.RELAY.networks, HOSTING: lists.HOSTING && lists.HOSTING.networks, PROXY: proxy && proxy.addresses };
+      document.querySelectorAll("[data-intel-count]").forEach(function (el) {
+        var v = value[el.getAttribute("data-intel-count")];
+        if (typeof v === "number") el.textContent = fmt.format(v);
+      });
+    }).catch(function () {});
+  })();
+</script>

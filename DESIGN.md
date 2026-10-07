@@ -405,6 +405,8 @@ connectionguard.net is the Persuade surface of the same system: it imports the d
 ### Layout
 Content sits in a 72rem container (`site-container`) with 20px side padding, 32px from `sm`. Sections are full-width bands divided by 1px hairlines, with 80px vertical padding (112px from `sm`) on the home page and 56-64px on inner pages. Section anchors carry a scroll margin that clears the taller mobile header. Smooth anchor scrolling turns off under reduced motion.
 
+**The Restack Rule.** Below `sm`, a site table too wide for a phone becomes one stacked card per row, with every value kept, instead of scrolling sideways (the Intel lists; the comparison table already restacks below `md`). Narrow tables that fit keep their table form and drop secondary columns instead.
+
 **The Preview Stage Rule.** Exactly one full-bleed band sits on a different ground than the page: the dashboard preview (`#dashboard`, `subtle` in light, `surface` in dark, hairlines top and bottom). It follows the theme; a band forced dark in light mode read as a black slab and was dropped (Gero, 2026-10-04). No other section changes ground. Chips reset letter-spacing so they survive inside tight display headings.
 
 ### Navigation
@@ -414,8 +416,9 @@ A sticky, opaque `surface` header with a bottom hairline (not the dashboard's tr
 - **Large Button** (`button-primary-lg`, and the secondary at the same size): 44px tall, 8px corners, 0.9375rem. Used only for the page-level calls to action (Download free, How it compares, Join the Discord). The nav keeps the standard 36px button.
 - **Chip** (`chip`): a 24px pill with a 1px `line` stroke on `surface`, `ink-2` caption text. Holds factual tags: license, version (in mono), "Recommended".
 - **Soon Chip** (`chip-soon`): the same pill on `emerald-wash` with `emerald-deep` text and a 35% emerald stroke, 20px tall where inline. Its text is "0.5" (or "Coming in 0.5" in the announcement bar) and it marks every feature not in the current release: comparison rows, setup steps, the dashboard heading.
-- **Frame** (`rounded.frame`): the comparison table and the dashboard preview window sit in 16px-cornered, hairline-stroked frames, one step rounder than cards because they hold cards or tables.
+- **Frame** (`rounded.frame`): the comparison table, the dashboard preview window and the ranking frame sit in 16px-cornered, hairline-stroked frames, one step rounder than cards because they hold cards or tables.
 - **Download Stats Card**: a standard card with the dated total as a 3rem tabular number, one emerald meter per platform, and a footer line naming the source and date.
+- **Ranking Frame**: the signature of the Intel hero. A frame on `surface` holding a ranked score table: a header row with a 0.9375rem/600 caption and the sample size and run date in `ink-3` caption; rows with an `ink-3` rank, the service name over a caption line of its counts, a right-aligned 0.9375rem/600 tabular score, and a 95 % range bar. The bars share one fixed, labelled scale (60–100) so overlaps read honestly: a 1px `line` track, a 6px pill range in `line-strong`, and a 10px score dot in `ink-2` ringed in `surface`. Our row sits on emerald wash at 60%, with the name at 500 weight, the score in emerald text, and the range and dot in emerald (range at 45%). A footer under a hairline states the formula and the caveat inside the frame. Below `sm` the bar column drops and the range prints under the score.
 
 ### Comparison Table
 **The Categories Not Competitors Rule.** Columns are Connection Guard, a typical paid plugin and a typical hosted service; no product is named, and a footnote dates the review.

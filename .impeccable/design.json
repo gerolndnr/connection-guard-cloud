@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-04T12:00:00Z",
+  "generatedAt": "2026-10-07T12:00:00Z",
   "title": "Design System: Connection Guard Cloud",
   "extensions": {
     "colorMeta": {
@@ -418,7 +418,7 @@
         "height": "56px",
         "compactRowBelowMd": "40px scrolling link row"
       },
-      "frameRadius": "16px (comparison table, preview window)",
+      "frameRadius": "16px (comparison table, preview window, ranking frame)",
       "compareMarks": {
         "yes": "emerald check",
         "no": "ink-3 dash",
@@ -430,7 +430,16 @@
         "wide diffuse shadows",
         "kicker chips above headings",
         "amber for neutral facts"
-      ]
+      ],
+      "rankingFrame": {
+        "where": "Intel hero (/intel), signature component",
+        "frame": "16px radius, 1px line stroke, surface fill; header caption 0.9375rem/600 with sample size and run date in ink-3 caption; footer formula and caveat under a hairline",
+        "rows": "ink-3 rank; name over a caption count line; right-aligned 0.9375rem/600 tabular score",
+        "rangeBar": "fixed labelled 60-100 scale; 1px line track; 6px pill range in line-strong; 10px ink-2 score dot ringed in surface",
+        "ownRow": "emerald wash 60%; name 500; score in emerald text; range emerald 45%, dot emerald",
+        "belowSm": "bar column drops; range prints under the score"
+      },
+      "restack": "Below sm, a site table too wide for a phone becomes one stacked card per row with every value kept (Intel lists; comparison table below md). Narrow tables keep table form and drop secondary columns."
     }
   },
   "components": [
@@ -529,6 +538,14 @@
       "description": "Marks features not in the current release; text is \"0.5\".",
       "html": "<span class=\"ds-chip ds-chip-soon\">0.5</span>",
       "css": ".ds-chip-soon { color: #047857; border-color: color-mix(in srgb, #059669 35%, transparent); background: #ecfdf5; } .dark .ds-chip-soon { color: #34d399; border-color: color-mix(in srgb, #10b981 35%, transparent); background: rgb(16 185 129 / 0.12); }"
+    },
+    {
+      "name": "Ranking Frame",
+      "kind": "custom",
+      "refersTo": "rounded.frame",
+      "description": "Intel hero: ranked score table with 95 % range bars on a fixed 60-100 scale; our row on emerald wash.",
+      "html": "<figure class=\"ds-rank\"><div class=\"ds-rank-head\"><figcaption>Detection services, measured on their own</figcaption><span>692 addresses · 7 October 2026</span></div><table><thead><tr><th></th><th>Service</th><th class=\"r\">Score</th><th><span class=\"ds-scale\"><span>95 % range</span><span>60–100</span></span></th></tr></thead><tbody><tr class=\"mine\"><td class=\"n\">1</td><th>Connection Guard Intel<small>349/382 caught · 1/310 refused</small></th><td class=\"r s\">91.4</td><td><span class=\"ds-bar\"><span class=\"t\"></span><span class=\"g\" style=\"left:68%;right:10%\"></span><span class=\"d\" style=\"left:78.5%\"></span></span></td></tr><tr><td class=\"n\">2</td><th>Blackbox<small>376/382 caught · 12/310 refused</small></th><td class=\"r s\">87.0</td><td><span class=\"ds-bar\"><span class=\"t\"></span><span class=\"g\" style=\"left:60%;right:20%\"></span><span class=\"d\" style=\"left:67.5%\"></span></span></td></tr></tbody></table><div class=\"ds-rank-foot\">Intel leads, but its range overlaps Blackbox.</div></figure>",
+      "css": ".ds-rank{margin:0;border:1px solid var(--line);border-radius:16px;background:var(--surface);font-size:.875rem;color:var(--fg)} .ds-rank-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:16px 20px;border-bottom:1px solid var(--line)} .ds-rank-head figcaption{font-size:.9375rem;font-weight:600;letter-spacing:-.01em} .ds-rank-head span{font-size:.75rem;color:var(--fg-3);font-variant-numeric:tabular-nums} .ds-rank table{width:100%;border-collapse:collapse;text-align:left} .ds-rank thead{font-size:.75rem;color:var(--fg-3)} .ds-rank th,.ds-rank td{padding:12px 12px 12px 0;border-bottom:1px solid var(--line);font-weight:400;vertical-align:top} .ds-rank thead th{padding:10px 12px 10px 0;font-weight:500} .ds-rank tr>*:first-child{padding-left:20px} .ds-rank tr>*:last-child{padding-right:20px;width:34%} .ds-rank tbody tr:last-child>*{border-bottom:0} .ds-rank small{display:block;font-size:.75rem;color:var(--fg-3)} .ds-rank .n{color:var(--fg-3);font-size:.8125rem;width:2rem} .ds-rank .r{text-align:right} .ds-rank .s{font-size:.9375rem;font-weight:600;font-variant-numeric:tabular-nums} .ds-rank .mine{background:color-mix(in srgb,var(--accent-soft) 60%,transparent)} .ds-rank .mine th{font-weight:500} .ds-rank .mine .s{color:var(--accent-text)} .ds-scale{display:flex;justify-content:space-between} .ds-bar{position:relative;display:block;height:20px} .ds-bar>span{position:absolute;top:50%} .ds-bar .t{left:0;right:0;height:1px;background:var(--line)} .ds-bar .g{height:6px;transform:translateY(-50%);border-radius:9999px;background:var(--line-strong)} .ds-bar .d{width:10px;height:10px;transform:translate(-50%,-50%);border-radius:9999px;background:var(--fg-2);box-shadow:0 0 0 2px var(--surface)} .ds-rank .mine .g{background:color-mix(in srgb,var(--accent) 45%,transparent)} .ds-rank .mine .d{background:var(--accent)} .ds-rank-foot{padding:16px 20px;border-top:1px solid var(--line);font-size:.8125rem;line-height:1.6;color:var(--fg-2)}"
     }
   ],
   "narrative": {
@@ -581,6 +598,11 @@
         "name": "The One Authored Moment Rule",
         "body": "Motion is limited to the new-row arrival, the sheet slide-in, skeleton sheen and the healthy ping, and all of it stops under `prefers-reduced-motion`. Everything else is a 150ms color transition.",
         "section": "components"
+      },
+      {
+        "name": "The Restack Rule",
+        "body": "Below `sm`, a site table too wide for a phone becomes one stacked card per row, with every value kept, instead of scrolling sideways (the Intel lists; the comparison table already restacks below `md`). Narrow tables that fit keep their table form and drop secondary columns instead.",
+        "section": "site"
       },
       {
         "name": "The Preview Stage Rule",

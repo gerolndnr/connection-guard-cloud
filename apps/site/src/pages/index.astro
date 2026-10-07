@@ -40,7 +40,7 @@ const steps = [
     <p class="container-site flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-2.5 text-center text-[0.8125rem] text-fg-2">
       {live ? <>
         <span class="chip chip-soon h-5 text-xs">New in 0.6</span>
-        Our own VPN lists, checked on your server, and services that step in for each other.
+        <a href="/intel" class="text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg" data-ph-event="cta_clicked" data-ph-cta="intel" data-ph-location="announcement">Our own VPN lists</a>, checked on your server, and services that step in for each other.
         {showBenchmark
           ? <a href="/benchmark" class="font-medium text-fg no-underline hover:underline" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="announcement">See the benchmark →</a>
           : <a href="/download" class="font-medium text-fg no-underline hover:underline" data-ph-event="cta_clicked" data-ph-cta="download" data-ph-location="announcement">Get 0.6 →</a>}
@@ -87,7 +87,8 @@ const steps = [
   <!-- The dashboard band follows the theme and sits one step off the page ground, so it reads as its own stage. -->
   <section id="dashboard" class="scroll-mt-28 md:scroll-mt-20 border-y border-line bg-subtle text-fg dark:bg-surface">
     <div class="container-site py-20 sm:py-28">
-      <div class="flex flex-wrap items-end justify-between gap-6">
+      <!-- Two columns from lg: the text and the four points side by side, so the band has no empty half. -->
+      <div class="grid grid-cols-[minmax(0,1fr)] items-end gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-12">
         <div class="max-w-2xl">
           <h2 class="section-title flex flex-wrap items-center gap-x-3 gap-y-2">Every decision, explained. {!live && <span class="chip chip-soon text-xs">0.5</span>}</h2>
           <p class="lede mt-4">{live ? "Optional and free" : "Optional and free from 0.5"}. Link a server from its console and stop guessing why a player could not join.</p>

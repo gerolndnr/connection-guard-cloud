@@ -1,0 +1,1584 @@
+{
+ "benchmark": {
+  "run": "37627564276",
+  "date": "2026-10-07",
+  "subjects": 692,
+  "services": [
+   {
+    "id": "cg-intel",
+    "name": "Connection Guard Intel",
+    "score": 91.4,
+    "range": [
+     84.5,
+     93.8
+    ],
+    "caught": 349,
+    "bad": 382,
+    "refused": 0,
+    "good": 310,
+    "ms": 0.0,
+    "local": true,
+    "keyed": false,
+    "own": true,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "blackbox",
+    "name": "Blackbox",
+    "score": 87.0,
+    "range": [
+     77.2,
+     92.5
+    ],
+    "caught": 379,
+    "bad": 382,
+    "refused": 12,
+    "good": 310,
+    "ms": 113,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "zowi",
+    "name": "zowi",
+    "score": 85.4,
+    "range": [
+     76.9,
+     89.6
+    ],
+    "caught": 339,
+    "bad": 382,
+    "refused": 2,
+    "good": 310,
+    "ms": 272,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37602043725",
+    "date": "2026-10-07",
+    "earlier": true
+   },
+   {
+    "id": "ipcheck",
+    "name": "ip-check.net",
+    "score": 83.9,
+    "range": [
+     73.5,
+     90.0
+    ],
+    "caught": 372,
+    "bad": 382,
+    "refused": 12,
+    "good": 310,
+    "ms": 368,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "ip-api",
+    "name": "IP-API",
+    "score": 79.6,
+    "range": [
+     70.4,
+     84.6
+    ],
+    "caught": 312,
+    "bad": 382,
+    "refused": 2,
+    "good": 310,
+    "ms": 27,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "funkemunky",
+    "name": "funkemunky (KauriVPN)",
+    "score": 70.1,
+    "range": [
+     57.9,
+     78.4
+    ],
+    "caught": 310,
+    "bad": 382,
+    "refused": 11,
+    "good": 310,
+    "ms": 72,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "marvinmc",
+    "name": "marvinmc.dev",
+    "score": 54.7,
+    "range": [
+     44.1,
+     61.4
+    ],
+    "caught": 226,
+    "bad": 382,
+    "refused": 3,
+    "good": 310,
+    "ms": 319,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "iprisk",
+    "name": "iprisk.info",
+    "score": 18.6,
+    "range": [
+     11.3,
+     22.8
+    ],
+    "caught": 74,
+    "bad": 382,
+    "refused": 0,
+    "good": 310,
+    "ms": 160,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "proxycheck",
+    "name": "ProxyCheck",
+    "score": 11.7,
+    "range": [
+     3.6,
+     17.0
+    ],
+    "caught": 54,
+    "bad": 382,
+    "refused": 2,
+    "good": 310,
+    "ms": 98,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "iplocate",
+    "name": "IPLocate",
+    "score": 10.7,
+    "range": [
+     4.3,
+     14.2
+    ],
+    "caught": 42,
+    "bad": 382,
+    "refused": 0,
+    "good": 310,
+    "ms": 61,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "freeipapi",
+    "name": "FreeIPAPI",
+    "score": 0.0,
+    "range": [
+     0.0,
+     0.0
+    ],
+    "caught": 0,
+    "bad": 382,
+    "refused": 0,
+    "good": 310,
+    "ms": 204,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "ip2location",
+    "name": "IP2Location.io",
+    "score": 0.0,
+    "range": [
+     0.0,
+     0.8
+    ],
+    "caught": 0,
+    "bad": 382,
+    "refused": 0,
+    "good": 310,
+    "ms": 50,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "ipquery",
+    "name": "IPQuery",
+    "score": 0.0,
+    "range": [
+     0.0,
+     0.0
+    ],
+    "caught": 0,
+    "bad": 382,
+    "refused": 0,
+    "good": 310,
+    "ms": 295,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "negativity",
+    "name": "Negativity",
+    "score": 0.0,
+    "range": [
+     0.0,
+     0.0
+    ],
+    "caught": 0,
+    "bad": 382,
+    "refused": 0,
+    "good": 310,
+    "ms": 544,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "rayzs",
+    "name": "rayzs.de",
+    "score": 0.0,
+    "range": [
+     0.0,
+     0.0
+    ],
+    "caught": 0,
+    "bad": 382,
+    "refused": 0,
+    "good": 310,
+    "ms": 240,
+    "local": false,
+    "keyed": false,
+    "own": false,
+    "unavailable": false,
+    "run": "37627564276",
+    "date": "2026-10-07",
+    "earlier": false
+   },
+   {
+    "id": "vpnapi",
+    "name": "VPNAPI",
+    "score": 0.0,
+    "range": [
+     0.0,
+     1.0
+    ],
+    "caught": 0,
+    "bad": 382,
+    "refused": 0,
+    "good": 310,
+    "ms": null,
+    "local": false,
+    "keyed": true,
+    "own": false,
+    "unavailable": false,
+    "run": "37602043725",
+    "date": "2026-10-07",
+    "earlier": true
+   }
+  ],
+  "intel_cohorts": [
+   {
+    "id": "commercial_vpn",
+    "label": "Commercial VPNs",
+    "n": 125,
+    "hit": 125
+   },
+   {
+    "id": "fresh_vpn",
+    "label": "Newly added VPN servers",
+    "n": 37,
+    "hit": 37
+   },
+   {
+    "id": "vpn_v6",
+    "label": "VPNs over IPv6",
+    "n": 40,
+    "hit": 40
+   },
+   {
+    "id": "tor",
+    "label": "Tor exits",
+    "n": 80,
+    "hit": 80
+   },
+   {
+    "id": "proxy",
+    "label": "Public proxies",
+    "n": 100,
+    "hit": 67
+   },
+   {
+    "id": "residential",
+    "label": "Home connections",
+    "n": 150,
+    "hit": 0
+   },
+   {
+    "id": "residential_v6",
+    "label": "Home connections, IPv6",
+    "n": 60,
+    "hit": 0
+   },
+   {
+    "id": "mobile_cgnat",
+    "label": "Mobile networks",
+    "n": 100,
+    "hit": 0
+   }
+  ]
+ },
+ "manifest": {
+  "as_of": "2026-10-07T13:15:29Z",
+  "lists": {
+   "HOSTING": {
+    "networks": 23568,
+    "addresses": null
+   },
+   "RELAY": {
+    "networks": 11933,
+    "addresses": null
+   },
+   "TOR": {
+    "networks": 870,
+    "addresses": 1432
+   },
+   "VPN": {
+    "networks": 10939,
+    "addresses": null
+   },
+   "PROXY": {
+    "networks": 23999,
+    "addresses": 32208
+   }
+  },
+  "tor_history_days": 3,
+  "proxy_history_days": 7,
+  "sources": [
+   {
+    "id": "tor-bulk-exit-list",
+    "category": "TOR",
+    "name": "Tor Project bulk exit list",
+    "licence": "published for this use",
+    "terms": "Tor Project, published for exactly this use (blocking or allowing Tor exits).",
+    "url": "https://check.torproject.org/torbulkexitlist",
+    "entries": 1275,
+    "ok": true
+   },
+   {
+    "id": "tor-collector",
+    "category": "TOR",
+    "name": "Tor Project CollecTor exit lists",
+    "licence": "published for this use",
+    "terms": "Tor Project CollecTor exit lists, published for research and for identifying Tor exits.",
+    "url": "https://collector.torproject.org/recent/exit-lists/",
+    "entries": 1432,
+    "ok": true
+   },
+   {
+    "id": "icloud-private-relay",
+    "category": "RELAY",
+    "name": "Apple iCloud Private Relay egress ranges",
+    "licence": "none published",
+    "terms": "Apple publishes the egress ranges so that services can recognise Private Relay; no licence text.",
+    "url": "https://mask-api.icloud.com/egress-ip-ranges.csv",
+    "entries": 285069,
+    "ok": true
+   },
+   {
+    "id": "cloudflare-warp",
+    "category": "RELAY",
+    "name": "AS13335 Cloudflare inside its WARP/Gateway egress blocks",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS13335 Cloudflare inside its WARP/Gateway egress blocks; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS13335",
+    "entries": 361,
+    "ok": true
+   },
+   {
+    "id": "aws",
+    "category": "HOSTING",
+    "name": "Amazon Web Services",
+    "licence": "published for this use",
+    "terms": "AWS publishes its ranges for firewall and routing use.",
+    "url": "https://ip-ranges.amazonaws.com/ip-ranges.json",
+    "entries": 17493,
+    "ok": true
+   },
+   {
+    "id": "gcp",
+    "category": "HOSTING",
+    "name": "Google Cloud",
+    "licence": "published for this use",
+    "terms": "Google Cloud publishes its customer ranges.",
+    "url": "https://www.gstatic.com/ipranges/cloud.json",
+    "entries": 1127,
+    "ok": true
+   },
+   {
+    "id": "oracle",
+    "category": "HOSTING",
+    "name": "Oracle Cloud",
+    "licence": "published for this use",
+    "terms": "Oracle Cloud publishes its ranges.",
+    "url": "https://docs.oracle.com/en-us/iaas/tools/public_ip_ranges.json",
+    "entries": 1107,
+    "ok": true
+   },
+   {
+    "id": "digitalocean",
+    "category": "HOSTING",
+    "name": "DigitalOcean geofeed",
+    "licence": "public geofeed",
+    "terms": "RFC 8805 geofeed, published for public consumption.",
+    "url": "https://digitalocean.com/geo/google.csv",
+    "entries": 1230,
+    "ok": true
+   },
+   {
+    "id": "linode",
+    "category": "HOSTING",
+    "name": "Akamai / Linode geofeed",
+    "licence": "public geofeed",
+    "terms": "RFC 8805 geofeed, published for public consumption.",
+    "url": "https://geoip.linode.com/",
+    "entries": 5505,
+    "ok": true
+   },
+   {
+    "id": "asn-24940",
+    "category": "HOSTING",
+    "name": "AS24940 Hetzner",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS24940 Hetzner; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS24940",
+    "entries": 96,
+    "ok": true
+   },
+   {
+    "id": "asn-16276",
+    "category": "HOSTING",
+    "name": "AS16276 OVH",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS16276 OVH; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS16276",
+    "entries": 769,
+    "ok": true
+   },
+   {
+    "id": "asn-51167",
+    "category": "HOSTING",
+    "name": "AS51167 Contabo",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS51167 Contabo; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS51167",
+    "entries": 573,
+    "ok": true
+   },
+   {
+    "id": "asn-9009",
+    "category": "HOSTING",
+    "name": "AS9009 M247",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS9009 M247; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS9009",
+    "entries": 5229,
+    "ok": true
+   },
+   {
+    "id": "asn-60068",
+    "category": "HOSTING",
+    "name": "AS60068 Datacamp (CDN77)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS60068 Datacamp (CDN77); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS60068",
+    "entries": 499,
+    "ok": true
+   },
+   {
+    "id": "asn-60781",
+    "category": "HOSTING",
+    "name": "AS60781 Leaseweb NL",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS60781 Leaseweb NL; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS60781",
+    "entries": 579,
+    "ok": true
+   },
+   {
+    "id": "asn-28753",
+    "category": "HOSTING",
+    "name": "AS28753 Leaseweb DE",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS28753 Leaseweb DE; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS28753",
+    "entries": 181,
+    "ok": true
+   },
+   {
+    "id": "asn-20473",
+    "category": "HOSTING",
+    "name": "AS20473 Vultr (Choopa)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS20473 Vultr (Choopa); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS20473",
+    "entries": 3241,
+    "ok": true
+   },
+   {
+    "id": "asn-63949",
+    "category": "HOSTING",
+    "name": "AS63949 Akamai Linode",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS63949 Akamai Linode; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS63949",
+    "entries": 452,
+    "ok": true
+   },
+   {
+    "id": "asn-14061",
+    "category": "HOSTING",
+    "name": "AS14061 DigitalOcean",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS14061 DigitalOcean; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS14061",
+    "entries": 891,
+    "ok": true
+   },
+   {
+    "id": "asn-12876",
+    "category": "HOSTING",
+    "name": "AS12876 Scaleway",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS12876 Scaleway; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS12876",
+    "entries": 30,
+    "ok": true
+   },
+   {
+    "id": "asn-8560",
+    "category": "HOSTING",
+    "name": "AS8560 IONOS",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS8560 IONOS; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS8560",
+    "entries": 542,
+    "ok": true
+   },
+   {
+    "id": "asn-199524",
+    "category": "HOSTING",
+    "name": "AS199524 G-Core Labs",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS199524 G-Core Labs; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS199524",
+    "entries": 595,
+    "ok": true
+   },
+   {
+    "id": "asn-21859",
+    "category": "HOSTING",
+    "name": "AS21859 Zenlayer",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS21859 Zenlayer; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS21859",
+    "entries": 1873,
+    "ok": true
+   },
+   {
+    "id": "asn-62240",
+    "category": "HOSTING",
+    "name": "AS62240 Clouvider",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS62240 Clouvider; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS62240",
+    "entries": 2504,
+    "ok": true
+   },
+   {
+    "id": "asn-40676",
+    "category": "HOSTING",
+    "name": "AS40676 Psychz",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS40676 Psychz; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS40676",
+    "entries": 614,
+    "ok": true
+   },
+   {
+    "id": "asn-8100",
+    "category": "HOSTING",
+    "name": "AS8100 QuadraNet",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS8100 QuadraNet; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS8100",
+    "entries": 5,
+    "ok": true
+   },
+   {
+    "id": "asn-11878",
+    "category": "HOSTING",
+    "name": "AS11878 tzulo",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS11878 tzulo; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS11878",
+    "entries": 229,
+    "ok": true
+   },
+   {
+    "id": "asn-203020",
+    "category": "HOSTING",
+    "name": "AS203020 HostRoyale",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS203020 HostRoyale; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS203020",
+    "entries": 1767,
+    "ok": true
+   },
+   {
+    "id": "asn-206804",
+    "category": "HOSTING",
+    "name": "AS206804 EstNOC",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS206804 EstNOC; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS206804",
+    "entries": 70,
+    "ok": true
+   },
+   {
+    "id": "asn-137409",
+    "category": "HOSTING",
+    "name": "AS137409 GSL Networks",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS137409 GSL Networks; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS137409",
+    "entries": 1644,
+    "ok": true
+   },
+   {
+    "id": "asn-42708",
+    "category": "HOSTING",
+    "name": "AS42708 GleSYS",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS42708 GleSYS; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS42708",
+    "entries": 217,
+    "ok": true
+   },
+   {
+    "id": "asn-212238",
+    "category": "HOSTING",
+    "name": "AS212238 Datacamp",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS212238 Datacamp; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS212238",
+    "entries": 4351,
+    "ok": true
+   },
+   {
+    "id": "asn-49981",
+    "category": "HOSTING",
+    "name": "AS49981 WorldStream",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS49981 WorldStream; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS49981",
+    "entries": 146,
+    "ok": true
+   },
+   {
+    "id": "asn-51396",
+    "category": "HOSTING",
+    "name": "AS51396 Pfcloud",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS51396 Pfcloud; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS51396",
+    "entries": 72,
+    "ok": true
+   },
+   {
+    "id": "asn-206092",
+    "category": "HOSTING",
+    "name": "AS206092 IPXO",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS206092 IPXO; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS206092",
+    "entries": 208,
+    "ok": true
+   },
+   {
+    "id": "asn-30633",
+    "category": "HOSTING",
+    "name": "AS30633 Leaseweb USA",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS30633 Leaseweb USA; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS30633",
+    "entries": 127,
+    "ok": true
+   },
+   {
+    "id": "asn-46562",
+    "category": "HOSTING",
+    "name": "AS46562 Performive",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS46562 Performive; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS46562",
+    "entries": 261,
+    "ok": true
+   },
+   {
+    "id": "asn-47583",
+    "category": "HOSTING",
+    "name": "AS47583 Hostinger",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS47583 Hostinger; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS47583",
+    "entries": 3664,
+    "ok": true
+   },
+   {
+    "id": "asn-25369",
+    "category": "HOSTING",
+    "name": "AS25369 Hydra Communications",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS25369 Hydra Communications; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS25369",
+    "entries": 323,
+    "ok": true
+   },
+   {
+    "id": "asn-136557",
+    "category": "HOSTING",
+    "name": "AS136557 Host Universal",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS136557 Host Universal; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS136557",
+    "entries": 133,
+    "ok": true
+   },
+   {
+    "id": "asn-49453",
+    "category": "HOSTING",
+    "name": "AS49453 Global Layer",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS49453 Global Layer; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS49453",
+    "entries": 141,
+    "ok": true
+   },
+   {
+    "id": "asn-396356",
+    "category": "HOSTING",
+    "name": "AS396356 Latitude.sh",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS396356 Latitude.sh; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS396356",
+    "entries": 1031,
+    "ok": true
+   },
+   {
+    "id": "asn-262287",
+    "category": "HOSTING",
+    "name": "AS262287 Latitude.sh LTDA",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS262287 Latitude.sh LTDA; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS262287",
+    "entries": 338,
+    "ok": true
+   },
+   {
+    "id": "asn-36352",
+    "category": "HOSTING",
+    "name": "AS36352 HostPapa",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS36352 HostPapa; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS36352",
+    "entries": 3279,
+    "ok": true
+   },
+   {
+    "id": "asn-42201",
+    "category": "HOSTING",
+    "name": "AS42201 PVDataNet",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS42201 PVDataNet; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS42201",
+    "entries": 26,
+    "ok": true
+   },
+   {
+    "id": "asn-42675",
+    "category": "HOSTING",
+    "name": "AS42675 Obehosting",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS42675 Obehosting; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS42675",
+    "entries": 19,
+    "ok": true
+   },
+   {
+    "id": "asn-34343",
+    "category": "HOSTING",
+    "name": "AS34343 Eweka Internet Services",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS34343 Eweka Internet Services; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS34343",
+    "entries": 41,
+    "ok": true
+   },
+   {
+    "id": "asn-205467",
+    "category": "HOSTING",
+    "name": "AS205467 Base IP",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS205467 Base IP; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS205467",
+    "entries": 14,
+    "ok": true
+   },
+   {
+    "id": "asn-34305",
+    "category": "HOSTING",
+    "name": "AS34305 Base IP",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS34305 Base IP; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS34305",
+    "entries": 23,
+    "ok": true
+   },
+   {
+    "id": "asn-43357",
+    "category": "HOSTING",
+    "name": "AS43357 Owl Limited",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS43357 Owl Limited; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS43357",
+    "entries": 291,
+    "ok": true
+   },
+   {
+    "id": "asn-32489",
+    "category": "HOSTING",
+    "name": "AS32489 Amanah Tech",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS32489 Amanah Tech; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS32489",
+    "entries": 66,
+    "ok": true
+   },
+   {
+    "id": "asn-6206",
+    "category": "HOSTING",
+    "name": "AS6206 Netrouting",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS6206 Netrouting; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS6206",
+    "entries": 53,
+    "ok": true
+   },
+   {
+    "id": "asn-51852",
+    "category": "HOSTING",
+    "name": "AS51852 Private Layer",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS51852 Private Layer; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS51852",
+    "entries": 96,
+    "ok": true
+   },
+   {
+    "id": "asn-13737",
+    "category": "HOSTING",
+    "name": "AS13737 Interconnecx",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS13737 Interconnecx; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS13737",
+    "entries": 75,
+    "ok": true
+   },
+   {
+    "id": "asn-51430",
+    "category": "HOSTING",
+    "name": "AS51430 AltusHost",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS51430 AltusHost; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS51430",
+    "entries": 76,
+    "ok": true
+   },
+   {
+    "id": "asn-52048",
+    "category": "HOSTING",
+    "name": "AS52048 RixHost",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS52048 RixHost; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS52048",
+    "entries": 22,
+    "ok": true
+   },
+   {
+    "id": "asn-43350",
+    "category": "HOSTING",
+    "name": "AS43350 NForce Entertainment",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS43350 NForce Entertainment; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS43350",
+    "entries": 109,
+    "ok": true
+   },
+   {
+    "id": "asn-63473",
+    "category": "HOSTING",
+    "name": "AS63473 HostHatch",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS63473 HostHatch; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS63473",
+    "entries": 140,
+    "ok": true
+   },
+   {
+    "id": "asn-197706",
+    "category": "HOSTING",
+    "name": "AS197706 Keminet",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS197706 Keminet; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS197706",
+    "entries": 54,
+    "ok": true
+   },
+   {
+    "id": "asn-50304",
+    "category": "HOSTING",
+    "name": "AS50304 Blix Solutions",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS50304 Blix Solutions; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS50304",
+    "entries": 114,
+    "ok": true
+   },
+   {
+    "id": "asn-55720",
+    "category": "HOSTING",
+    "name": "AS55720 Gigabit Hosting",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS55720 Gigabit Hosting; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS55720",
+    "entries": 283,
+    "ok": true
+   },
+   {
+    "id": "asn-43289",
+    "category": "HOSTING",
+    "name": "AS43289 Trabia",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS43289 Trabia; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS43289",
+    "entries": 18,
+    "ok": true
+   },
+   {
+    "id": "asn-53356",
+    "category": "HOSTING",
+    "name": "AS53356 Free Range Cloud Hosting",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS53356 Free Range Cloud Hosting; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS53356",
+    "entries": 186,
+    "ok": true
+   },
+   {
+    "id": "asn-42831",
+    "category": "HOSTING",
+    "name": "AS42831 UK Dedicated Servers",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS42831 UK Dedicated Servers; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS42831",
+    "entries": 284,
+    "ok": true
+   },
+   {
+    "id": "asn-397423",
+    "category": "HOSTING",
+    "name": "AS397423 Tier.Net",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS397423 Tier.Net; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS397423",
+    "entries": 343,
+    "ok": true
+   },
+   {
+    "id": "asn-46664",
+    "category": "HOSTING",
+    "name": "AS46664 VolumeDrive",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS46664 VolumeDrive; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS46664",
+    "entries": 19,
+    "ok": true
+   },
+   {
+    "id": "asn-400587",
+    "category": "HOSTING",
+    "name": "AS400587 Ryamer",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS400587 Ryamer; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS400587",
+    "entries": 14,
+    "ok": true
+   },
+   {
+    "id": "asn-41564",
+    "category": "HOSTING",
+    "name": "AS41564 Orion Network",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS41564 Orion Network; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS41564",
+    "entries": 203,
+    "ok": true
+   },
+   {
+    "id": "asn-394256",
+    "category": "HOSTING",
+    "name": "AS394256 Tech Futures Interactive",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS394256 Tech Futures Interactive; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS394256",
+    "entries": 27,
+    "ok": true
+   },
+   {
+    "id": "asn-133480",
+    "category": "HOSTING",
+    "name": "AS133480 5G Network Operations",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS133480 5G Network Operations; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS133480",
+    "entries": 45,
+    "ok": true
+   },
+   {
+    "id": "asn-4785",
+    "category": "HOSTING",
+    "name": "AS4785 xTom",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS4785 xTom; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS4785",
+    "entries": 66,
+    "ok": true
+   },
+   {
+    "id": "asn-3258",
+    "category": "HOSTING",
+    "name": "AS3258 xTom Japan",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS3258 xTom Japan; RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS3258",
+    "entries": 160,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-209854",
+    "category": "VPN",
+    "name": "AS209854 Cyberzone S.A. (Surfshark)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS209854 Cyberzone S.A. (Surfshark); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS209854",
+    "entries": 468,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-39351",
+    "category": "VPN",
+    "name": "AS39351 31173 Services AB (Mullvad)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS39351 31173 Services AB (Mullvad); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS39351",
+    "entries": 74,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-136787",
+    "category": "VPN",
+    "name": "AS136787 PacketHub S.A. (Nord Security)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS136787 PacketHub S.A. (Nord Security); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS136787",
+    "entries": 981,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-147049",
+    "category": "VPN",
+    "name": "AS147049 PacketHub S.A. (Nord Security)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS147049 PacketHub S.A. (Nord Security); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS147049",
+    "entries": 129,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-207137",
+    "category": "VPN",
+    "name": "AS207137 PacketHub S.A. (Nord Security)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS207137 PacketHub S.A. (Nord Security); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS207137",
+    "entries": 77,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-141039",
+    "category": "VPN",
+    "name": "AS141039 PacketHub S.A. (Nord Security)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS141039 PacketHub S.A. (Nord Security); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS141039",
+    "entries": 53,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-62651",
+    "category": "VPN",
+    "name": "AS62651 Strong Technology (StrongVPN, IPVanish)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS62651 Strong Technology (StrongVPN, IPVanish); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS62651",
+    "entries": 128,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-140952",
+    "category": "VPN",
+    "name": "AS140952 Strong Technology (StrongVPN, IPVanish)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS140952 Strong Technology (StrongVPN, IPVanish); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS140952",
+    "entries": 20,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-22781",
+    "category": "VPN",
+    "name": "AS22781 Strong Technology (StrongVPN, IPVanish)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS22781 Strong Technology (StrongVPN, IPVanish); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS22781",
+    "entries": 37,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-209103",
+    "category": "VPN",
+    "name": "AS209103 ProtonVPN (Proton AG)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS209103 ProtonVPN (Proton AG); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS209103",
+    "entries": 10,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-199218",
+    "category": "VPN",
+    "name": "AS199218 ProtonVPN-2 (Proton AG)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS199218 ProtonVPN-2 (Proton AG); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS199218",
+    "entries": 9,
+    "ok": true
+   },
+   {
+    "id": "operator-asn-208172",
+    "category": "VPN",
+    "name": "AS208172 PV-HOSTED (Proton AG)",
+    "licence": "RIPE NCC terms",
+    "terms": "RIPEstat (RIS) announced prefixes of AS208172 PV-HOSTED (Proton AG); RIPE NCC terms, attribution.",
+    "url": "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS208172",
+    "entries": 92,
+    "ok": true
+   },
+   {
+    "id": "mullvad",
+    "category": "VPN",
+    "name": "Mullvad",
+    "licence": "none published",
+    "terms": "Public relay API, no licence text.",
+    "url": "https://api.mullvad.net/www/relays/all/",
+    "entries": 1083,
+    "ok": true
+   },
+   {
+    "id": "nordvpn",
+    "category": "VPN",
+    "name": "NordVPN",
+    "licence": "none published",
+    "terms": "Undocumented public API used by its apps, no licence text.",
+    "url": "https://api.nordvpn.com/v1/servers?limit=20000&fields[station]=1&fields[ipv6_station]=1&fields[hostname]=1",
+    "entries": 7140,
+    "ok": true
+   },
+   {
+    "id": "ivpn",
+    "category": "VPN",
+    "name": "IVPN",
+    "licence": "none published",
+    "terms": "Public server list used by its open-source apps, no licence text.",
+    "url": "https://api.ivpn.net/v4/servers.json",
+    "entries": 89,
+    "ok": true
+   },
+   {
+    "id": "pia",
+    "category": "VPN",
+    "name": "Private Internet Access",
+    "licence": "none published",
+    "terms": "Public server list used by its apps, no licence text.",
+    "url": "https://serverlist.piaservers.net/vpninfo/servers/v6",
+    "entries": 2527,
+    "ok": true
+   },
+   {
+    "id": "surfshark",
+    "category": "VPN",
+    "name": "Surfshark",
+    "licence": "none published",
+    "terms": "Public cluster list (host names, resolved by DNS), no licence text.",
+    "url": "https://api.surfshark.com/v4/server/clusters/generic",
+    "entries": 281,
+    "ok": true
+   },
+   {
+    "id": "airvpn",
+    "category": "VPN",
+    "name": "AirVPN",
+    "licence": "none published",
+    "terms": "Public status API, no licence text.",
+    "url": "https://airvpn.org/api/status/",
+    "entries": 1992,
+    "ok": true
+   },
+   {
+    "id": "windscribe",
+    "category": "VPN",
+    "name": "Windscribe",
+    "licence": "none published",
+    "terms": "Public server list used by its apps, no licence text.",
+    "url": "https://assets.windscribe.com/serverlist/mob-v2/1/0",
+    "entries": 1068,
+    "ok": true
+   },
+   {
+    "id": "ipvanish",
+    "category": "VPN",
+    "name": "IPVanish",
+    "licence": "none published",
+    "terms": "Public OpenVPN configuration archive (host names, resolved by DNS), no licence text.",
+    "url": "https://configs.ipvanish.com/configs/configs.zip",
+    "entries": 0,
+    "ok": false
+   },
+   {
+    "id": "privadovpn",
+    "category": "VPN",
+    "name": "PrivadoVPN",
+    "licence": "none published",
+    "terms": "Public OpenVPN configuration archive (host names, resolved by DNS), no licence text.",
+    "url": "https://privadovpn.com/apps/ovpn_configs.zip",
+    "entries": 167,
+    "ok": true
+   },
+   {
+    "id": "ovpn",
+    "category": "VPN",
+    "name": "OVPN",
+    "licence": "none published",
+    "terms": "Public server API used by its apps, no licence text.",
+    "url": "https://www.ovpn.com/v2/api/client/entry",
+    "entries": 96,
+    "ok": true
+   },
+   {
+    "id": "azirevpn",
+    "category": "VPN",
+    "name": "AzireVPN",
+    "licence": "none published",
+    "terms": "Public locations API (pool host names, resolved by DNS), no licence text.",
+    "url": "https://api.azirevpn.com/v2/locations",
+    "entries": 65,
+    "ok": true
+   },
+   {
+    "id": "privatevpn",
+    "category": "VPN",
+    "name": "PrivateVPN",
+    "licence": "none published",
+    "terms": "Public server page (host names, resolved by DNS), no licence text.",
+    "url": "https://privatevpn.com/serverlist/",
+    "entries": 150,
+    "ok": true
+   },
+   {
+    "id": "vpnac",
+    "category": "VPN",
+    "name": "vpn.ac",
+    "licence": "none published",
+    "terms": "Public status page (host names, resolved by DNS), no licence text.",
+    "url": "https://vpn.ac/status",
+    "entries": 123,
+    "ok": true
+   },
+   {
+    "id": "fastestvpn",
+    "category": "VPN",
+    "name": "FastestVPN",
+    "licence": "none published",
+    "terms": "Public server page (host names, resolved by DNS), no licence text.",
+    "url": "https://support.fastestvpn.com/vpn-servers/",
+    "entries": 15,
+    "ok": true
+   },
+   {
+    "id": "proxy-jetkai",
+    "category": "PROXY",
+    "name": "jetkai/proxy-list",
+    "licence": "MIT",
+    "terms": "MIT licence (jetkai/proxy-list).",
+    "url": "https://raw.githubusercontent.com/jetkai/proxy-list/main/online-proxies/txt/proxies.txt",
+    "entries": 4232,
+    "ok": true
+   },
+   {
+    "id": "proxy-clarketm",
+    "category": "PROXY",
+    "name": "clarketm/proxy-list",
+    "licence": "MIT",
+    "terms": "MIT licence (clarketm/proxy-list).",
+    "url": "https://raw.githubusercontent.com/clarketm/proxy-list/master/proxy-list-raw.txt",
+    "entries": 400,
+    "ok": true
+   },
+   {
+    "id": "proxy-sunny9577",
+    "category": "PROXY",
+    "name": "sunny9577/proxy-scraper",
+    "licence": "MIT",
+    "terms": "MIT licence (sunny9577/proxy-scraper).",
+    "url": "https://raw.githubusercontent.com/sunny9577/proxy-scraper/master/proxies.txt",
+    "entries": 1244,
+    "ok": true
+   },
+   {
+    "id": "proxy-ercin-http",
+    "category": "PROXY",
+    "name": "ErcinDedeoglu/proxies",
+    "licence": "MIT",
+    "terms": "MIT licence (ErcinDedeoglu/proxies).",
+    "url": "https://raw.githubusercontent.com/ErcinDedeoglu/proxies/main/proxies/http.txt",
+    "entries": 64982,
+    "ok": true
+   },
+   {
+    "id": "proxy-ercin-https",
+    "category": "PROXY",
+    "name": "ErcinDedeoglu/proxies",
+    "licence": "MIT",
+    "terms": "MIT licence (ErcinDedeoglu/proxies).",
+    "url": "https://raw.githubusercontent.com/ErcinDedeoglu/proxies/main/proxies/https.txt",
+    "entries": 3226,
+    "ok": true
+   },
+   {
+    "id": "proxy-ercin-socks4",
+    "category": "PROXY",
+    "name": "ErcinDedeoglu/proxies",
+    "licence": "MIT",
+    "terms": "MIT licence (ErcinDedeoglu/proxies).",
+    "url": "https://raw.githubusercontent.com/ErcinDedeoglu/proxies/main/proxies/socks4.txt",
+    "entries": 22161,
+    "ok": true
+   },
+   {
+    "id": "proxy-ercin-socks5",
+    "category": "PROXY",
+    "name": "ErcinDedeoglu/proxies",
+    "licence": "MIT",
+    "terms": "MIT licence (ErcinDedeoglu/proxies).",
+    "url": "https://raw.githubusercontent.com/ErcinDedeoglu/proxies/main/proxies/socks5.txt",
+    "entries": 66444,
+    "ok": true
+   },
+   {
+    "id": "proxy-speedx-http",
+    "category": "PROXY",
+    "name": "TheSpeedX/PROXY-List",
+    "licence": "none published",
+    "terms": "No licence published.",
+    "url": "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt",
+    "entries": 2681,
+    "ok": true
+   },
+   {
+    "id": "proxy-speedx-socks4",
+    "category": "PROXY",
+    "name": "TheSpeedX/PROXY-List",
+    "licence": "none published",
+    "terms": "No licence published.",
+    "url": "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks4.txt",
+    "entries": 1886,
+    "ok": true
+   },
+   {
+    "id": "proxy-speedx-socks5",
+    "category": "PROXY",
+    "name": "TheSpeedX/PROXY-List",
+    "licence": "none published",
+    "terms": "No licence published.",
+    "url": "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt",
+    "entries": 2676,
+    "ok": true
+   },
+   {
+    "id": "proxy-shiftytr",
+    "category": "PROXY",
+    "name": "ShiftyTR/Proxy-List",
+    "licence": "none published",
+    "terms": "No licence published.",
+    "url": "https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/proxy.txt",
+    "entries": 823,
+    "ok": true
+   },
+   {
+    "id": "proxy-hookzof",
+    "category": "PROXY",
+    "name": "hookzof/socks5_list",
+    "licence": "none published",
+    "terms": "No licence published.",
+    "url": "https://raw.githubusercontent.com/hookzof/socks5_list/master/proxy.txt",
+    "entries": 45571,
+    "ok": true
+   },
+   {
+    "id": "proxy-roosterkid",
+    "category": "PROXY",
+    "name": "roosterkid/openproxylist",
+    "licence": "none published",
+    "terms": "No licence published.",
+    "url": "https://raw.githubusercontent.com/roosterkid/openproxylist/main/HTTPS_RAW.txt",
+    "entries": 117,
+    "ok": true
+   },
+   {
+    "id": "proxy-mmpx12",
+    "category": "PROXY",
+    "name": "mmpx12/proxy-list",
+    "licence": "none published",
+    "terms": "No licence published.",
+    "url": "https://raw.githubusercontent.com/mmpx12/proxy-list/master/proxies.txt",
+    "entries": 1173,
+    "ok": true
+   },
+   {
+    "id": "proxy-zloi",
+    "category": "PROXY",
+    "name": "zloi-user/hideip.me",
+    "licence": "none published",
+    "terms": "No licence published.",
+    "url": "https://raw.githubusercontent.com/zloi-user/hideip.me/main/http.txt",
+    "entries": 189,
+    "ok": true
+   },
+   {
+    "id": "proxy-prxchk",
+    "category": "PROXY",
+    "name": "prxchk/proxy-list",
+    "licence": "none published",
+    "terms": "No licence published.",
+    "url": "https://raw.githubusercontent.com/prxchk/proxy-list/main/all.txt",
+    "entries": 100,
+    "ok": true
+   },
+   {
+    "id": "proxy-murongpig",
+    "category": "PROXY",
+    "name": "MuRongPIG/Proxy-Master",
+    "licence": "GPL-3.0",
+    "terms": "GPL-3.0.",
+    "url": "https://raw.githubusercontent.com/MuRongPIG/Proxy-Master/main/http.txt",
+    "entries": 101610,
+    "ok": true
+   },
+   {
+    "id": "proxy-proxyscrape",
+    "category": "PROXY",
+    "name": "proxyscrape free API",
+    "licence": "service terms not reviewed",
+    "terms": "Commercial service; free-API terms not reviewed.",
+    "url": "https://api.proxyscrape.com/v2/?request=getproxies&protocol=all&timeout=10000&country=all&ssl=all&anonymity=all",
+    "entries": 3344,
+    "ok": true
+   }
+  ]
+ }
+}
