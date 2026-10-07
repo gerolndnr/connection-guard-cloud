@@ -1,10 +1,10 @@
 {
-  "fetchedAt": "2026-10-07T18:14:25.132Z",
+  "fetchedAt": "2026-10-07T20:44:12.942Z",
   "sources": {
     "modrinth": {
       "name": "Modrinth",
       "url": "https://modrinth.com/plugin/connectionguard",
-      "downloads": 3410,
+      "downloads": 3414,
       "stale": false
     },
     "spigot": {
@@ -16,7 +16,7 @@
     "github": {
       "name": "GitHub",
       "url": "https://github.com/gerolndnr/connection-guard/releases",
-      "downloads": 660,
+      "downloads": 661,
       "stale": false
     },
     "hangar": {

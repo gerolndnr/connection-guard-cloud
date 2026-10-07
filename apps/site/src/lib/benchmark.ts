@@ -7,8 +7,15 @@ export const bench = data;
 export const showBenchmark = BENCHMARK_LIVE || import.meta.env.DEV;
 
 type ProductId = keyof typeof data.products;
-export const CURRENT = "connection-guard-candidate" as ProductId;
-export const PREVIOUS = "connection-guard" as ProductId;
+const meta = data.products as Record<string, { name: string; version: string; us?: boolean; previous?: boolean; after_join?: boolean }>;
+/** The Connection Guard build the page is about, and the earlier release shown as a reference (from benchmark.json). */
+export const CURRENT = (Object.keys(meta).find((p) => meta[p]!.us && !meta[p]!.previous) ?? "connection-guard-candidate") as ProductId;
+export const PREVIOUS = (Object.keys(meta).find((p) => meta[p]!.previous) ?? "connection-guard") as ProductId;
+/** Lets every player in and checks afterwards (KauriVPN): its login times are not decision times. */
+export const afterJoin = (id: string) => Boolean(meta[id]?.after_join);
+/** Measured without the shared ProxyCheck key the other plugins' keyless requests got. */
+export const unnormalized = new Set<string>(((data.detection as { unnormalized?: string[] }).unnormalized) ?? []);
+export const releaseCandidate = /RC|candidate/i.test(meta[CURRENT as string]?.version ?? "");
 /** Connection Guard first, then the other plugins in alphabetical order; the previous CG release is a reference only. */
 export const COMPARED = (Object.keys(data.products) as ProductId[])
   .filter((p) => p !== PREVIOUS)
@@ -24,7 +31,8 @@ export function ms(value: number): string {
   return `${Math.round(value)} ms`;
 }
 export const num = (n: number) => n.toLocaleString("en-US");
-export const dateLabel = new Date(`${data.date}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+export const dateLabel = (data as { date_label?: string }).date_label
+  ?? new Date(`${data.date}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 export const preliminary = data.status !== "published";
 
 type Phase = "cold" | "warm" | "stampede" | "burst";

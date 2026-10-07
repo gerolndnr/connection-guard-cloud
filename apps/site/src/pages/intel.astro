@@ -35,7 +35,7 @@ const spared = cohorts.filter((c) => c.id.startsWith("residential") || c.id === 
 const sparedN = spared.reduce((s, c) => s + c.n, 0);
 const sparedHit = spared.reduce((s, c) => s + c.hit, 0);
 
-// Failure test of the released plugin (Connection Guard 0.6.0): VPN and Tor still refused while every service fails.
+// Failure test of the Connection Guard build on /benchmark: VPN and Tor still refused while every service fails.
 const faults = Object.keys(FAULT_LABELS).filter((f) => f !== "control" && failure[CURRENT]?.[f]);
 const heldFaults = faults.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length;
 

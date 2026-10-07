@@ -3,8 +3,8 @@ import Base from "../layouts/Base.astro";
 import { breadcrumbs } from "../lib/seo";
 import { BENCHMARK_LIVE, BENCHMARK_REPO } from "../data/release";
 import {
-  bench, COMPARED, CURRENT, PREVIOUS, FAULT_LABELS, blocked, catchCohorts, dateLabel, failure, label, ms, num, perf,
-  preliminary, spareCohorts, spareN, spareTotal, timedOut, versionOf,
+  bench, COMPARED, CURRENT, PREVIOUS, FAULT_LABELS, afterJoin, blocked, catchCohorts, dateLabel, failure, label, ms, num, perf,
+  preliminary, releaseCandidate, spareCohorts, spareN, spareTotal, timedOut, unnormalized, versionOf,
 } from "../lib/benchmark";
 
 const burst = (id: string) => perf(id, "burst")!;
@@ -12,12 +12,13 @@ const us = burst(CURRENT);
 const bare = perf("none", "burst")!;
 const others = COMPARED.filter((p) => p !== CURRENT);
 /** Charts list Connection Guard first, then the others by their value, best first. */
-const byDecision = [CURRENT, ...others.sort((a, b) => burst(a).decision_p95 - burst(b).decision_p95)];
+const byDecision = [CURRENT, ...others.sort((a, b) => Number(afterJoin(a)) - Number(afterJoin(b)) || burst(a).decision_p95 - burst(b).decision_p95)];
 const byJoin = [CURRENT, "none", ...[...others].sort((a, b) => burst(a).join_p95 - burst(b).join_p95)];
-const maxDecision = Math.max(...COMPARED.map((p) => burst(p).decision_p95));
+const maxDecision = Math.max(...COMPARED.filter((p) => !afterJoin(p)).map((p) => burst(p).decision_p95));
 const maxJoin = Math.max(...[...COMPARED, "none"].map((p) => burst(p).join_p95));
 const bestOtherChecked = Math.max(...others.map((p) => burst(p).checked));
 const faults = Object.keys(FAULT_LABELS).filter((f) => failure[CURRENT]?.[f]);
+const outages = faults.filter((f) => f !== "control");
 // Reliability compares every plugin measured under failure; the previous Connection Guard release goes last.
 const failCols = [...COMPARED, PREVIOUS].filter((p) => failure[p]);
 const notes = (bench as { notes?: Record<string, string> }).notes ?? {};
@@ -40,7 +41,7 @@ const check = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-ac
 const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-danger-text" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>`;
 ---
 <Base title="Anti-VPN Plugin Benchmark for Minecraft | Connection Guard" path="/benchmark"
-  description={`Connection Guard, FoxGate, ProxyShield and VPNGuard on one server: speed with 1,000 players, VPN and Tor detection, false positives, service outages. Open data.`}
+  description={`${COMPARED.length} Minecraft anti-VPN plugins on one server, Connection Guard included: speed with 1,000 players, VPN and Tor detection, false positives, outages. Open data.`}
   noindex={!BENCHMARK_LIVE} schema={[breadcrumbs([["Benchmark", "/benchmark"]])]} view={{ event: "benchmark_viewed" }}>
 
   <section class="border-b border-line">
@@ -60,6 +61,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         {preliminary
           ? " These are preliminary results: speed and detection come from a quick run. The published run repeats everything three times on all 692 addresses and replaces them here."
           : " Every plugin runs as it ships, without API keys. A second pass with the same free ProxyCheck key for every plugin follows."}
+        {releaseCandidate && ` Connection Guard ${versionOf(CURRENT)} is a release candidate: downloads deliver ${versionOf(PREVIOUS)} until it ships, and ${versionOf(PREVIOUS)}'s results are shown where they differ.`}
       </p>
     </div>
   </section>
@@ -68,9 +70,9 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
   <section aria-label="Results at a glance" class="border-b border-line">
     <div class="container-site grid gap-4 py-12 sm:py-14 md:grid-cols-3">
       {[
-        { href: "#speed", k: "Join wave", big: `${num(us.checked)} / ${num(us.subjects)}`, text: `players checked when 1,000 joined in 20 seconds. The other plugins checked at most ${num(bestOtherChecked)}.` },
-        { href: "#reliability", k: "Detection services down", big: `${faults.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length} / ${faults.length}`, text: "failure cases with VPN and Tor still blocked, without a single lookup." },
-        { href: "#detection", k: "Caught", big: `${vpnCaught(CURRENT)} / ${vpnN}`, text: `VPN and Tor addresses blocked. ${spareTotal(CURRENT)} of ${spareN} home and mobile players were refused too; most of them by every plugin.` },
+        { href: "#speed", k: "Join wave", big: `${num(us.checked)} / ${num(us.subjects)}`, text: `players looked up when 1,000 joined in 20 seconds. The other plugins looked up at most ${num(bestOtherChecked)}.` },
+        { href: "#reliability", k: "Detection services down", big: `${outages.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length} / ${outages.length}`, text: "failure cases with VPN and Tor still blocked, without a single lookup." },
+        { href: "#detection", k: "Caught", big: `${vpnCaught(CURRENT)} / ${vpnN}`, text: `VPN and Tor addresses blocked. ${spareTotal(CURRENT)} of ${spareN} home and mobile players were refused too, the fewest of the plugins that block most VPNs.` },
       ].map((c) => (
         <a href={c.href} class="card group block p-6 no-underline transition-colors hover:border-line-strong">
           <p class="text-[0.8125rem] font-medium text-fg-2">{c.k}</p>
@@ -91,17 +93,17 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
       <div class="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div class="card p-6">
           <h3 class="text-[0.9375rem] font-semibold">Time until the plugin decides</h3>
-          <p class="mt-1 text-[0.8125rem] text-fg-3">95th percentile, and how many of the 1,000 players it actually checked. Lower time is better.</p>
+          <p class="mt-1 text-[0.8125rem] text-fg-3">95th percentile, and how many of the 1,000 players it looked up. Lower time is better.</p>
           <ul class="mt-6 grid gap-4">
             {byDecision.map((p) => {
-              const b = burst(p); const mine = p === CURRENT;
+              const b = burst(p); const mine = p === CURRENT; const late = afterJoin(p);
               return (
-                <li class="grid grid-cols-[7.5rem_minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-[9rem_minmax(0,1fr)_9.5rem] sm:gap-4">
+                <li class="grid grid-cols-[7.75rem_minmax(0,1fr)_5.75rem] items-center gap-3 sm:grid-cols-[9rem_minmax(0,1fr)_9.5rem] sm:gap-4">
                   <span class={`truncate text-sm ${mine ? "font-medium text-fg" : "text-fg-2"}`}>{label(p)}</span>
-                  <span class="relative h-7 rounded-md bg-subtle"><span class={`absolute inset-y-0 left-0 rounded-md ${mine ? "bg-accent" : "bg-line-strong"}`} style={`width:${Math.max(1.5, (100 * b.decision_p95) / maxDecision)}%`}></span></span>
+                  <span class="relative h-7 rounded-md bg-subtle">{!late && <span class={`absolute inset-y-0 left-0 rounded-md ${mine ? "bg-accent" : "bg-line-strong"}`} style={`width:${Math.max(1.5, (100 * b.decision_p95) / maxDecision)}%`}></span>}</span>
                   <span class="text-right">
-                    <span class={`num block text-[0.9375rem] font-medium ${mine ? "text-accent-text" : "text-fg"}`}>{timedOut(b.decision_p95) ? "30 s" : ms(b.decision_p95)}</span>
-                    <span class="num block text-[0.75rem] text-fg-3">{timedOut(b.decision_p95) ? "timed out · " : ""}{num(b.checked)} checked</span>
+                    <span class={`num block text-[0.9375rem] font-medium ${mine ? "text-accent-text" : late ? "text-fg-3" : "text-fg"}`}>{late ? "after join" : timedOut(b.decision_p95) ? "30 s" : ms(b.decision_p95)}</span>
+                    <span class="num block text-[0.75rem] text-fg-3">{late ? "lets everyone in, kicks later" : <>{timedOut(b.decision_p95) ? "timed out · " : ""}{num(b.checked)} looked up</>}</span>
                   </span>
                 </li>
               );
@@ -124,7 +126,9 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
             })}
           </ul>
           <p class="mt-6 border-t border-line pt-4 text-[0.8125rem] leading-relaxed text-fg-2">
-            {us.outcomes.DENY_LOGIN ? `${num(us.outcomes.DENY_LOGIN)} players refused.` : "No player in the wave was refused."} The wave uses ordinary home addresses, so every refusal here is a mistake.
+            {us.outcomes.DENY_LOGIN === 1
+              ? "One player in the wave was refused: the wave's random addresses include one in a range Connection Guard Intel lists as VPN."
+              : us.outcomes.DENY_LOGIN ? `${num(us.outcomes.DENY_LOGIN)} players refused.` : "No player in the wave was refused."}
           </p>
         </div>
       </div>
@@ -141,6 +145,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
                 <th scope="row" class="px-5 py-3.5 font-normal"><span class="block font-medium text-fg">{ph.title}</span><span class="text-[0.75rem] text-fg-3">{ph.hint}</span></th>
                 {COMPARED.map((p) => {
                   const x = perf(p, ph.id)!;
+                  if (afterJoin(p)) return <td class="px-4 py-3.5 text-right text-[0.8125rem] text-fg-3">after join</td>;
                   return <td class={`num px-4 py-3.5 text-right ${p === CURRENT ? "text-accent-text" : "text-fg-2"}`}>{ms(x.decision_p50)}<span class="block text-[0.75rem] text-fg-3">p95 {timedOut(x.decision_p95) ? "30 s, timed out" : ms(x.decision_p95)}</span></td>;
                 })}
               </tr>
@@ -148,6 +153,11 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
           </tbody>
         </table>
       </div>
+      {COMPARED.some(afterJoin) && (
+        <p class="mt-5 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
+          {COMPARED.filter(afterJoin).map(label).join(", ")} lets every player join and checks afterwards, kicking a VPN user a moment later. Its times measure the login, not a decision, so they are not compared here.
+        </p>
+      )}
     </div>
   </section>
 
@@ -190,7 +200,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         </table>
       </div>
       <p class="mt-5 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
-        A check means the VPN or Tor exit was still refused while every detection service failed that way. Connection Guard 0.6 checks its own signed lists of VPN servers and Tor exits (<a href="/intel" class="underline">Connection Guard Intel</a>) on the server before asking any service, so a known VPN needs no lookup at all. When several services hang at once, a home player's first login can take up to about 5 seconds; services that time out are then skipped for a while.
+        A check means the VPN or Tor exit was still refused while every detection service failed that way. Connection Guard checks its own signed lists of VPN servers and Tor exits (<a href="/intel" class="underline">Connection Guard Intel</a>) on the server before asking any service, so a known VPN needs no lookup at all. When several services hang at once, a home player's first login can take up to about 5 seconds; services that time out are then skipped for a while.
       </p>
     </div>
   </section>
@@ -204,7 +214,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         <table class="w-full min-w-[44rem] text-left text-sm">
           <caption class="sr-only">Blocked addresses per group and plugin</caption>
           <thead class="border-b border-line text-[0.75rem] text-fg-3">
-            <tr><th class="px-5 py-3 font-medium">Group</th>{COMPARED.map((p) => <th class={`px-4 py-3 text-right font-medium ${p === CURRENT ? "text-fg" : ""}`}>{label(p)}</th>)}</tr>
+            <tr><th class="px-5 py-3 font-medium">Group</th>{COMPARED.map((p) => <th class={`px-4 py-3 text-right font-medium ${p === CURRENT ? "text-fg" : ""}`}>{label(p)}{unnormalized.has(p) && <span aria-label="see note below">*</span>}</th>)}</tr>
           </thead>
           <tbody>
             <tr class="border-b border-line"><th colspan={COMPARED.length + 1} class="bg-subtle px-5 py-2 text-[0.75rem] font-medium text-fg-2 dark:bg-[#111]">Should be blocked: higher is better</th></tr>
@@ -227,11 +237,16 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         </table>
       </div>
       <p class="mt-5 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
-        Read the VPN rows with care: Connection Guard 0.6's own lists are built from the same provider lists that label these addresses, so for those groups they show coverage, not how well it finds unknown servers. Tor, proxies and the false positives are not affected.
+        Read the VPN rows with care: Connection Guard's own lists are built from the same provider lists that label these addresses, so for those groups they show coverage, not how well it finds unknown servers. Tor, proxies and the false positives are not affected.
       </p>
+      {unnormalized.size > 0 && (
+        <p class="mt-3 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
+          *{[...unnormalized].map(label).join(", ")} ran in a separate run without the shared free ProxyCheck key the others' keyless lookups got, so its free quotas ran out after about 100 players and it let the rest in. A run with the same key for every plugin follows.
+        </p>
+      )}
       {!preliminary && (
         <p class="mt-3 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
-          Connection Guard refused {spareTotal(CURRENT)} home and mobile players here, more than the others. We looked at every one. Six are refused by every plugin: their traffic leaves through a data centre, Cloudflare WARP or an IPv6 tunnel, so they are not home connections in the way they are labelled. The other four came from one detection service, Blackbox, answering alone after ProxyCheck's 100 free daily lookups had run out. Connection Guard Intel caused none of them. Making a Blackbox answer need a second opinion is in progress.
+          Connection Guard {versionOf(CURRENT)} refused {spareTotal(CURRENT)} of {spareN} home and mobile players, both mobile connections; FoxGate, ProxyShield, VPNGuard and KauriVPN refuse one of the two as well. Version 0.6.0 refused 10 here, four of them on a single answer from one detection service, Blackbox. From 0.6.1 on, a Blackbox answer needs a second source before a player is refused.
         </p>
       )}
     </div>
