@@ -15,7 +15,16 @@ function props(el: HTMLElement): Record<string, string> {
   return out;
 }
 
+// Clicks on tracked elements before PostHog has loaded (it loads late on purpose) are kept and sent afterwards.
+const early: { event: string; props: Record<string, string> }[] = [];
+function buffer(e: Event) {
+  const el = (e.target as Element | null)?.closest<HTMLElement>("[data-ph-event]");
+  if (el?.dataset.phEvent && early.length < 20) early.push({ event: `cg_${el.dataset.phEvent}`, props: { ...props(el), page: location.pathname } });
+}
+
 function wire(ph: Ph) {
+  document.removeEventListener("click", buffer, { capture: true });
+  for (const e of early.splice(0)) ph.capture(e.event, e.props);
   // Page-level events declared in markup, e.g. <main data-ph-view="install_guide_opened" data-ph-platform="velocity">.
   const view = document.querySelector<HTMLElement>("[data-ph-view]");
   if (view?.dataset.phView) ph.capture(`cg_${view.dataset.phView}`, { ...props(view), page: location.pathname });
@@ -59,6 +68,19 @@ export function startSiteAnalytics() {
     ph.register({ surface: "site" });
     wire(ph);
   });
-  if ("requestIdleCallback" in window) requestIdleCallback(() => void go(), { timeout: 3000 });
-  else setTimeout(() => void go(), 1500);
+  document.addEventListener("click", buffer, { capture: true });
+  // On the visitor's first interaction, or 5 s after load at the latest, so the analytics library never competes
+  // with rendering the page.
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    for (const t of INTERACTIONS) removeEventListener(t, start, { capture: true });
+    void go();
+  };
+  const INTERACTIONS = ["pointerdown", "keydown", "scroll", "touchstart"] as const;
+  for (const t of INTERACTIONS) addEventListener(t, start, { capture: true, passive: true, once: true });
+  const timer = () => setTimeout(start, 5000);
+  if (document.readyState === "complete") timer();
+  else addEventListener("load", timer, { once: true });
 }

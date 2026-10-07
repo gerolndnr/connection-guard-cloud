@@ -11,6 +11,8 @@ const benchmarkLive = /BENCHMARK_LIVE = true/.test(readFileSync(new URL("./src/d
 export default defineConfig({
   site: "https://connectionguard.net",
   trailingSlash: "never",
+  // The site's whole stylesheet is small: inline it so the first paint waits for no extra request.
+  build: { inlineStylesheets: "always" },
   integrations: [react(), sitemap({ filter: (page) => benchmarkLive || !page.includes("/benchmark") })],
   vite: {
     plugins: [tailwindcss()],

@@ -2,6 +2,8 @@ import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createRootRoute, createRoute, createRouter, Outlet, useRouterState } from "@tanstack/react-router";
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
 import "./styles.css";
 import { ApiError } from "./api.ts";
 import { Home } from "./routes/Home.tsx";
