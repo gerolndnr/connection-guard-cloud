@@ -81,6 +81,9 @@ export const GATED_PATHS: readonly ConfigPath[] = [
 export const PATHS_SINCE: readonly { version: string; paths: readonly ConfigPath[] }[] = [
   { version: "0.6.0", paths: ["provider.vpn.blackbox.enabled", "provider.vpn.ipcheck.enabled", "provider.vpn.zowi.enabled",
     "provider.local.connectionguard-intel.enabled", "provider.local.connectionguard-intel.relay"] },
+  // 0.6.1 (released 13 Oct 2026): the order and strategy of the services, attempts per player, IPQuery and IPQualityScore.
+  { version: "0.6.1", paths: ["provider.vpn-failover.enabled", "provider.vpn-failover.order", "provider.max-external-attempts",
+    "provider.vpn.ipquery.enabled", "provider.vpn.ipqualityscore.enabled", "provider.vpn.ipqualityscore.api-key"] },
 ];
 
 /** "0.6.0-SNAPSHOT" ≥ "0.6.0": development builds already carry the features of their version. */
