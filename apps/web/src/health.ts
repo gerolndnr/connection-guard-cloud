@@ -1,7 +1,7 @@
 // Turns server status into attention notes: "action" when the operator must act, "pencil" when it is good to know.
 // Every note has a stable id and a fingerprint of the situation. Dismissing stores the fingerprint, so a
 // dismissed note comes back only when the situation changes (a server drops out again, a new day's quota...).
-import type { Install, InstallError } from "./api.ts";
+import type { Install, InstallError, PluginRelease } from "./api.ts";
 import { ago, num, serverName, versionAtLeast } from "./format.ts";
 import { sourceLabel } from "./sources.ts";
 
@@ -79,9 +79,21 @@ export function providers(installs: Install[]): ProviderRow[] {
   return [...byId.values()].sort((a, b) => a.scope.localeCompare(b.scope) || a.id.localeCompare(b.id));
 }
 
-export function notes(installs: Install[], now = Date.now()): Note[] {
+/** "0.6.1-SNAPSHOT" → "0.6": a different minor version is more than a bug-fix release behind. */
+const minor = (v: string) => (v.match(/\d+/g) ?? []).slice(0, 2).join(".");
+
+export function notes(installs: Install[], now = Date.now(), release: PluginRelease | null = null): Note[] {
   const out: Note[] = [];
   for (const i of installs) {
+    // A newer release is out (development builds of that version or later count as current). The note comes back for
+    // every new release, also after it was dismissed.
+    if (release && i.online && !versionAtLeast(i.plugin_version, release.version)) {
+      const older = minor(i.plugin_version) !== minor(release.version);
+      out.push({ id: `update:${i.id}`, fingerprint: release.version, tone: older ? "action" : "pencil",
+        title: `${serverName(i)} runs Connection Guard ${i.plugin_version}; ${release.version} is out`,
+        detail: `Replace the JAR in the plugins folder and restart the server. Your config.yml and data are kept.${older ? " This version is more than a bug-fix release behind." : ""}`,
+        link: { href: release.url, label: "What's new" } });
+    }
     const coverage = i.status?.vpn_unchecked_allowed;
     if (coverage && coverage.total > 0) {
       const reasons = Object.entries(coverage.reasons).filter(([, count]) => count! > 0)

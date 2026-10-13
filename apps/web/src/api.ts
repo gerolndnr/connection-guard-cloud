@@ -39,6 +39,8 @@ export interface InstallError {
   fingerprint: string; type: string; cause_type: string | null; context: "STARTUP" | "RELOAD" | "LOOKUP" | "CACHE" | "SYNC" | "COMMAND" | "OTHER";
   top_frame: string; plugin_version: string; count: number; first_at: number; last_at: number;
 }
+/** The newest published plugin release (from GitHub). */
+export interface PluginRelease { version: string; url: string; published_at: string }
 export interface NetworkView { network: { id: string; name: string; retention_days: number; created_at: number }; role: Role; installs: Install[] }
 export type Range = "24h" | "7d" | "30d" | "90d";
 export interface Stats {
@@ -122,4 +124,5 @@ export const api = {
   deleteNetwork: (networkId: string, confirm: string) => request<{ ok: true }>(`/networks/${networkId}`, { method: "DELETE", json: { confirm } }),
   deleteAccount: () => request<{ ok: true }>("/me", { method: "DELETE", json: { confirm: "DELETE" } }),
   announcement: () => request<{ announcement: Announcement | null }>("/announcement"),
+  pluginRelease: () => request<{ release: PluginRelease | null }>("/plugin-release"),
 };

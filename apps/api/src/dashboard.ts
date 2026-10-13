@@ -116,6 +116,36 @@ dashboard.get("/announcement", async (c) => {
   return c.json({ announcement: announcementCache.value });
 });
 
+// The newest published plugin release (GitHub releases), so the overview can point out servers on an older version.
+// Asked at most once an hour per isolate; the last good answer is kept in KV for when GitHub does not answer.
+const RELEASES = "https://api.github.com/repos/gerolndnr/connection-guard/releases/latest";
+let releaseCache: { at: number; value: PluginRelease | null } | null = null;
+interface PluginRelease { version: string; url: string; published_at: string }
+export function parseRelease(body: unknown): PluginRelease | null {
+  const r = body as { tag_name?: unknown; html_url?: unknown; published_at?: unknown; draft?: unknown; prerelease?: unknown } | null;
+  if (!r || typeof r.tag_name !== "string" || r.draft || r.prerelease) return null;
+  const version = r.tag_name.replace(/^v/i, "");
+  if (!/^\d+\.\d+(\.\d+)?$/.test(version)) return null;
+  return { version, url: typeof r.html_url === "string" && r.html_url.startsWith("https://github.com/") ? r.html_url : "https://connectionguard.net/download",
+    published_at: typeof r.published_at === "string" ? r.published_at : "" };
+}
+dashboard.get("/plugin-release", async (c) => {
+  const now = Date.now();
+  if (!releaseCache || now - releaseCache.at > 3_600_000) {
+    let value: PluginRelease | null = null;
+    try {
+      const res = await fetch(RELEASES, { headers: { "user-agent": "connection-guard-cloud", accept: "application/vnd.github+json" } });
+      if (res.ok) value = parseRelease(await res.json());
+    } catch { value = null; }
+    if (value) await c.env.PUBLIC.put("plugin-release", JSON.stringify(value));
+    else {
+      try { value = JSON.parse((await c.env.PUBLIC.get("plugin-release")) ?? "null") as PluginRelease | null; } catch { value = null; }
+    }
+    releaseCache = { at: now, value };
+  }
+  return c.json({ release: releaseCache.value });
+});
+
 dashboard.use("/*", sameOrigin);
 dashboard.use("/me", requireUser);
 dashboard.use("/link/*", requireUser);

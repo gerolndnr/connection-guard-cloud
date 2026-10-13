@@ -108,6 +108,7 @@ describe("setup assistant logic", () => {
 });
 
 import { notes, providers, providerProblem } from "../health.ts";
+import type { Install } from "../api.ts";
 
 describe("attention notes", () => {
   const install = (over: Record<string, unknown>) => ({
@@ -190,5 +191,26 @@ describe("plugin error notes", () => {
     expect(url).toContain("3f9c0a1b2d4e5f60");
     expect(notes([{ ...install, errors: [{ ...err, last_at: now - 2 * 3_600_000 }] }], now).find((x) => x.id.startsWith("error:"))!.tone).toBe("pencil");
     expect(notes([{ ...install, errors: [{ ...err, last_at: now - 2 * 86_400_000 }] }], now).some((x) => x.id.startsWith("error:"))).toBe(false);
+  });
+});
+
+describe("update notes", () => {
+  const server = (plugin_version: string, online = true) => ({
+    id: "ins_u", name: "Lobby", platform: "BUKKIT", platform_version: "Paper", plugin_version, java_version: "21",
+    created_at: 0, claimed_at: 0, last_seen_at: 0, online, status: null,
+  }) as Install;
+  const release = { version: "0.6.1", url: "https://github.com/gerolndnr/connection-guard/releases/tag/0.6.1", published_at: "" };
+  const update = (v: string, online = true) => notes([server(v, online)], 0, release).find((n) => n.id.startsWith("update:"));
+  it("tips on a bug-fix release behind, flags an older minor version", () => {
+    expect(update("0.6.0")).toMatchObject({ tone: "pencil", fingerprint: "0.6.1", link: { href: release.url } });
+    expect(update("0.6.0")!.installId).toBeUndefined(); // no "remove this server" offer
+    expect(update("0.5.1")!.tone).toBe("action");
+  });
+  it("stays quiet when current, ahead, offline or the release is unknown", () => {
+    expect(update("0.6.1")).toBeUndefined();
+    expect(update("0.6.1-SNAPSHOT")).toBeUndefined();
+    expect(update("0.6.2-SNAPSHOT")).toBeUndefined();
+    expect(update("0.6.0", false)).toBeUndefined();
+    expect(notes([server("0.5.1")], 0).find((n) => n.id.startsWith("update:"))).toBeUndefined();
   });
 });

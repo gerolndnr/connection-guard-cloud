@@ -137,6 +137,7 @@ export function Overview() {
   // The whole network's last week, for the review request (independent of the chosen range and server).
   const week = useQuery({ queryKey: ["stats", networkId, "7d", undefined], queryFn: () => api.stats(networkId, "7d"), staleTime: 15 * 60_000 });
   const [reviewState] = useState(readReviewState);
+  const release = useQuery({ queryKey: ["plugin-release"], queryFn: api.pluginRelease, staleTime: 60 * 60_000 });
   const players = usePlayerNames(latest.data?.events.map((e) => e.uuid) ?? []);
   // On phones the overview leads with what needs a decision; charts and breakdowns open on request.
   const [desktop, setDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
@@ -159,7 +160,7 @@ export function Overview() {
   const t = stats.data?.totals;
   const anyObserving = installs.some((i) => i.status?.mode === "OBSERVE");
   const observing = installs.length > 0 && installs.every((i) => i.status?.mode === "OBSERVE");
-  const allNotes = notes(installs);
+  const allNotes = notes(installs, Date.now(), release.data?.release ?? null);
   const attention = allNotes.filter((n) => !isDismissed(n));
   const dismissedCount = allNotes.length - attention.length;
   const dismissTracked: typeof dismiss = (n) => { track("issue_dismissed", { kind: n.id.split(":")[0], tone: n.tone }); dismiss(n); };
@@ -235,7 +236,7 @@ export function Overview() {
           hasDecisions={Boolean(latest.data?.events.length) || (t?.checks ?? 0) > 0} wouldRefuse={t?.would_refuse ?? 0} />
       )}
 
-      {net.data && week.data && shouldAskForReview({ role: net.data.role, installs: allInstalls, issues: notes(allInstalls).filter((n) => n.tone === "action").length,
+      {net.data && week.data && shouldAskForReview({ role: net.data.role, installs: allInstalls, issues: notes(allInstalls, Date.now(), release.data?.release ?? null).filter((n) => n.tone === "action").length,
         week: week.data.totals, state: reviewState, now: Date.now() }) && (
         <ReviewPrompt checks={week.data.totals.checks} found={week.data.totals.vpn_positive} />
       )}
