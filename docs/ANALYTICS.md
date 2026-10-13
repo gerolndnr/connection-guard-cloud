@@ -59,6 +59,9 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | `decisions_filtered`, `decisions_searched` | `filter` (never the search text) |
 | `range_changed` | `range` |
 | `issue_dismissed` | `kind`, `tone` |
+| `review_prompt_shown` | `checks_bucket` (100+, 1k+, 10k+) |
+| `review_prompt_clicked` | `target` (spigotmc, hangar) |
+| `review_prompt_later`, `review_prompt_dismissed` | none |
 | `theme_changed` | `theme` |
 | `rule_builder_added` | `kind` (address, asn, isp, operator, country, type), `effect`, `scope`, `temporary` (never the target) |
 | `rule_preset_picked` | `preset` (label of the shortcut, e.g. Refuse Tor) |

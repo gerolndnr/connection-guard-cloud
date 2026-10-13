@@ -11,6 +11,8 @@ import { DecisionTable } from "../components/Register.tsx";
 import { usePlayerNames } from "../players.ts";
 import { StatusDot } from "../components/Badge.tsx";
 import { SetupChecklist } from "../components/SetupChecklist.tsx";
+import { ReviewPrompt } from "../components/ReviewPrompt.tsx";
+import { readReviewState, shouldAskForReview } from "../review.ts";
 import { notes, providers, providerProblem, type ProviderRow } from "../health.ts";
 import { ago, countryName, ms, num, pct, platformName, reasonText, serverName } from "../format.ts";
 import { track } from "../analytics.ts";
@@ -132,6 +134,9 @@ export function Overview() {
   const net = useQuery({ queryKey: ["network", networkId], queryFn: () => api.network(networkId) });
   const stats = useQuery({ queryKey: ["stats", networkId, range, server], queryFn: () => api.stats(networkId, range, server), placeholderData: (prev) => prev });
   const latest = useQuery({ queryKey: ["events", networkId, "latest", server], queryFn: () => api.events(networkId, { limit: 8, install: server }) });
+  // The whole network's last week, for the review request (independent of the chosen range and server).
+  const week = useQuery({ queryKey: ["stats", networkId, "7d", undefined], queryFn: () => api.stats(networkId, "7d"), staleTime: 15 * 60_000 });
+  const [reviewState] = useState(readReviewState);
   const players = usePlayerNames(latest.data?.events.map((e) => e.uuid) ?? []);
   // On phones the overview leads with what needs a decision; charts and breakdowns open on request.
   const [desktop, setDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
@@ -228,6 +233,11 @@ export function Overview() {
       {net.data && (
         <SetupChecklist networkId={networkId} installs={allInstalls} role={net.data.role}
           hasDecisions={Boolean(latest.data?.events.length) || (t?.checks ?? 0) > 0} wouldRefuse={t?.would_refuse ?? 0} />
+      )}
+
+      {net.data && week.data && shouldAskForReview({ role: net.data.role, installs: allInstalls, issues: notes(allInstalls).filter((n) => n.tone === "action").length,
+        week: week.data.totals, state: reviewState, now: Date.now() }) && (
+        <ReviewPrompt checks={week.data.totals.checks} found={week.data.totals.vpn_positive} />
       )}
 
       <dl className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
