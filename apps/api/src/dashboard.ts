@@ -119,6 +119,7 @@ dashboard.get("/announcement", async (c) => {
 // The newest published plugin release (GitHub releases), so the overview can point out servers on an older version.
 // Asked at most once an hour per isolate; the last good answer is kept in KV for when GitHub does not answer.
 const RELEASES = "https://api.github.com/repos/gerolndnr/connection-guard/releases/latest";
+const RELEASES_PAGE = "https://github.com/gerolndnr/connection-guard/releases/latest";
 let releaseCache: { at: number; value: PluginRelease | null } | null = null;
 interface PluginRelease { version: string; url: string; published_at: string }
 export function parseRelease(body: unknown): PluginRelease | null {
@@ -129,6 +130,11 @@ export function parseRelease(body: unknown): PluginRelease | null {
   return { version, url: typeof r.html_url === "string" && r.html_url.startsWith("https://github.com/") ? r.html_url : "https://connectionguard.net/download",
     published_at: typeof r.published_at === "string" ? r.published_at : "" };
 }
+/** "https://github.com/gerolndnr/connection-guard/releases/tag/0.6.1" → that release (no publication time). */
+export function releaseFromRedirect(location: string | null): PluginRelease | null {
+  const m = location?.match(/^https:\/\/github\.com\/gerolndnr\/connection-guard\/releases\/tag\/v?(\d+\.\d+(?:\.\d+)?)$/);
+  return m ? { version: m[1]!, url: location!, published_at: "" } : null;
+}
 dashboard.get("/plugin-release", async (c) => {
   const now = Date.now();
   if (!releaseCache || now - releaseCache.at > 3_600_000) {
@@ -137,6 +143,14 @@ dashboard.get("/plugin-release", async (c) => {
       const res = await fetch(RELEASES, { headers: { "user-agent": "connection-guard-cloud", accept: "application/vnd.github+json" } });
       if (res.ok) value = parseRelease(await res.json());
     } catch { value = null; }
+    // The unauthenticated API allows 60 requests an hour per address, shared with every Worker on the same egress
+    // addresses: when it refuses, the web page's redirect to the newest release tag answers instead.
+    if (!value) {
+      try {
+        const res = await fetch(RELEASES_PAGE, { redirect: "manual", headers: { "user-agent": "connection-guard-cloud" } });
+        value = releaseFromRedirect(res.headers.get("location"));
+      } catch { value = null; }
+    }
     if (value) await c.env.PUBLIC.put("plugin-release", JSON.stringify(value));
     else {
       try { value = JSON.parse((await c.env.PUBLIC.get("plugin-release")) ?? "null") as PluginRelease | null; } catch { value = null; }
