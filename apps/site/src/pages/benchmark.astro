@@ -27,7 +27,7 @@ const phases = [
   { id: "cold", title: "First join of a new player", hint: "50 new players, one after another" },
   { id: "warm", title: "The same players again", hint: "Answers can come from the cache" },
   { id: "stampede", title: "100 joins from one address at once", hint: "A bot wave from one IP" },
-  { id: "burst", title: "1,000 new players in 20 seconds", hint: "50 per second, each from a new address" },
+  { id: "burst", title: "Stress test: 1,000 new players in 20 seconds", hint: "50 per second, each from a new address" },
 ] as const;
 const vpnCaught = (id: string) => catchCohorts.filter((c) => c.id !== "proxy").reduce((s, c) => s + (c.blocked as Record<string, number>)[id]!, 0);
 const vpnN = catchCohorts.filter((c) => c.id !== "proxy").reduce((s, c) => s + c.n, 0);
@@ -41,7 +41,7 @@ const check = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-ac
 const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-danger-text" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>`;
 ---
 <Base title="Anti-VPN Plugin Benchmark for Minecraft | Connection Guard" path="/benchmark"
-  description={`${COMPARED.length} Minecraft anti-VPN plugins on one server, Connection Guard included: speed with 1,000 players, VPN and Tor detection, false positives, outages. Open data.`}
+  description={`${COMPARED.length} Minecraft anti-VPN plugins on one server, Connection Guard included: a stress test with 1,000 players, VPN and Tor detection, false positives, outages. Open data.`}
   noindex={!BENCHMARK_LIVE} schema={[breadcrumbs([["Benchmark", "/benchmark"]])]} view={{ event: "benchmark_viewed" }}>
 
   <section class="border-b border-line">
@@ -70,7 +70,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
   <section aria-label="Results at a glance" class="border-b border-line">
     <div class="container-site grid gap-4 py-12 sm:py-14 md:grid-cols-3">
       {[
-        { href: "#speed", k: "Join wave", big: `${num(us.checked)} / ${num(us.subjects)}`, text: `players checked when 1,000 joined in 20 seconds. The other plugins checked at most ${num(bestOtherChecked)}; the rest got in unchecked or were cut off.` },
+        { href: "#speed", k: "Stress test", big: `${num(us.checked)} / ${num(us.subjects)}`, text: `players checked when 1,000 joined in 20 seconds. The other plugins checked at most ${num(bestOtherChecked)}; the rest got in unchecked or were cut off.` },
         { href: "#reliability", k: "Detection services down", big: `${outages.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length} / ${outages.length}`, text: "failure cases with VPN and Tor still blocked, without a single lookup." },
         { href: "#detection", k: "Caught", big: `${vpnCaught(CURRENT)} / ${vpnN}`, text: `VPN and Tor addresses blocked. ${spareTotal(CURRENT)} of ${spareN} home and mobile players were refused too, the fewest of the plugins that block most VPNs.` },
       ].map((c) => (
@@ -86,8 +86,8 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
 
   <section id="speed" aria-labelledby="speed-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
     <div class="container-site py-16 sm:py-20">
-      <h2 id="speed-h" class="section-title">1,000 players join at once.</h2>
-      <p class="lede mt-4">50 new players per second for 20 seconds. Each detection service is simulated with the same delay and its real free-tier limit, so a plugin can't look fast by asking a service that would refuse it in reality.</p>
+      <h2 id="speed-h" class="section-title">Stress test: 1,000 players join at once.</h2>
+      <p class="lede mt-4">Does the plugin still check every player under heavy load? 50 new players per second for 20 seconds. Each detection service is simulated with the same delay and its real free-tier limit, so a plugin can't look fast by asking a service that would refuse it in reality.</p>
       <Fragment set:html={note("performance")} />
 
       <div class="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
@@ -112,7 +112,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         </div>
         <div class="card p-6">
           <h3 class="text-[0.9375rem] font-semibold">What players feel</h3>
-          <p class="mt-1 text-[0.8125rem] text-fg-3">Join time during the wave, 95th percentile, next to the same proxy with no anti-VPN plugin.</p>
+          <p class="mt-1 text-[0.8125rem] text-fg-3">Join time during the stress test, 95th percentile, next to the same proxy with no anti-VPN plugin.</p>
           <ul class="mt-6 grid gap-3.5">
             {byJoin.map((p) => {
               const b = burst(p); const mine = p === CURRENT; const ref = p === "none";
@@ -127,8 +127,8 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
           </ul>
           <p class="mt-6 border-t border-line pt-4 text-[0.8125rem] leading-relaxed text-fg-2">
             {us.outcomes.DENY_LOGIN === 1
-              ? "One player in the wave was refused: the wave's random addresses include one in a range Connection Guard Intel lists as VPN. It was decided from that list on the server, without a lookup, and counts as checked."
-              : us.outcomes.DENY_LOGIN ? `${num(us.outcomes.DENY_LOGIN)} players refused.` : "No player in the wave was refused."}
+              ? "One player in the stress test was refused: its random addresses include one in a range Connection Guard Intel lists as VPN. It was decided from that list on the server, without a lookup, and counts as checked."
+              : us.outcomes.DENY_LOGIN ? `${num(us.outcomes.DENY_LOGIN)} players refused.` : "No player in the stress test was refused."}
           </p>
         </div>
       </div>

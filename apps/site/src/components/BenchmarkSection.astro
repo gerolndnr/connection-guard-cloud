@@ -23,7 +23,7 @@ const vpnN = vpn.reduce((s, c) => s + c.n, 0);
 
     <div class="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
       <a href="/benchmark#speed" class="card group block p-6 no-underline transition-colors hover:border-line-strong" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="home_speed">
-        <p class="text-[0.8125rem] font-medium text-fg-2">1,000 players join in 20 seconds</p>
+        <p class="text-[0.8125rem] font-medium text-fg-2">Stress test: 1,000 players join in 20 seconds</p>
         <p class="mt-2 text-xl font-semibold tracking-[-0.02em] text-fg">{num(us.checked)} of 1,000 players checked, 95 % decided within {ms(us.decision_p95)}.</p>
         <ul class="mt-6 grid gap-3">
           {byChecked.map((p) => {

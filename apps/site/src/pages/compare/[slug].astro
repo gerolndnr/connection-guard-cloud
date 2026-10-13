@@ -40,8 +40,8 @@ const measured: Row[] = [
   { label: "VPNs over IPv6 blocked", us: `${us.ipv6} of ${us.ipv6N}`, them: `${them.ipv6} of ${them.ipv6N}`, better: higher(us.ipv6, them.ipv6) },
   { label: "Public proxies blocked", us: `${us.proxies} of ${us.proxiesN}`, them: `${them.proxies} of ${them.proxiesN}`, better: higher(us.proxies, them.proxies) },
   ...(late ? [] : [
-    { label: "1,000 players in 20 s: decided within (p95)", us: fmt.sec(us.waveP95), them: fmt.sec(them.waveP95), better: lower(us.waveP95, them.waveP95) },
-    { label: "1,000 players in 20 s: checked", us: `${us.waveChecked}`, them: `${them.waveChecked}`, better: higher(us.waveChecked, them.waveChecked) },
+    { label: "Stress test, 1,000 players in 20 s: decided within (p95)", us: fmt.sec(us.waveP95), them: fmt.sec(them.waveP95), better: lower(us.waveP95, them.waveP95) },
+    { label: "Stress test, 1,000 players in 20 s: checked", us: `${us.waveChecked}`, them: `${them.waveChecked}`, better: higher(us.waveChecked, them.waveChecked) },
     { label: "First join of a new player (p95)", us: fmt.sec(us.coldP95), them: fmt.sec(them.coldP95), better: lower(us.coldP95, them.coldP95) },
     { label: "Same player again (median)", us: fmt.sec(us.warmP50), them: fmt.sec(them.warmP50), better: lower(us.warmP50, them.warmP50) },
   ]),
