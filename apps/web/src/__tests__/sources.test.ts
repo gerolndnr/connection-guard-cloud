@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { sourceKey, sourceLabel } from "../sources.ts";
-import { failoverCoverage, failoverOrder, fixedProviders, PROVIDERS, providersFor, usesFailover } from "../providers.ts";
+import { failoverCoverage, failoverOrder, fixedProviders, isRecommended, ordersFromDashboard, PROVIDERS, providersFor, setupOrder, usesFailover } from "../providers.ts";
 
 describe("source names", () => {
   it("maps decision, health and extension IDs to providers", () => {
@@ -63,6 +63,23 @@ describe("providers", () => {
     expect(failoverCoverage([{ info: p("proxycheck"), hasKey: false }, { info: p("ipquery"), hasKey: false }]))
       .toEqual({ first: p("proxycheck"), firstLimit: 100, uncappedFallback: p("ipquery") });
     expect(failoverCoverage([{ info: p("proxycheck"), hasKey: true }, { info: p("ipqualityscore"), hasKey: true }])!.uncappedFallback).toBeNull();
+  });
+});
+
+describe("recommended setup", () => {
+  const byKey = (k: string) => PROVIDERS.find((p) => p.key === k)!;
+  it("keeps the 0.6.0 recommendation until the server takes the order from the dashboard", () => {
+    expect(ordersFromDashboard({ "provider.vpn.blackbox.enabled": true }, "0.6.0")).toBe(false);
+    expect(isRecommended(byKey("proxycheck"), true, false)).toBe(true);
+    expect(isRecommended(byKey("zowi"), true, false)).toBe(true);
+  });
+  it("recommends zowi, Blackbox and IPQuery, in that order, once it does", () => {
+    const snapshot = { "provider.vpn-failover.order": ["zowi", "blackbox", "ipquery", "proxycheck"] };
+    expect(ordersFromDashboard(snapshot, "0.6.1")).toBe(true);
+    expect(PROVIDERS.filter((p) => isRecommended(p, true, true)).map((p) => p.key).sort()).toEqual(["blackbox", "ipquery", "zowi"]);
+    expect(setupOrder(PROVIDERS, true).map((p) => p.key).slice(0, 4)).toEqual(["zowi", "blackbox", "ipquery", "proxycheck"]);
+    expect(setupOrder(PROVIDERS, true).at(-1)!.key).toBe("ip-api");
+    expect(setupOrder(PROVIDERS, false)).toEqual([...PROVIDERS]);
   });
 });
 

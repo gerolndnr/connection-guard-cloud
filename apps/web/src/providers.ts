@@ -48,8 +48,34 @@ export const PROVIDERS: readonly ProviderInfo[] = [
     caution: "Free use is for non-commercial servers only. In our benchmark it caught nothing the other services had missed, so it is off in the recommended setup." },
 ];
 
+/**
+ * Servers whose plugin takes the order from the dashboard (from the release with PR #92) start new installs with zowi,
+ * Blackbox (confirmed) and IPQuery, and ProxyCheck off: in our benchmark (mc-antivpn-bench, 7 and 13 Oct 2026) every
+ * home player refused by the 0.6.1 order was refused on a ProxyCheck answer, and zowi before Blackbox caught the most.
+ */
+export const ORDERED_RECOMMENDATION: readonly ProviderInfo["key"][] = ["zowi", "blackbox", "ipquery"];
+
+/** Whether this server takes the order of its services from the dashboard (its snapshot lists the setting). */
+export const ordersFromDashboard = (snapshot: Record<string, unknown> | null | undefined, pluginVersion?: string | null) =>
+  supportsPath(snapshot, "provider.vpn-failover.order", pluginVersion);
+
+/** On in the recommended setup for this server. */
+export function isRecommended(p: ProviderInfo, v06: boolean, ordered: boolean): boolean {
+  if (ordered) return ORDERED_RECOMMENDATION.includes(p.key);
+  return v06 ? Boolean(p.recommended) : p.key === "proxycheck";
+}
+
+/** The services in the order the recommended setup asks them: the recommendation first, the others after, IP-API last. */
+export function setupOrder<T extends ProviderInfo>(list: readonly T[], ordered: boolean): T[] {
+  if (!ordered) return [...list];
+  const rank = (p: ProviderInfo) => (p.key === "ip-api" ? 1000 : ORDERED_RECOMMENDATION.includes(p.key) ? ORDERED_RECOMMENDATION.indexOf(p.key) : 100 + PROVIDERS.indexOf(p));
+  return [...list].sort((a, b) => rank(a) - rank(b));
+}
+
 /** The explanation for a service on this server: Blackbox counts a listing only inside Intel's data-centre ranges from 0.6.1. */
-export function providerBody(p: ProviderInfo, pluginVersion?: string | null): string {
+export function providerBody(p: ProviderInfo, pluginVersion?: string | null, ordered = false): string {
+  if (p.key === "proxycheck" && ordered)
+    return "Free: 100 checks a day, 1,000 with a free API key. Off in the recommended setup: in our benchmark its answers refused home players the other services let in. With a key it is a good late fallback.";
   if (p.key === "blackbox" && versionAtLeast(pluginVersion, "0.6.1"))
     return "Free, no key, by ipinfo.app. Its list also covers hosting and cloud networks, so a listing only counts when Connection Guard Intel places the address in a data centre; otherwise the next service decides.";
   return p.body;

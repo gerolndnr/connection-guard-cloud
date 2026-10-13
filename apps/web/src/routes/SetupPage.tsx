@@ -9,7 +9,7 @@ import { VerdictBadge } from "../components/Badge.tsx";
 import { CountryPicker, Switch } from "../components/Form.tsx";
 import { clock, explain, isPrivateIp, ms, num, serverName, verdict, versionAtLeast } from "../format.ts";
 import { isConfigured, lookupsPerDay } from "../setup.ts";
-import { dailyCapacity, failoverCoverage, failoverOrder, fixedProviders, isValidKey, providersFor, usesFailover, type ProviderInfo } from "../providers.ts";
+import { dailyCapacity, failoverCoverage, failoverOrder, fixedProviders, isRecommended as recommendedFor, isValidKey, ordersFromDashboard, providerBody, providersFor, setupOrder, usesFailover, type ProviderInfo } from "../providers.ts";
 import { sourceKey } from "../sources.ts";
 
 const INTEL = "provider.local.connectionguard-intel.enabled";
@@ -99,13 +99,15 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
   const configured = isConfigured(snapshot, cfgQ.data?.managed);
   const pv = install.plugin_version;
   // Before the server's first report (right after linking) its version says what it offers, so 0.6 shows its services at once.
-  const available = providersFor(snapshot, pv);
+  // A plugin that takes the order from the dashboard gets the new recommended set and order (providers.ts).
+  const ordered = ordersFromDashboard(snapshot, pv);
+  const available = setupOrder(providersFor(snapshot, pv), ordered);
   // Plugins from 0.5.2 ask services one after another unless config.yml switches that off; the assistant keeps it as is.
   const failover = usesFailover(snapshot, snapshot, install.plugin_version);
   // 0.6 brings Connection Guard Intel, three more keyless services and stricter defaults for new installs.
   const v06 = versionAtLeast(pv, "0.6.0") || supportsPath(snapshot, "provider.vpn.blackbox.enabled");
   const hasIntel = supportsPath(snapshot, INTEL, pv);
-  const recommendedSet = (list: readonly ProviderInfo[]) => Object.fromEntries(list.map((p) => [p.key, v06 ? Boolean(p.recommended) : p.key === "proxycheck"]));
+  const recommendedSet = (list: readonly ProviderInfo[]) => Object.fromEntries(list.map((p) => [p.key, recommendedFor(p, v06, ordered)]));
   const fixed = fixedProviders(snapshot, (install.status?.providers ?? []).filter((p) => p.scope === "VPN").map((p) => sourceKey(p.id)), pv);
 
   // Choices, prefilled with the server's current values (or the shipped defaults until it reports).
@@ -167,6 +169,8 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     for (const p of available) values[`provider.vpn.${p.key}.enabled`] = on.includes(p);
     if (hasIntel) { values[INTEL] = vpn && intel; if (supportsPath(snapshot, INTEL_RELAY, pv)) values[INTEL_RELAY] = relay; }
     if (on.length > 0 && !failover) values["required-positive-flags"] = Math.min(Math.max(1, votes), on.length);
+    // The order the assistant shows is the order the server asks in (IP-API is always last there anyway).
+    if (ordered && failover) values["provider.vpn-failover.order"] = on.map((p) => p.key).filter((k) => k !== "ip-api");
     const secrets = Object.fromEntries(on.filter((p) => p.keyPath && typedKey(p)).map((p) => [p.keyPath!, typedKey(p)]));
     if (countryMode !== "off" && snapshot?.["provider.geo.service"] === "Disabled") values["provider.geo.service"] = "IP-API";
     track("setup_finished", { install_id: install.id,
@@ -272,7 +276,7 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
               <h2 className="mb-2 text-[0.8125rem] font-medium text-fg-3">On your server</h2>
               <OptionCard checked={intel} onToggle={() => setIntel(!intel)} icon={<Server className="size-4.5" />} badge="Recommended"
                 title="Connection Guard Intel"
-                body="Signed lists of VPN servers, Tor exits and privacy relays, checked on your server before any service is asked. No player address leaves it, and it keeps working when every service is down.">
+                body={`Signed lists of VPN servers, Tor exits, ${versionAtLeast(pv, "0.6.1") ? "public proxies " : ""}and privacy relays, checked on your server before any service is asked. No player address leaves it, and it keeps working when every service is down.`}>
                 <p className="mb-2 text-[0.8125rem] font-medium">Privacy relays such as iCloud Private Relay</p>
                 <div role="group" aria-label="Privacy relays" className="segmented">
                   <button type="button" aria-pressed={relay === "ALLOW"} onClick={() => setRelay("ALLOW")}>Let them in</button>
@@ -291,7 +295,7 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
               return (
                 <OptionCard key={p.key} checked={on} onToggle={() => setSelected({ ...selected, [p.key]: !on })}
                   icon={p.keyPath ? <KeyRound className="size-4.5" /> : <ShieldCheck className="size-4.5" />}
-                  title={p.name} badge={(v06 ? p.recommended : p.key === "proxycheck") ? "Recommended" : undefined} body={p.body} note={p.caution}>
+                  title={p.name} badge={recommendedFor(p, v06, ordered) ? "Recommended" : undefined} body={providerBody(p, pv, ordered)} note={p.caution}>
                   {p.keyPath ? (
                     <div>
                       <label className="block">
@@ -325,9 +329,9 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
             <div className="mt-5 rounded-lg border border-line px-4 py-3">
               <p className="font-medium">A new address travels this way</p>
               <p className="mt-0.5 text-[0.8125rem] text-fg-2">
-                {hasIntel && intel ? "Connection Guard Intel → " : ""}{chain.map((p) => p.name).join(" → ")}. {coverage?.uncappedFallback
+                {hasIntel && intel ? "Connection Guard Intel → " : ""}{chain.map((p) => p.name).join(" → ")}. {coverage?.uncappedFallback && coverage.firstLimit !== null
                   ? `When ${coverage.first.name}'s daily limit is used up, ${coverage.uncappedFallback.name} takes over, so players stay checked.`
-                  : "When one limit is used up, the next service takes over."}
+                  : "When a service fails, has no clear answer or reaches its limit, the next one decides."}
               </p>
             </div>
           )}

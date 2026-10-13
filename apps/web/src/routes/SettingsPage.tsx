@@ -335,7 +335,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
           {providers.map((p) => (
             <Row key={p.key} managed={managed(`provider.vpn.${p.key}.enabled`)} error={errors[`provider.vpn.${p.key}.enabled`]}
               label={<>{p.name}{p.signup && <a href={p.signup} target="_blank" rel="noreferrer" className="text-fg-3 hover:text-fg" aria-label={`${p.name} website`}><ExternalLink className="size-3.5" /></a>}</>}
-              help={providerBody(p, install.plugin_version)}>
+              help={providerBody(p, install.plugin_version, supportsPath(effective, "provider.vpn-failover.order"))}>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Switch label={`Use ${p.name}`} checked={v<boolean>(`provider.vpn.${p.key}.enabled`) ?? false} onChange={(on) => set(`provider.vpn.${p.key}.enabled`, on)} />

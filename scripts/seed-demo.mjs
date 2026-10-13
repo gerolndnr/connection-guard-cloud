@@ -80,6 +80,14 @@ const snapshotNext = (mode) => ({
   "provider.local.connectionguard-intel.enabled": true, "provider.local.connectionguard-intel.relay": "ALLOW",
 });
 
+// A build that takes the provider order from the dashboard (PR #92): new-install order zowi, Blackbox, IPQuery, ProxyCheck off.
+const snapshotOrdered = (mode) => ({
+  ...snapshotNext(mode), "provider.vpn.proxycheck.enabled": false, "provider.vpn.ip-api.enabled": false,
+  "provider.vpn-failover.enabled": true, "provider.vpn-failover.order": ["zowi", "blackbox", "ipquery", "proxycheck", "ipcheck", "ip-api"],
+  "provider.max-external-attempts": 16, "provider.vpn.ipquery.enabled": true,
+  "provider.vpn.ipqualityscore.enabled": false, "provider.vpn.ipqualityscore.api-key": { set: false, hint: null },
+});
+
 const servers = [
   { platform: "VELOCITY", platform_version: "Velocity 3.4.0-SNAPSHOT (git-a1b2c3)", name: "Proxy", mode: "ENFORCE", rate: 26, vpnRate: 0.07, plugin: "0.5.0" },
   { platform: "BUKKIT", platform_version: "Paper 1.21.11-132", name: "Survival", mode: "OBSERVE", rate: 9, vpnRate: 0.2, plugin: "0.5.0" },
@@ -148,7 +156,7 @@ for (const s of servers) {
           { id: "ip-api", scope: "GEO", attempts: 398, successes: 398, last_reason: null, paused: false, daily_used: null, daily_budget: null },
         ],
         warnings: s.mode === "OBSERVE" ? ["mode.observe"] : [], config_version: null, cache_type: "SQLITE", buffered_events: 0, dropped_events: 0,
-        config: s.next ? snapshotNext(s.mode) : snapshot(s.mode), managed: [], config_result: null,
+        config: s.unconfirmed ? snapshotOrdered(s.mode) : s.next ? snapshotNext(s.mode) : snapshot(s.mode), managed: [], config_result: null,
         // The proxy runs a plugin that can end time-limited rules; the backend an older one that cannot.
         capabilities: s.next ? ["rule_expiry", "sync_command"] : ["rule_expiry"], // 0.6.0 adds /cg cloud sync
       },
