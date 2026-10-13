@@ -51,7 +51,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         <span>{dateLabel} · {bench.platform[0]!.toUpperCase() + bench.platform.slice(1)} · {bench.rounds} {bench.rounds === 1 ? "round" : "rounds"}</span>
       </p>
       <h1 class="display mt-5 text-[clamp(2.25rem,5vw,3.5rem)]">Measured, not claimed.</h1>
-      <p class="lede mt-5 max-w-2xl">We run the popular free anti-VPN plugins on the same server, with the same players and the same simulated detection services, and publish every number and log. Connection Guard included, so check our work.</p>
+      <p class="lede mt-5 max-w-2xl">We run the popular free anti-VPN plugins under the same conditions, with the same players and addresses, and publish every number and log. Connection Guard included, so check our work.</p>
       <div class="mt-8 flex flex-wrap items-center gap-3">
         <a href={BENCHMARK_REPO} class="btn btn-primary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="benchmark_repo" data-ph-location="benchmark_hero">Raw data and method</a>
         <a href="#reproduce" class="btn btn-secondary btn-lg no-underline">Run it yourself</a>
@@ -60,7 +60,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         Conflict of interest: the benchmark is built by Connection Guard's author. The method, the adapters and every log are public, and any plugin author can contest a result.
         {preliminary
           ? " These are preliminary results: speed and detection come from a quick run. The published run repeats everything three times on all 692 addresses and replaces them here."
-          : " Every plugin runs as it ships, without API keys. A second pass with the same free ProxyCheck key for every plugin follows."}
+          : " Every plugin runs as it ships, without API keys, each on a server of its own. A second table with each plugin's best configuration and free keys follows on 18 October."}
         {releaseCandidate && ` Connection Guard ${versionOf(CURRENT)} is a release candidate: downloads deliver ${versionOf(PREVIOUS)} until it ships, and ${versionOf(PREVIOUS)}'s results are shown where they differ.`}
       </p>
     </div>
@@ -241,12 +241,12 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
       </p>
       {unnormalized.size > 0 && (
         <p class="mt-3 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
-          *{[...unnormalized].map(label).join(", ")} ran in a separate run without the shared free ProxyCheck key the others' keyless lookups got, so its free quotas ran out after about 100 players and it let the rest in. A run with the same key for every plugin follows.
+          *{[...unnormalized].map(label).join(", ")} ask ProxyCheck without a key, as shipped. ProxyCheck answers 100 such lookups a day per server; each plugin ran on a server of its own, and after its 100 ProxyCheck answered it no more, as on a busy real server.
         </p>
       )}
       {!preliminary && (
         <p class="mt-3 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
-          Connection Guard {versionOf(CURRENT)} refused {spareTotal(CURRENT)} of {spareN} home and mobile players, both mobile connections; FoxGate, ProxyShield, VPNGuard and KauriVPN refuse one of the two as well. Version 0.6.0 refused 10 here, four of them on a single answer from one detection service, Blackbox. From 0.6.1 on, a Blackbox answer needs a second source before a player is refused.
+          Connection Guard {versionOf(CURRENT)} refused {spareTotal(CURRENT)} of {spareN} home and mobile players. Two changes in 0.6.1 are behind that. A Blackbox listing only counts when the address is in a data centre: version 0.6.0 refused four home players on a Blackbox answer alone. And new installs ask zowi, Blackbox and IPQuery, with ProxyCheck off: in our runs with a key, every home player the 0.6.1 release candidate refused was refused on a ProxyCheck answer.
         </p>
       )}
     </div>
@@ -260,8 +260,8 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
           {[
             "Unmodified plugin JARs from their official pages, with checksums, on one pinned server build.",
             "A real Minecraft client logs in from each test address, so every plugin sees what it would see in production.",
-            "Detection services are recorded once and replayed to every plugin, with the same delay (120 ms median, 350 ms at p95) and each service's free-tier limit.",
-            "Each plugin runs with its documented settings, enforcement switched on. No plugin-specific tuning.",
+            "Speed: detection services are simulated for every plugin alike, with the same delay (120 ms median, 350 ms at p95) and each service's free-tier limit. Detection: each plugin asks the real services, from a server of its own.",
+            "Each plugin runs with its documented settings, enforcement switched on, no API keys. No plugin-specific tuning.",
             "No combined score: speed, reliability and detection are reported separately, with every denominator.",
           ].map((t) => <li class="flex gap-3"><Fragment set:html={check} /><span>{t}</span></li>)}
         </ul>

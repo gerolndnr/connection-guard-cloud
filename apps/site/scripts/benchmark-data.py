@@ -145,6 +145,8 @@ def from_latest(args):
         'performance': f"run {run_of('performance', args.current)} for {label(args.current)} and run {', '.join(others('performance'))} for the others",
         'failure': f"run {run_of('failure', args.current)} for {label(args.current)} and runs {', '.join(others('failure'))} for the others",
     }
+    # --note section=text replaces a generated note (e.g. when a column comes from an earlier build of the same code).
+    notes.update(dict(n.split('=', 1) for n in args.note))
     unnormalized = sorted(p for p in det.get('unnormalized', set()) if p in keep and p != args.current)
     data = dict(
         status=args.status,
