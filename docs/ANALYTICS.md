@@ -41,6 +41,7 @@ Custom events are sent with a `cg_` prefix (`cg_download_clicked`, `cg_server_li
 | `support_clicked` | `channel` (discord, github), `location` |
 | `install_guide_opened` | `platform` (velocity, bungeecord, paper), on platform pages |
 | `guide_opened` | `guide` (slug) |
+| `compare_opened` | `competitor` (slug, or index), on /compare pages |
 | `compare_proof_clicked` | `row` |
 | `faq_opened` | `question`, `page` |
 

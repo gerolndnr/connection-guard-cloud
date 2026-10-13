@@ -3,7 +3,7 @@
 // the copy turns present tense and the navigation links to the dashboard.
 export const DASHBOARD_RELEASED = true;
 /** Plugin version the guides were last checked against; update it when a guide is re-verified. */
-export const GUIDES_VERIFIED_FOR = "0.6.0";
+export const GUIDES_VERIFIED_FOR = "0.6.1";
 export const DASHBOARD_URL = "https://app.connectionguard.net";
 
 /**

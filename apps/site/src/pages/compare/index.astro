@@ -1,0 +1,63 @@
+---
+import Base from "../../layouts/Base.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import DownloadCta from "../../components/DownloadCta.astro";
+import { breadcrumbs } from "../../lib/seo";
+import { dateLabel, versionOf } from "../../lib/benchmark";
+import { CHECKED, COMPETITORS, US, fmt, metrics } from "../../data/competitors";
+
+const crumbs: [string, string][] = [["Compare", "/compare"]];
+const rows = [{ slug: null, name: "Connection Guard", id: US, price: "Free", source: "Open (MIT)" },
+  ...COMPETITORS.map((c) => ({ slug: c.slug, name: c.name, id: c.id, price: c.price.split(";")[0]!.split(",")[0]!, source: c.source }))]
+  .map((r) => ({ ...r, m: metrics(r.id), version: versionOf(r.id) }));
+---
+<Base title="Minecraft Anti-VPN Plugins Compared (2026 Benchmark)"
+  description="Connection Guard, FoxGate, ProxyShield, VPNGuard, KauriVPN and AdvancedAntiVPN on the same server: VPNs blocked, home players refused, join waves and outages."
+  path="/compare" schema={[breadcrumbs(crumbs)]} view={{ event: "compare_opened", competitor: "index" }}>
+  <header class="border-b border-line">
+    <div class="container-site py-12 sm:py-16">
+      <Breadcrumbs items={crumbs} />
+      <h1 class="display mt-6 max-w-4xl text-[clamp(2.25rem,5vw,3.25rem)] text-balance">Minecraft anti-VPN plugins compared</h1>
+      <p class="lede mt-5 max-w-2xl text-pretty">Six plugins on the same server, with the same players and addresses, each as it ships and without API keys. Pick one to see where it differs from Connection Guard.</p>
+      <p class="mt-6 text-[0.8125rem] text-fg-3">Measured {dateLabel}. Prices and licences checked {CHECKED}. Written by Connection Guard's author; every number is in the <a href="/benchmark" class="text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg">open benchmark</a>.</p>
+    </div>
+  </header>
+  <section class="container-site py-12 sm:py-16" aria-label="Comparison">
+    <div class="overflow-x-auto rounded-xl border border-line">
+      <table class="w-full min-w-[46rem] text-left text-[0.9375rem]">
+        <thead class="border-b border-line bg-subtle text-[0.8125rem] text-fg-2 dark:bg-[#111]">
+          <tr>
+            <th scope="col" class="px-4 py-3 font-medium">Plugin</th>
+            <th scope="col" class="px-4 py-3 font-medium">Price</th>
+            <th scope="col" class="px-4 py-3 text-right font-medium">Bad addresses blocked</th>
+            <th scope="col" class="px-4 py-3 text-right font-medium">Home players refused</th>
+            <th scope="col" class="px-4 py-3 text-right font-medium">1,000 joins: p95</th>
+            <th scope="col" class="px-4 py-3 text-right font-medium">Outages still blocking</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr class="border-b border-line last:border-0">
+              <th scope="row" class="px-4 py-3 font-medium">
+                {r.slug ? <a href={`/compare/${r.slug}`} class="text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">{r.name}</a> : <span>{r.name}</span>}
+                <span class="ml-1.5 text-[0.8125rem] font-normal text-fg-3">{r.version}</span>
+              </th>
+              <td class="px-4 py-3 text-fg-2">{r.price}</td>
+              <td class="num px-4 py-3 text-right text-fg-2">{r.m.caught} / {r.m.bad}</td>
+              <td class="num px-4 py-3 text-right text-fg-2">{r.m.refused} / {r.m.good}</td>
+              <td class="num px-4 py-3 text-right text-fg-2">{r.id === "kaurivpn" ? "after join" : fmt.sec(r.m.waveP95)}</td>
+              <td class="num px-4 py-3 text-right text-fg-2">{r.m.keptBlocking} / {r.m.outages}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-4 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">"1,000 joins" is the time until the plugin decided for 95 % of 1,000 players joining in 20 seconds. KauriVPN checks players after they joined, so it has no decision time at login.</p>
+    <ul class="mt-12 grid gap-x-10 gap-y-3 sm:grid-cols-2">
+      {COMPETITORS.map((c) => (
+        <li><a href={`/compare/${c.slug}`} class="text-[0.9375rem] text-fg underline decoration-line-strong underline-offset-4 hover:decoration-fg">Connection Guard vs {c.name}</a></li>
+      ))}
+    </ul>
+    <div class="mt-14"><DownloadCta location="compare_index" /></div>
+  </section>
+</Base>

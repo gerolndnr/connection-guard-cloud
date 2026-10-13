@@ -6,7 +6,7 @@ import { showBenchmark } from "../lib/benchmark";
 interface Props { path: string }
 const { path } = Astro.props;
 const links = [
-  { href: "/#compare", label: "Compare" },
+  { href: "/compare", label: "Compare" },
   ...(showBenchmark ? [{ href: "/benchmark", label: "Benchmark" }] : []),
   { href: "/#platforms", label: "Platforms" },
   { href: "/guides", label: "Guides" },

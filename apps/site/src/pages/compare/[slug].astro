@@ -1,0 +1,151 @@
+---
+import Base from "../../layouts/Base.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import Faq from "../../components/Faq.astro";
+import DownloadCta from "../../components/DownloadCta.astro";
+import { article, breadcrumbs, faq as faqSchema } from "../../lib/seo";
+import { bench, dateLabel, runUrlFor, versionOf } from "../../lib/benchmark";
+import { CHECKED, COMPETITORS, US, benchmarkRepo, fmt, metrics, type Competitor } from "../../data/competitors";
+
+export function getStaticPaths() {
+  return COMPETITORS.map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+const { c } = Astro.props as { c: Competitor };
+const them = metrics(c.id), us = metrics(US);
+const path = `/compare/${c.slug}`;
+const crumbs: [string, string][] = [["Compare", "/compare"], [`Connection Guard vs ${c.name}`, path]];
+const points = c.points.filter((p) => !p.when || p.when(them, us));
+const strengths = c.strengths.flatMap((s) => typeof s === "string" ? [s] : s.when(them, us) ? [s.text(them, us)] : []);
+const usVersion = versionOf(US), themVersion = versionOf(c.id);
+const late = c.id === "kaurivpn";
+const SOURCE: Record<string, string> = { benchmark: "Measured", config: "From its configuration", listing: "From its listing" };
+
+type Row = { label: string; us: string; them: string; better?: "us" | "them" | null };
+const facts: Row[] = [
+  { label: "Price", us: "Free", them: c.price },
+  { label: "Source code", us: "Open (MIT)", them: c.source },
+  { label: "After installing", us: "Blocks right away: its own signed lists, then zowi, Blackbox and IPQuery, no key needed.", them: c.afterInstall },
+  { label: "How it decides", us: "Its own lists on your server first, then one service at a time until one gives a clear answer.", them: c.detection },
+  { label: "Platforms", us: "Paper, Spigot, Folia, BungeeCord, Velocity: one JAR", them: c.platforms },
+  { label: "Shared cache for networks", us: "Redis", them: c.storage },
+  { label: "Telemetry", us: "bStats; anonymous totals and error reports to its optional dashboard (no player data). Documented, each can be switched off.", them: c.telemetry },
+];
+// Times compare as shown: 288 ms against 288 ms is a tie, whatever the decimals.
+const shownEqual = (a: number, b: number) => fmt.sec(a) === fmt.sec(b);
+const lower = (a: number | null, b: number | null) => a === null || b === null || a === b || shownEqual(a, b) ? null : a < b ? "us" : "them";
+const higher = (a: number | null, b: number | null) => a === null || b === null || a === b ? null : a > b ? "us" : "them";
+const measured: Row[] = [
+  { label: "VPN, Tor and proxy addresses blocked", us: `${us.caught} of ${us.bad}`, them: `${them.caught} of ${them.bad}`, better: higher(us.caught, them.caught) },
+  { label: "Home and mobile players refused", us: `${us.refused} of ${us.good}`, them: `${them.refused} of ${them.good}`, better: lower(us.refused, them.refused) },
+  { label: "VPNs over IPv6 blocked", us: `${us.ipv6} of ${us.ipv6N}`, them: `${them.ipv6} of ${them.ipv6N}`, better: higher(us.ipv6, them.ipv6) },
+  { label: "Public proxies blocked", us: `${us.proxies} of ${us.proxiesN}`, them: `${them.proxies} of ${them.proxiesN}`, better: higher(us.proxies, them.proxies) },
+  ...(late ? [] : [
+    { label: "1,000 players in 20 s: decided within (p95)", us: fmt.sec(us.waveP95), them: fmt.sec(them.waveP95), better: lower(us.waveP95, them.waveP95) },
+    { label: "1,000 players in 20 s: looked up", us: `${us.waveChecked}`, them: `${them.waveChecked}`, better: higher(us.waveChecked, them.waveChecked) },
+    { label: "First join of a new player (p95)", us: fmt.sec(us.coldP95), them: fmt.sec(them.coldP95), better: lower(us.coldP95, them.coldP95) },
+    { label: "Same player again (median)", us: fmt.sec(us.warmP50), them: fmt.sec(them.warmP50), better: lower(us.warmP50, them.warmP50) },
+  ]),
+  { label: "Outages with VPN and Tor still refused", us: `${us.keptBlocking} of ${us.outages}`, them: `${them.keptBlocking} of ${them.outages}`, better: higher(us.keptBlocking, them.keptBlocking) },
+];
+const title = c.title, description = c.description;
+const schema = [
+  article({ title: `Connection Guard vs ${c.name}`, description, path, published: "2026-10-13", modified: "2026-10-13", image: "/og/home.png" }),
+  breadcrumbs(crumbs), faqSchema(c.faq),
+];
+const cell = (r: Row, side: "us" | "them") => `px-4 py-3 align-top ${r.better === side ? "font-medium text-fg" : "text-fg-2"}`;
+---
+<Base title={title} description={description} path={path} type="article" schema={schema} view={{ event: "compare_opened", competitor: c.slug }}>
+  <header class="border-b border-line">
+    <div class="container-site py-12 sm:py-16">
+      <Breadcrumbs items={crumbs} />
+      <h1 class="display mt-6 max-w-4xl text-[clamp(2.25rem,5vw,3.25rem)] text-balance">Connection Guard vs {c.name}</h1>
+      <p class="lede mt-5 max-w-2xl text-pretty">{c.lede}</p>
+      <div class="mt-8"><DownloadCta location={`compare_${c.slug}`} /></div>
+      <p class="mt-6 max-w-2xl text-[0.8125rem] leading-relaxed text-fg-3">
+        Connection Guard {usVersion} against {c.name} {themVersion}, measured {dateLabel} on the same server with the same players, each as it ships and without API keys.
+        Facts about {c.name} from its own listing and configuration, checked {CHECKED}. Written by Connection Guard's author: <a href="/benchmark" class="text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg">check the benchmark</a>.
+      </p>
+    </div>
+  </header>
+
+  <section aria-labelledby="table-h" class="border-b border-line">
+    <div class="container-site py-12 sm:py-16">
+      <h2 id="table-h" class="section-title">Side by side</h2>
+      <div class="mt-8 overflow-x-auto rounded-xl border border-line">
+        <table class="w-full min-w-[40rem] text-left text-[0.9375rem]">
+          <thead class="border-b border-line bg-subtle text-[0.8125rem] text-fg-2 dark:bg-[#111]">
+            <tr><th scope="col" class="w-[28%] px-4 py-3 font-medium"></th><th scope="col" class="px-4 py-3 font-medium text-fg">Connection Guard {usVersion}</th><th scope="col" class="px-4 py-3 font-medium text-fg">{c.name} {themVersion}</th></tr>
+          </thead>
+          <tbody>
+            {facts.map((r) => (
+              <tr class="border-b border-line">
+                <th scope="row" class="px-4 py-3 align-top text-[0.875rem] font-medium text-fg">{r.label}</th>
+                <td class="px-4 py-3 align-top text-fg-2">{r.us}</td>
+                <td class="px-4 py-3 align-top text-fg-2">{r.them}</td>
+              </tr>
+            ))}
+            <tr class="border-b border-line"><th colspan="3" scope="colgroup" class="bg-subtle px-4 py-2 text-[0.75rem] font-medium text-fg-2 dark:bg-[#111]">Measured in the benchmark · {dateLabel}</th></tr>
+            {measured.map((r) => (
+              <tr class="border-b border-line last:border-0">
+                <th scope="row" class="px-4 py-3 align-top text-[0.875rem] font-medium text-fg">{r.label}</th>
+                <td class={`num ${cell(r, "us")}`}>{r.us}{r.better === "us" && <span class="sr-only"> (better)</span>}</td>
+                <td class={`num ${cell(r, "them")}`}>{r.them}{r.better === "them" && <span class="sr-only"> (better)</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-4 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
+        The better value in a measured row is set in bold. Speed rows use simulated detection services with the same delay for every plugin; detection rows use the real services, each plugin from a server of its own.
+        {late && ` ${c.name} lets players join and checks afterwards, so its join times measure the login, not a decision, and are left out.`}
+      </p>
+    </div>
+  </section>
+
+  <section aria-labelledby="diff-h" class="border-b border-line">
+    <div class="container-site grid gap-12 py-12 sm:py-16 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-16">
+      <div>
+        <h2 id="diff-h" class="section-title">Where Connection Guard is different</h2>
+        <ol class="mt-8 space-y-8">
+          {points.map((p) => (
+            <li>
+              <h3 class="text-lg font-semibold tracking-[-0.015em]">{p.title}</h3>
+              <p class="mt-2 max-w-[38rem] leading-relaxed text-fg-2">{p.body(them, us)}</p>
+              <p class="mt-2 text-[0.75rem] text-fg-3">{SOURCE[p.source]}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div class="space-y-10">
+        <section aria-labelledby="good-h">
+          <h2 id="good-h" class="text-lg font-semibold tracking-[-0.015em]">Where {c.name} is good</h2>
+          <ul class="mt-4 space-y-3 text-[0.9375rem] leading-relaxed text-fg-2">
+            {strengths.map((s) => <li class="flex gap-3"><span aria-hidden="true" class="mt-2.5 size-1.5 shrink-0 rounded-full bg-fg-3"></span><span>{s}</span></li>)}
+          </ul>
+        </section>
+        <section aria-labelledby="switch-h" class="rounded-xl border border-line p-6">
+          <h2 id="switch-h" class="text-lg font-semibold tracking-[-0.015em]">Switching from {c.name}</h2>
+          <p class="mt-2 text-[0.9375rem] leading-relaxed text-fg-2">Connection Guard 0.6.1 reads {c.name}'s settings. Install it next to {c.name}, then in the console:</p>
+          <pre class="mono mt-4 overflow-x-auto rounded-lg border border-line bg-[#0a0a0a] px-4 py-3 text-[0.8125rem] leading-relaxed text-[#ededed]">/cg migrate preview {c.migrate}</pre>
+          <p class="mt-4 text-[0.8125rem] leading-relaxed text-fg-3">It shows what it would take over (mode, countries, API keys, your IP, CIDR, UUID and ASN rules) and what works differently. Apply it with the command it prints, remove {c.name} and restart; the original files are kept as a backup.</p>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <div class="container-site py-12 sm:py-16">
+    <Faq items={c.faq} title={`Connection Guard vs ${c.name}: questions`} />
+    <aside class="card mt-16 flex flex-col items-start justify-between gap-6 p-6 lg:flex-row lg:items-center">
+      <div>
+        <p class="text-lg font-semibold tracking-[-0.02em]">Try it on your server</p>
+        <p class="mt-1 text-sm text-fg-2">Free and open source. One JAR for Paper, Spigot, Folia, BungeeCord and Velocity.</p>
+      </div>
+      <DownloadCta location={`compare_${c.slug}_end`} class="shrink-0 lg:max-w-xs" />
+    </aside>
+    <p class="mt-10 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
+      Benchmark runs: <a href={runUrlFor("detection")} class="underline decoration-line-strong underline-offset-4 hover:text-fg">detection</a>{", "}<a href={runUrlFor("performance")} class="underline decoration-line-strong underline-offset-4 hover:text-fg">speed</a>{", "}<a href={runUrlFor("failure")} class="underline decoration-line-strong underline-offset-4 hover:text-fg">outages</a>.{" "}
+      Method and every log: <a href={benchmarkRepo} class="underline decoration-line-strong underline-offset-4 hover:text-fg">mc-antivpn-bench</a>.{" "}
+      {c.name}'s author can contest any number there; corrections are re-measured. {c.name} is a trademark of its author; this page is not affiliated with it. Listing: <a href={c.listing} rel="nofollow" class="underline decoration-line-strong underline-offset-4 hover:text-fg">{c.listingName}</a>.
+    </p>
+  </div>
+</Base>
