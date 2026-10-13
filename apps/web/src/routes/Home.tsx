@@ -3,10 +3,10 @@ import { ChevronRight } from "lucide-react";
 import { Shell, useMe } from "../components/Shell.tsx";
 import { SignIn } from "../components/SignIn.tsx";
 
-function ConsoleLine() {
+function ConsoleLine({ wrap = false }: { wrap?: boolean }) {
   return (
     <figure className="m-0">
-      <pre className="mono overflow-x-auto rounded-lg border border-line bg-[#0a0a0a] px-4 py-3 text-[0.75rem] leading-relaxed text-[#a1a1a1]">
+      <pre className={`mono rounded-lg border border-line bg-[#0a0a0a] px-4 py-3 text-[0.75rem] leading-relaxed text-[#a1a1a1] ${wrap ? "whitespace-pre-wrap break-words" : "overflow-x-auto"}`}>
         <span className="text-[#6b6b6b]">[12:04:51 INFO] </span>Link this server to your Connection Guard dashboard:{"\n"}
         <span className="text-[#6b6b6b]">[12:04:51 INFO] </span><span className="text-[#34d399]">https://app.connectionguard.net/link/7KQM-4P2X</span>
       </pre>
@@ -53,13 +53,20 @@ export function Home() {
   if (!data) {
     return (
       <Shell>
-        <div className="mx-auto grid max-w-5xl items-start gap-6 pt-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-10">
-          <section className="card p-8">
-            <h1 className="text-2xl font-semibold tracking-[-0.025em]">Sign in to Connection Guard</h1>
-            <p className="mt-2 text-fg-2">See every connection your servers checked, who was refused and why. Free and optional; your plugin works without it.</p>
-            <div className="mt-8"><SignIn next="/" /></div>
+        <div className="mx-auto flex max-w-[24rem] flex-col pt-[min(10vh,6rem)]">
+          <h1 className="text-center text-[1.75rem] font-semibold leading-tight tracking-[-0.03em] text-balance">Sign in to Connection Guard</h1>
+          <p className="mt-3 text-center text-fg-2 text-pretty">Every connection your servers checked, who was refused and why.</p>
+          <div className="mt-8"><SignIn next="/" /></div>
+          <section aria-labelledby="linking" className="mt-10 border-t border-line pt-8">
+            <h2 id="linking" className="text-sm font-medium">Linking a server?</h2>
+            <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-fg-2">
+              Start it with Connection Guard 0.5 or newer. The console prints a link; open it and sign in.
+            </p>
+            <div className="mt-4"><ConsoleLine wrap /></div>
+            <p className="mt-4 text-[0.8125rem] leading-relaxed text-fg-3">
+              Lost the link? Run <code className="mono rounded bg-subtle px-1 py-0.5 text-fg-2">/cg cloud link</code>. The dashboard is free and optional: your plugin works without it, and logins never wait on it.
+            </p>
           </section>
-          <HowItWorks />
         </div>
       </Shell>
     );
