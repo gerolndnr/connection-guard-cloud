@@ -79,7 +79,11 @@ def performance(folders):
                                 decision_p95=round(med([x['decision_ms']['p95'] for x in xs]), 1),
                                 join_p50=round(med([x['join_ms']['p50'] for x in xs]), 1),
                                 join_p95=round(med([x['join_ms']['p95'] for x in xs]), 1),
-                                checked=round(med([x.get('subjects_with_lookup') or 0 for x in xs])),
+                                # Players checked: looked up, or refused from the plugin's own list (mc-antivpn-bench from
+                                # 13 Oct 2026). Earlier runs: every refusal added to the lookups (exact for local-list refusals).
+                                checked=round(med([x['subjects_checked'] if 'subjects_checked' in x else min(
+                                    x.get('distinct_subjects') or 0, (x.get('subjects_with_lookup') or 0)
+                                    + sum((x.get('outcomes') or {}).get(k, 0) for k in ('DENY_LOGIN', 'DENY_PLAY'))) for x in xs])),
                                 subjects=round(med([x.get('distinct_subjects') or 0 for x in xs])),
                                 outcomes=outcomes)
         out[product] = entry

@@ -101,8 +101,8 @@
         "checked": 498,
         "subjects": 1000,
         "outcomes": {
-          "CLOSED": 532,
-          "ALLOW": 468
+          "ALLOW": 468,
+          "CLOSED": 532
         }
       }
     },
@@ -148,7 +148,7 @@
         "decision_p95": 451.5,
         "join_p50": 426.8,
         "join_p95": 807.9,
-        "checked": 999,
+        "checked": 1000,
         "subjects": 1000,
         "outcomes": {
           "DENY_LOGIN": 1,
@@ -165,7 +165,7 @@
         "decision_p95": 5669.0,
         "join_p50": 1044.8,
         "join_p95": 5743.9,
-        "checked": 49,
+        "checked": 50,
         "subjects": 50,
         "outcomes": {
           "DENY_LOGIN": 1,
@@ -177,7 +177,7 @@
         "decision_p95": 5392.5,
         "join_p50": 547.5,
         "join_p95": 5499.1,
-        "checked": 0,
+        "checked": 1,
         "subjects": 50,
         "outcomes": {
           "DENY_LOGIN": 1,
@@ -201,12 +201,12 @@
         "decision_p95": 29009.9,
         "join_p50": 16270.8,
         "join_p95": 29137.3,
-        "checked": 196,
+        "checked": 198,
         "subjects": 1000,
         "outcomes": {
           "DENY_LOGIN": 3,
-          "CLOSED": 864,
-          "ALLOW": 133
+          "ALLOW": 133,
+          "CLOSED": 864
         }
       }
     },
@@ -350,7 +350,7 @@
         "decision_p95": 7314.8,
         "join_p50": 9101.0,
         "join_p95": 12954.7,
-        "checked": 294,
+        "checked": 332,
         "subjects": 1000,
         "outcomes": {
           "DENY_LOGIN": 38,

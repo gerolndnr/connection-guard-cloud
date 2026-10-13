@@ -69,7 +69,7 @@ export const COMPETITORS: Competitor[] = [
     points: [
       { title: "Keeps up when many players join", source: "benchmark",
         when: (t, u) => t.waveP95 !== null && u.waveP95 !== null && t.waveP95 > 4 * u.waveP95,
-        body: (t, u) => `With 1,000 players joining in 20 seconds, FoxGate needed ${sec(t.waveP95)} at the 95th percentile and looked up ${t.waveChecked} of them; Connection Guard decided within ${sec(u.waveP95)} and looked up ${u.waveChecked}. FoxGate asks up to 12 services for every new address, and their free limits run out in a wave.` },
+        body: (t, u) => `With 1,000 players joining in 20 seconds, FoxGate needed ${sec(t.waveP95)} at the 95th percentile and checked ${t.waveChecked} of them; Connection Guard checked ${u.waveChecked} within ${sec(u.waveP95)}. FoxGate asks up to 12 services for every new address, and their free limits run out in a wave.` },
       { title: "Returning players get in at once", source: "benchmark",
         when: (t, u) => t.warmP50 !== null && u.warmP50 !== null && t.warmP50 > 20 * u.warmP50,
         body: (t, u) => `A player joining again took FoxGate ${sec(t.warmP50)} (median), Connection Guard ${sec(u.warmP50)}: Connection Guard answers returning players from memory.` },
@@ -108,7 +108,7 @@ export const COMPETITORS: Competitor[] = [
         body: (t, u) => `Of ${t.good} home and mobile players, ProxyShield refused ${t.refused} and Connection Guard ${u.refused}. ProxyShield blocks data-centre ranges by default, and several home connections sit in ranges some services list as hosting.` },
       { title: "Every player checked in a join wave", source: "benchmark",
         when: (t, u) => t.waveChecked !== null && u.waveChecked !== null && t.waveChecked < 0.8 * u.waveChecked,
-        body: (t, u) => `With 1,000 players joining in 20 seconds, ProxyShield looked up ${t.waveChecked} and needed ${sec(t.waveP95)} at the 95th percentile; Connection Guard looked up ${u.waveChecked} within ${sec(u.waveP95)}.` },
+        body: (t, u) => `With 1,000 players joining in 20 seconds, ProxyShield checked ${t.waveChecked} and needed ${sec(t.waveP95)} at the 95th percentile; Connection Guard checked ${u.waveChecked} within ${sec(u.waveP95)}.` },
       { title: "More VPNs over IPv6", source: "benchmark",
         when: (t, u) => u.ipv6 > t.ipv6,
         body: (t, u) => `ProxyShield blocked ${t.ipv6} of ${t.ipv6N} VPN servers reached over IPv6, Connection Guard ${u.ipv6}.` },
@@ -146,7 +146,7 @@ export const COMPETITORS: Competitor[] = [
         body: (t, u) => `When the detection services timed out, rate-limited or broke, VPNGuard let the VPN or Tor exit in in ${t.outages - t.keptBlocking} of ${t.outages} cases; Connection Guard kept refusing in ${u.keptBlocking} of ${u.outages}, from its own lists on the server.` },
       { title: "Every player checked in a join wave", source: "benchmark",
         when: (t, u) => t.waveChecked !== null && u.waveChecked !== null && t.waveChecked < 0.5 * u.waveChecked,
-        body: (t, u) => `With 1,000 players joining in 20 seconds, VPNGuard looked up ${t.waveChecked} (one lookup a second, queued) and took ${sec(t.waveP95)} at the 95th percentile; Connection Guard looked up ${u.waveChecked} within ${sec(u.waveP95)}.` },
+        body: (t, u) => `With 1,000 players joining in 20 seconds, VPNGuard checked ${t.waveChecked} (one lookup a second, queued) and took ${sec(t.waveP95)} at the 95th percentile; Connection Guard checked ${u.waveChecked} within ${sec(u.waveP95)}.` },
     ],
     strengths: [
       "Simple: three providers, a few commands, no telemetry found.",
@@ -212,7 +212,7 @@ export const COMPETITORS: Competitor[] = [
         body: (t, u) => `When the services timed out, rate-limited or broke, AdvancedAntiVPN let the VPN or Tor exit in in ${t.outages - t.keptBlocking} of ${t.outages} cases; Connection Guard kept refusing in ${u.keptBlocking} of ${u.outages}.` },
       { title: "Every player checked in a join wave", source: "benchmark",
         when: (t, u) => t.waveP95 !== null && u.waveP95 !== null && t.waveP95 > 4 * u.waveP95,
-        body: (t, u) => `With 1,000 players joining in 20 seconds, AdvancedAntiVPN needed ${sec(t.waveP95)} at the 95th percentile and looked up ${t.waveChecked}; Connection Guard decided within ${sec(u.waveP95)} for ${u.waveChecked}.` },
+        body: (t, u) => `With 1,000 players joining in 20 seconds, AdvancedAntiVPN needed ${sec(t.waveP95)} at the 95th percentile and checked ${t.waveChecked}; Connection Guard checked ${u.waveChecked} within ${sec(u.waveP95)}.` },
     ],
     strengths: [
       "Highly rated on SpigotMC (4.9 from 43 ratings, checked 13 October 2026) and supports seven services, including IPQualityScore and GetIPIntel.",

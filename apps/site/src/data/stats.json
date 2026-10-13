@@ -1,34 +1,34 @@
 {
-  "fetchedAt": "2026-10-07T20:44:12.942Z",
+  "fetchedAt": "2026-10-13T14:34:54.885Z",
   "sources": {
     "modrinth": {
       "name": "Modrinth",
       "url": "https://modrinth.com/plugin/connectionguard",
-      "downloads": 3414,
+      "downloads": 3569,
       "stale": false
     },
     "spigot": {
       "name": "SpigotMC",
       "url": "https://www.spigotmc.org/resources/121509/",
-      "downloads": 1074,
+      "downloads": 1114,
       "stale": false
     },
     "github": {
       "name": "GitHub",
       "url": "https://github.com/gerolndnr/connection-guard/releases",
-      "downloads": 661,
+      "downloads": 696,
       "stale": false
     },
     "hangar": {
       "name": "Hangar",
       "url": "https://hangar.papermc.io/gerolndnr/connection-guard",
-      "downloads": 102,
+      "downloads": 103,
       "stale": false
     }
   },
   "latest": {
-    "version": "0.6.0",
-    "published": "2026-10-06T22:53:21.371339Z",
+    "version": "0.6.1",
+    "published": "2026-10-13T13:15:12.552193Z",
     "loaders": [
       "bukkit",
       "bungeecord",
@@ -40,9 +40,9 @@
     ],
     "source": "modrinth",
     "file": {
-      "name": "connection-guard-0.6.0-all.jar",
-      "size": 4455320,
-      "url": "https://cdn.modrinth.com/data/Zaz0XyvF/versions/1K196DTs/connection-guard-0.6.0-all.jar"
+      "name": "connection-guard-0.6.1-all.jar",
+      "size": 5426743,
+      "url": "https://cdn.modrinth.com/data/Zaz0XyvF/versions/R3RV8JhJ/connection-guard-0.6.1-all.jar"
     }
   }
 }

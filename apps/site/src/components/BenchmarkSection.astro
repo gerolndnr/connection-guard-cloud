@@ -4,8 +4,7 @@ import { COMPARED, CURRENT, afterJoin, blocked, FAULT_LABELS, bench, catchCohort
 const burst = (id: string) => perf(id, "burst")!;
 const us = burst(CURRENT);
 const others = COMPARED.filter((p) => p !== CURRENT);
-const max = Math.max(...COMPARED.filter((p) => !afterJoin(p)).map((p) => burst(p).decision_p95));
-const byDecision = [CURRENT, ...[...others].sort((a, b) => Number(afterJoin(a)) - Number(afterJoin(b)) || burst(a).decision_p95 - burst(b).decision_p95)];
+const byChecked = [CURRENT, ...[...others].sort((a, b) => Number(afterJoin(a)) - Number(afterJoin(b)) || burst(b).checked - burst(a).checked)];
 const faults = Object.keys(FAULT_LABELS).filter((f) => f !== "control" && failure[CURRENT]?.[f]);
 const held = faults.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length;
 const vpn = catchCohorts.filter((c) => c.id !== "proxy");
@@ -25,23 +24,23 @@ const vpnN = vpn.reduce((s, c) => s + c.n, 0);
     <div class="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
       <a href="/benchmark#speed" class="card group block p-6 no-underline transition-colors hover:border-line-strong" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="home_speed">
         <p class="text-[0.8125rem] font-medium text-fg-2">1,000 players join in 20 seconds</p>
-        <p class="mt-2 text-xl font-semibold tracking-[-0.02em] text-fg">{num(us.checked)} of 1,000 looked up, 95 % decided within {ms(us.decision_p95)}.</p>
+        <p class="mt-2 text-xl font-semibold tracking-[-0.02em] text-fg">{num(us.checked)} of 1,000 players checked, 95 % decided within {ms(us.decision_p95)}.</p>
         <ul class="mt-6 grid gap-3">
-          {byDecision.map((p) => {
+          {byChecked.map((p) => {
             const b = burst(p); const mine = p === CURRENT; const late = afterJoin(p);
             return (
               <li class="grid grid-cols-[7.5rem_minmax(0,1fr)_6.5rem] items-center gap-3">
                 <span class={`truncate text-sm ${mine ? "font-medium text-fg" : "text-fg-2"}`}>{label(p)}</span>
-                <span class="relative h-5 rounded bg-subtle">{!late && <span class={`absolute inset-y-0 left-0 rounded ${mine ? "bg-accent" : "bg-line-strong"}`} style={`width:${Math.max(2, (100 * b.decision_p95) / max)}%`}></span>}</span>
+                <span class="relative h-5 rounded bg-subtle">{!late && <span class={`absolute inset-y-0 left-0 rounded ${mine ? "bg-accent" : "bg-line-strong"}`} style={`width:${Math.max(2, (100 * b.checked) / Math.max(1, b.subjects))}%`}></span>}</span>
                 <span class="text-right leading-tight">
-                  <span class={`num block text-sm font-medium ${mine ? "text-accent-text" : late ? "text-fg-3" : "text-fg"}`}>{late ? "after join" : timedOut(b.decision_p95) ? "30 s" : ms(b.decision_p95)}</span>
-                  <span class="num block text-[0.6875rem] text-fg-3">{late ? "kicks later" : `${num(b.checked)} looked up`}</span>
+                  <span class={`num block text-sm font-medium ${mine ? "text-accent-text" : late ? "text-fg-3" : "text-fg"}`}>{late ? "after join" : `${num(b.checked)} checked`}</span>
+                  <span class="num block text-[0.6875rem] text-fg-3">{late ? "kicks later" : timedOut(b.decision_p95) ? "timed out" : `within ${ms(b.decision_p95)}`}</span>
                 </span>
               </li>
             );
           })}
         </ul>
-        <p class="mt-5 text-[0.8125rem] text-fg-3">Decision time at the 95th percentile. Once free service limits run out, the other plugins let players in unchecked.</p>
+        <p class="mt-5 text-[0.8125rem] text-fg-3">Players checked by a detection service or the plugin's own list, and the time until 95 % were decided. Once free service limits run out, the other plugins let players in unchecked.</p>
       </a>
 
       <div class="grid gap-4">

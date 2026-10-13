@@ -12,11 +12,11 @@ const us = burst(CURRENT);
 const bare = perf("none", "burst")!;
 const others = COMPARED.filter((p) => p !== CURRENT);
 /** Charts list Connection Guard first, then the others by their value, best first. */
-const byDecision = [CURRENT, ...others.sort((a, b) => Number(afterJoin(a)) - Number(afterJoin(b)) || burst(a).decision_p95 - burst(b).decision_p95)];
+const byChecked = [CURRENT, ...others.sort((a, b) => Number(afterJoin(a)) - Number(afterJoin(b)) || burst(b).checked - burst(a).checked)];
 const byJoin = [CURRENT, "none", ...[...others].sort((a, b) => burst(a).join_p95 - burst(b).join_p95)];
-const maxDecision = Math.max(...COMPARED.filter((p) => !afterJoin(p)).map((p) => burst(p).decision_p95));
 const maxJoin = Math.max(...[...COMPARED, "none"].map((p) => burst(p).join_p95));
-const bestOtherChecked = Math.max(...others.map((p) => burst(p).checked));
+// Plugins that check after the join (KauriVPN) let everyone in first, so they do not compete here.
+const bestOtherChecked = Math.max(...others.filter((p) => !afterJoin(p)).map((p) => burst(p).checked));
 const faults = Object.keys(FAULT_LABELS).filter((f) => failure[CURRENT]?.[f]);
 const outages = faults.filter((f) => f !== "control");
 // Reliability compares every plugin measured under failure; the previous Connection Guard release goes last.
@@ -70,7 +70,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
   <section aria-label="Results at a glance" class="border-b border-line">
     <div class="container-site grid gap-4 py-12 sm:py-14 md:grid-cols-3">
       {[
-        { href: "#speed", k: "Join wave", big: `${num(us.checked)} / ${num(us.subjects)}`, text: `players looked up when 1,000 joined in 20 seconds. The other plugins looked up at most ${num(bestOtherChecked)}.` },
+        { href: "#speed", k: "Join wave", big: `${num(us.checked)} / ${num(us.subjects)}`, text: `players checked when 1,000 joined in 20 seconds. The other plugins checked at most ${num(bestOtherChecked)}; the rest got in unchecked or were cut off.` },
         { href: "#reliability", k: "Detection services down", big: `${outages.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length} / ${outages.length}`, text: "failure cases with VPN and Tor still blocked, without a single lookup." },
         { href: "#detection", k: "Caught", big: `${vpnCaught(CURRENT)} / ${vpnN}`, text: `VPN and Tor addresses blocked. ${spareTotal(CURRENT)} of ${spareN} home and mobile players were refused too, the fewest of the plugins that block most VPNs.` },
       ].map((c) => (
@@ -92,18 +92,18 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
 
       <div class="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div class="card p-6">
-          <h3 class="text-[0.9375rem] font-semibold">Time until the plugin decides</h3>
-          <p class="mt-1 text-[0.8125rem] text-fg-3">95th percentile, and how many of the 1,000 players it looked up. Lower time is better.</p>
+          <h3 class="text-[0.9375rem] font-semibold">Players checked</h3>
+          <p class="mt-1 text-[0.8125rem] text-fg-3">Of 1,000, checked by a detection service or the plugin's own list. Higher is better; below each, the time until it decided (95th percentile).</p>
           <ul class="mt-6 grid gap-4">
-            {byDecision.map((p) => {
+            {byChecked.map((p) => {
               const b = burst(p); const mine = p === CURRENT; const late = afterJoin(p);
               return (
                 <li class="grid grid-cols-[7.75rem_minmax(0,1fr)_5.75rem] items-center gap-3 sm:grid-cols-[9rem_minmax(0,1fr)_9.5rem] sm:gap-4">
                   <span class={`truncate text-sm ${mine ? "font-medium text-fg" : "text-fg-2"}`}>{label(p)}</span>
-                  <span class="relative h-7 rounded-md bg-subtle">{!late && <span class={`absolute inset-y-0 left-0 rounded-md ${mine ? "bg-accent" : "bg-line-strong"}`} style={`width:${Math.max(1.5, (100 * b.decision_p95) / maxDecision)}%`}></span>}</span>
+                  <span class="relative h-7 rounded-md bg-subtle">{!late && <span class={`absolute inset-y-0 left-0 rounded-md ${mine ? "bg-accent" : "bg-line-strong"}`} style={`width:${Math.max(1.5, (100 * b.checked) / Math.max(1, b.subjects))}%`}></span>}</span>
                   <span class="text-right">
-                    <span class={`num block text-[0.9375rem] font-medium ${mine ? "text-accent-text" : late ? "text-fg-3" : "text-fg"}`}>{late ? "after join" : timedOut(b.decision_p95) ? "30 s" : ms(b.decision_p95)}</span>
-                    <span class="num block text-[0.75rem] text-fg-3">{late ? "lets everyone in, kicks later" : <>{timedOut(b.decision_p95) ? "timed out · " : ""}{num(b.checked)} looked up</>}</span>
+                    <span class={`num block text-[0.9375rem] font-medium ${mine ? "text-accent-text" : late ? "text-fg-3" : "text-fg"}`}>{late ? "after join" : num(b.checked)}</span>
+                    <span class="num block text-[0.75rem] text-fg-3">{late ? "lets everyone in, kicks later" : timedOut(b.decision_p95) ? "timed out at 30 s" : `decided within ${ms(b.decision_p95)}`}</span>
                   </span>
                 </li>
               );
@@ -127,7 +127,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
           </ul>
           <p class="mt-6 border-t border-line pt-4 text-[0.8125rem] leading-relaxed text-fg-2">
             {us.outcomes.DENY_LOGIN === 1
-              ? "One player in the wave was refused: the wave's random addresses include one in a range Connection Guard Intel lists as VPN."
+              ? "One player in the wave was refused: the wave's random addresses include one in a range Connection Guard Intel lists as VPN. It was decided from that list on the server, without a lookup, and counts as checked."
               : us.outcomes.DENY_LOGIN ? `${num(us.outcomes.DENY_LOGIN)} players refused.` : "No player in the wave was refused."}
           </p>
         </div>
