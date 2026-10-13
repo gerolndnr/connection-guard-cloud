@@ -2,12 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { LogOut } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Me } from "../api.ts";
-import { analyticsAvailable, analyticsOptedOut, setAnalyticsOptOut } from "../analytics.ts";
 
-/** Avatar button with the account name, the usage-data choice and sign out. */
+/** Avatar button with the account name, a link to the account page (data, usage-data choice) and sign out. */
 export function AccountMenu({ me, onSignOut }: { me: Me; onSignOut: () => void }) {
   const [open, setOpen] = useState(false);
-  const [sharing, setSharing] = useState(() => !analyticsOptedOut());
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -30,21 +28,6 @@ export function AccountMenu({ me, onSignOut }: { me: Me; onSignOut: () => void }
       {open && (
         <div role="menu" className="absolute right-0 top-10 z-30 w-72 rounded-lg border border-line bg-surface p-1.5 shadow-[var(--shadow-pop)]">
           <p className="ph-no-capture truncate px-2.5 pb-2 pt-1.5 text-sm font-medium">{me.user.name}</p>
-          <div className="border-t border-line px-2.5 py-2.5">
-            <label className="flex cursor-pointer items-start justify-between gap-3">
-              <span>
-                <span className="block text-[0.8125rem] font-medium">Share usage data</span>
-                <span className="mt-0.5 block text-[0.75rem] leading-relaxed text-fg-3">
-                  {analyticsAvailable()
-                    ? "Anonymous clicks and errors help improve the dashboard. Never your players' data."
-                    : "Off: your browser asks sites not to track (Global Privacy Control)."}
-                </span>
-              </span>
-              <input type="checkbox" role="switch" className="mt-0.5 size-4 accent-[var(--accent)]" disabled={!analyticsAvailable()}
-                checked={sharing && analyticsAvailable()} onChange={(e) => { setSharing(e.target.checked); setAnalyticsOptOut(!e.target.checked); }} />
-            </label>
-            <a href="https://connectionguard.net/privacy#dashboard-analytics" className="mt-2 inline-block text-[0.75rem] text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg">What is collected</a>
-          </div>
           <Link to="/account" role="menuitem" onClick={() => setOpen(false)} className="block rounded-md border-t border-line px-2.5 py-2 text-[0.8125rem] text-fg-2 no-underline hover:bg-subtle hover:text-fg">Account and data</Link>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); onSignOut(); }}
             className="flex w-full items-center gap-2 rounded-md border-t border-line px-2.5 py-2 text-left text-[0.8125rem] text-fg-2 hover:bg-subtle hover:text-fg">

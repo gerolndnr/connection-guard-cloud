@@ -3,8 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "../api.ts";
 import { Shell, useMe } from "../components/Shell.tsx";
-import { Row, Section } from "../components/Form.tsx";
-import { resetAnalytics, track } from "../analytics.ts";
+import { Row, Section, Switch } from "../components/Form.tsx";
+import { analyticsAvailable, analyticsOptedOut, resetAnalytics, setAnalyticsOptOut, track } from "../analytics.ts";
 import { SignIn } from "../components/SignIn.tsx";
 
 export function AccountPage() {
@@ -14,6 +14,7 @@ export function AccountPage() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(() => !analyticsOptedOut());
   if (me.isPending) return <Shell><div className="skeleton h-64" /></Shell>;
   if (!me.data) return <Shell><div className="mx-auto max-w-md"><SignIn next="/account" /></div></Shell>;
   const owned = me.data.networks.filter((n) => n.role === "owner");
@@ -43,6 +44,15 @@ export function AccountPage() {
           <p className="ph-no-capture mt-1 text-fg-2">Signed in with Discord as {me.data.user.name}</p>
         </div>
         <Section title="Your data" description="What the dashboard stores about you, and how to take it with you or delete it.">
+          <Row label="Share usage data" help={analyticsAvailable()
+            ? <>Anonymous clicks and errors help improve the dashboard. Never your players' data. <a href="https://connectionguard.net/privacy#dashboard-analytics" className="underline decoration-line-strong underline-offset-4 hover:text-fg">What is collected</a></>
+            : "Off: your browser asks sites not to track (Global Privacy Control)."}>
+            <div className="flex items-center gap-3">
+              <Switch label="Share usage data" disabled={!analyticsAvailable()} checked={sharing && analyticsAvailable()}
+                onChange={(on) => { setSharing(on); setAnalyticsOptOut(!on); }} />
+              <span className="text-[0.8125rem] text-fg-2">{sharing && analyticsAvailable() ? "On" : "Off"}</span>
+            </div>
+          </Row>
           <Row label="Export" help="Your account and the networks you belong to. Each network's page has its own, complete export.">
             <button type="button" className="btn btn-secondary" onClick={download}>Download JSON</button>
           </Row>
