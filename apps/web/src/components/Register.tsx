@@ -4,7 +4,7 @@ import { api, ApiError, type Install, type RegisterEvent, type RuleEffect, type 
 import { track } from "../analytics.ts";
 import { RULE_DURATIONS, ago, clock, countryName, day, explain, ms, reasonLabel, serverName, supportsExpiry, verdict } from "../format.ts";
 import { VerdictBadge } from "./Badge.tsx";
-import { isLocalList, sourceLabel, sourceVerdict } from "../sources.ts";
+import { isLocalList, sourceLabel, sourceVerdict, unconfirmedListing } from "../sources.ts";
 
 const trustText: Record<RegisterEvent["identity_trust"], string> = {
   UNTRUSTED: "Not verified",
@@ -161,7 +161,8 @@ export function WhySheet({ event, installs, onClose, networkId, canManage = fals
                   </div>
                   <p className="num mt-1 text-[0.8125rem] text-fg-2">
                     {[s.country && countryName(s.country), s.isp, s.asn !== null && `AS${s.asn}`, s.risk !== null && `risk ${s.risk}`,
-                      s.from_cache ? "from cache" : ms(s.duration_ms), s.reason !== "NONE" && s.reason.toLowerCase().replace(/_/g, " "),
+                      s.from_cache ? "from cache" : ms(s.duration_ms),
+                      unconfirmedListing(s) ? "not in a data centre, so the next service decided" : s.reason !== "NONE" && s.reason.toLowerCase().replace(/_/g, " "),
                       !s.voting && "not voting", s.data_as_of && `data from ${day(s.data_as_of)}`].filter(Boolean).join(" · ")}
                   </p>
                 </li>

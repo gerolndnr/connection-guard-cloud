@@ -8,7 +8,7 @@ import { Shell } from "../components/Shell.tsx";
 import { StatusDot } from "../components/Badge.tsx";
 import { Choice, CountryPicker, Row, Section, SecretField, Segmented, Switch, TagInput, type SecretEdit } from "../components/Form.tsx";
 import { ago, configErrorHint, num, platformName, serverName, versionAtLeast } from "../format.ts";
-import { failoverOrder, fixedProviders, providersFor, usesFailover } from "../providers.ts";
+import { failoverOrder, fixedProviders, providerBody, providersFor, usesFailover } from "../providers.ts";
 import { sourceKey } from "../sources.ts";
 import { SIMULATED_PATHS, simulate, type SimulationResult } from "../simulate.ts";
 import { useHistory } from "../history.ts";
@@ -315,7 +315,9 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
           : "Each enabled service is asked about new IP addresses. Results are cached, so most logins cost no lookup at all."}>
           {hasIntel && (
             <Row label="Connection Guard Intel" managed={managed(INTEL)}
-              help="Daily lists of VPN servers, Tor exits and privacy relays, checked on your server before any service is asked. Player addresses never leave it.">
+              help={versionAtLeast(install.plugin_version, "0.6.1")
+                ? "Daily lists of VPN servers, Tor exits, public proxies and privacy relays, checked on your server before any service is asked. Player addresses never leave it."
+                : "Daily lists of VPN servers, Tor exits and privacy relays, checked on your server before any service is asked. Player addresses never leave it."}>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Switch label="Use Connection Guard Intel" checked={v<boolean>(INTEL) ?? false} onChange={(on) => set(INTEL, on)} />
@@ -333,7 +335,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
           {providers.map((p) => (
             <Row key={p.key} managed={managed(`provider.vpn.${p.key}.enabled`)} error={errors[`provider.vpn.${p.key}.enabled`]}
               label={<>{p.name}{p.signup && <a href={p.signup} target="_blank" rel="noreferrer" className="text-fg-3 hover:text-fg" aria-label={`${p.name} website`}><ExternalLink className="size-3.5" /></a>}</>}
-              help={p.body}>
+              help={providerBody(p, install.plugin_version)}>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Switch label={`Use ${p.name}`} checked={v<boolean>(`provider.vpn.${p.key}.enabled`) ?? false} onChange={(on) => set(`provider.vpn.${p.key}.enabled`, on)} />
@@ -484,6 +486,12 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
                   {v<boolean>(`behavior.${scope}.send-webhook.enabled`) && (
                     <SecretField type="url" state={secretState(`behavior.${scope}.send-webhook.url`)} edit={secretEdit(`behavior.${scope}.send-webhook.url`)}
                       onEdit={(e) => setSecrets({ ...secrets, [`behavior.${scope}.send-webhook.url`]: e })} placeholder="https://discord.com/api/webhooks/…" />
+                  )}
+                  {v<boolean>(`behavior.${scope}.send-webhook.enabled`) && versionAtLeast(install.plugin_version, "0.6.1") && (
+                    <p className="text-[0.8125rem] text-fg-3">
+                      Your own message: set <code className="mono">format: TEXT</code> in config.yml and write <code className="mono">messages.{scope}-webhook</code> in the
+                      plugin's language file, with any of <span className="mono">%NAME% %UUID% %IS_VPN% %IP% %LOCATION% %COUNTRY% %CITY% %ISP% %TIME%</span>.
+                    </p>
                   )}
                 </div>
               </Row>

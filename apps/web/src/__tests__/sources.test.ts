@@ -75,6 +75,11 @@ describe("source categories", () => {
     expect(sourceVerdict({ status: "NEGATIVE", scope: "VPN", types: ["RELAY"] })).toEqual({ text: "Privacy relay, allowed", tone: "neutral" });
     expect(sourceVerdict({ status: "UNKNOWN", scope: "VPN", types: ["HOSTING"] }).text).toBe("Data centre, not blocked");
     expect(sourceVerdict({ status: "POSITIVE", scope: "VPN" }).text).toBe("VPN / proxy");
+    // Blackbox: a listing, not a classification; from 0.6.1 an unconfirmed listing is UNKNOWN / NO_EVIDENCE.
+    expect(sourceVerdict({ id: "vpn-blackbox", status: "POSITIVE", scope: "VPN" }).text).toBe("On Blackbox's list");
+    expect(sourceVerdict({ id: "vpn-blackbox", status: "UNKNOWN", scope: "VPN", reason: "NO_EVIDENCE" })).toEqual({ text: "Listed, not confirmed", tone: "neutral" });
+    expect(sourceVerdict({ id: "vpn-blackbox", status: "UNKNOWN", scope: "VPN", reason: "TIMEOUT" }).text).toBe("No answer");
+    expect(sourceVerdict({ id: "vpn-zowi", status: "UNKNOWN", scope: "VPN", reason: "NO_EVIDENCE" }).text).toBe("No answer");
     expect(typesText(["VPN", "PROXY"])).toBe("VPN and proxy");
   });
 });

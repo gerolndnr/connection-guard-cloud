@@ -48,6 +48,13 @@ export const PROVIDERS: readonly ProviderInfo[] = [
     caution: "Free use is for non-commercial servers only. In our benchmark it caught nothing the other services had missed, so it is off in the recommended setup." },
 ];
 
+/** The explanation for a service on this server: Blackbox counts a listing only inside Intel's data-centre ranges from 0.6.1. */
+export function providerBody(p: ProviderInfo, pluginVersion?: string | null): string {
+  if (p.key === "blackbox" && versionAtLeast(pluginVersion, "0.6.1"))
+    return "Free, no key, by ipinfo.app. Its list also covers hosting and cloud networks, so a listing only counts when Connection Guard Intel places the address in a data centre; otherwise the next service decides.";
+  return p.body;
+}
+
 /** Services this server can switch from the dashboard: each plugin version offers its own set (0.6.0 has no IPQuery switch). */
 export const providersFor = (snapshot: Record<string, unknown> | null | undefined, pluginVersion?: string | null) =>
   PROVIDERS.filter((p) => supportsPath(snapshot, `provider.vpn.${p.key}.enabled`, pluginVersion) && (!p.keyPath || supportsPath(snapshot, p.keyPath, pluginVersion)));

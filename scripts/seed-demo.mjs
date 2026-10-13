@@ -84,7 +84,16 @@ const servers = [
   { platform: "VELOCITY", platform_version: "Velocity 3.4.0-SNAPSHOT (git-a1b2c3)", name: "Proxy", mode: "ENFORCE", rate: 26, vpnRate: 0.07, plugin: "0.5.0" },
   { platform: "BUKKIT", platform_version: "Paper 1.21.11-132", name: "Survival", mode: "OBSERVE", rate: 9, vpnRate: 0.2, plugin: "0.5.0" },
   { platform: "BUKKIT", platform_version: "Paper 1.21.11-132", name: "Lobby", mode: "ENFORCE", rate: 6, vpnRate: 0.1, plugin: "0.6.0", next: true },
+  // 0.6.1 development build: Blackbox listings count only inside Intel's data-centre ranges.
+  { platform: "BUKKIT", platform_version: "Paper 1.21.11-132", name: "Minigames", mode: "ENFORCE", rate: 5, vpnRate: 0.1, plugin: "0.6.1-SNAPSHOT", next: true, unconfirmed: true },
 ];
+
+// On the 0.6.1 server every sixth clean login was listed by Blackbox outside a data centre: not counted, zowi decided.
+const unconfirmedBlackbox = (e) => ({ ...e, sources: [
+  { id: "vpn-blackbox", scope: "VPN", status: "UNKNOWN", reason: "NO_EVIDENCE", duration_ms: 71, voting: true, from_cache: false,
+    country: e.sources[0].country, asn: null, isp: null, risk: null },
+  { id: "vpn-zowi", scope: "VPN", status: "NEGATIVE", reason: "NONE", duration_ms: 268, voting: true, from_cache: false,
+    country: e.sources[0].country, asn: e.sources[0].asn, isp: e.sources[0].isp, risk: null }, ...e.sources.slice(1)] });
 
 // Every fifth flagged login on the 0.6.0 server is a Tor exit, answered by its bundled list before any service.
 // The other flagged logins on the 0.6.0 server are answered by Connection Guard Intel's VPN list, locally.
@@ -112,7 +121,8 @@ for (const s of servers) {
     const load = Math.max(1, Math.round(s.rate * (0.35 + 0.9 * Math.exp(-((evening - 20) ** 2) / 18)) * (0.7 + rand() * 0.6)));
     let flaggedCount = 0;
     const events = Array.from({ length: load }, () => event(end - Math.floor(rand() * H), s.platform, s.mode, s.vpnRate))
-      .map((e) => (s.next && e.vpn === "POSITIVE" ? (++flaggedCount % 5 === 1 ? torExit(e) : intelHit(e, end)) : e)).sort((a, b) => a.at - b.at);
+      .map((e) => (s.next && e.vpn === "POSITIVE" ? (++flaggedCount % 5 === 1 ? torExit(e) : intelHit(e, end)) : e))
+      .map((e, i) => (s.unconfirmed && e.vpn !== "POSITIVE" && i % 6 === 0 ? unconfirmedBlackbox(e) : e)).sort((a, b) => a.at - b.at);
     const c = { checks: 0, allowed: 0, denied: 0, errors: 0, vpn_positive: 0, geo_flagged: 0, cache_hits: 0, lookups: 0, countries: {}, reasons: {} };
     for (const e of events) {
       c.checks++; c[e.outcome === "DENY" ? "denied" : "allowed"]++;
