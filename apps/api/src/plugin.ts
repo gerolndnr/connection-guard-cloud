@@ -104,20 +104,10 @@ const failedSource = (r: ErrorReport) => {
   return own ?? topFrame(r);
 };
 
-/**
- * Analytics events for a sync's reports, without a person: one `$exception` per fingerprint for Error Tracking, and one
- * `cg_network_failure` per fingerprint for failures of the network (see NETWORK_FAILURES).
- */
+/** Error Tracking events for a sync's reports, without a person: one `$exception` per fingerprint. Network failures
+ * (NETWORK_FAILURES) are not among them: they are counted per day instead (networkFailureRows, cron.reportDaily). */
 export function exceptionEvents(install: ErrorSource, req: Pick<SyncRequest, "errors" | "plugin_version">): ServerEvent[] {
-  return (req.errors ?? []).map((r) => isNetworkFailure(r) ? {
-    event: "network_failure", distinct_id: install.id, person: false, groups: { network: install.network_id },
-    properties: {
-      type: r.type, cause_type: r.cause_type, context: r.context, source: failedSource(r), top_frame: topFrame(r), count: r.count,
-      platform: install.platform, plugin_version: req.plugin_version, java_major: javaMajor(install.java_version),
-      linked: install.network_id !== null,
-    },
-  } : ({
-    event: "$exception", distinct_id: install.id, person: false, groups: { network: install.network_id },
+  return (req.errors ?? []).filter((r) => !isNetworkFailure(r)).map((r) => ({    event: "$exception", distinct_id: install.id, person: false, groups: { network: install.network_id },
     properties: {
       $exception_list: [{
         type: r.type, value: r.cause_type ? `caused by ${r.cause_type}` : r.type,
@@ -137,9 +127,29 @@ export function exceptionEvents(install: ErrorSource, req: Pick<SyncRequest, "er
   }));
 }
 
+/** The day's counters for a sync's network failures: one row per service and exception type. */
+export function networkFailureRows(req: Pick<SyncRequest, "errors">, now: number) {
+  const day = Math.floor(now / DAY) * DAY;
+  const rows = new Map<string, { day: number; source: string; type: string; count: number }>();
+  for (const r of (req.errors ?? []).filter(isNetworkFailure)) {
+    const source = failedSource(r), key = `${source}|${r.type}`;
+    const row = rows.get(key) ?? { day, source, type: r.type, count: 0 };
+    row.count += r.count;
+    rows.set(key, row);
+  }
+  return [...rows.values()];
+}
+
 async function recordErrors(c: Context<AppEnv>, install: ErrorSource, req: SyncRequest, now: number) {
   const reports = req.errors ?? [];
   capture(c, ...exceptionEvents(install, req));
+  const failures = networkFailureRows(req, now);
+  if (failures.length) {
+    await c.env.DB.batch(failures.map((f) => c.env.DB.prepare(
+      `INSERT INTO network_failures (day, source, type, count, installs) VALUES (?1, ?2, ?3, ?4, 1)
+       ON CONFLICT(day, source, type) DO UPDATE SET count = count + excluded.count, installs = installs + 1`,
+    ).bind(f.day, f.source, f.type, f.count)));
+  }
   if (install.network_id === null) return;
   await c.env.DB.batch(reports.map((r) => c.env.DB.prepare(
     `INSERT INTO install_errors (install_id, fingerprint, type, cause_type, context, top_frame, plugin_version, count, first_at, last_at)

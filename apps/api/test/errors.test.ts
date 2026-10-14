@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { env } from "cloudflare:test";
 import { errorReport, syncRequest } from "@cg/protocol/examples";
 import { analyticsPayload } from "../src/analytics.ts";
-import { exceptionEvents, isNetworkFailure } from "../src/plugin.ts";
+import { exceptionEvents, isNetworkFailure, networkFailureRows } from "../src/plugin.ts";
+import { networkFailureSummaries } from "../src/cron.ts";
 import { api, claim, install, login, syncOk } from "./helpers.ts";
 
 type ErrorView = { fingerprint: string; type: string; context: string; top_frame: string; count: number; plugin_version: string };
@@ -47,20 +48,33 @@ describe("plugin error reports", () => {
     expect(frames[0]).toMatchObject({ function: "IpQueryVpnProvider.parse", lineno: 88, in_app: true });
   });
 
-  it("sends network failures as a counted event per service, not to error tracking", () => {
+  it("keeps network failures out of error tracking and counts them per day and service", async () => {
     const timeout = { ...errorReport, type: "java.io.InterruptedIOException", cause_type: "java.io.IOException", context: "LOOKUP" as const,
       frames: [
         { class: "com.github.gerolndnr.connectionguard.libs.okhttp3.internal.connection.RealCall", method: "timeoutExit", line: 398 },
         { class: "com.github.gerolndnr.connectionguard.core.http.ProviderHttp", method: "readText", line: 56 },
         { class: "com.github.gerolndnr.connectionguard.core.vpn.ZowiVpnProvider", method: "lambda$getVpnResult$1", line: 24 },
       ] };
-    const dns = { ...errorReport, type: "java.net.UnknownHostException", cause_type: null, context: "SYNC" as const };
-    const [a, b, c] = exceptionEvents({ id: "ins_abc", network_id: "net_1", platform: "BUKKIT", java_version: "21.0.4" },
+    const dns = { ...errorReport, fingerprint: "0123456789abcdef", type: "java.net.UnknownHostException", cause_type: null, context: "SYNC" as const };
+    const events = exceptionEvents({ id: "ins_abc", network_id: "net_1", platform: "BUKKIT", java_version: "21.0.4" },
       { plugin_version: "0.6.1", errors: [timeout, dns, errorReport] });
-    expect(a).toMatchObject({ event: "network_failure", person: false,
-      properties: { type: "java.io.InterruptedIOException", source: "ZowiVpnProvider", context: "LOOKUP", count: 37, linked: true } });
-    expect(b!.event).toBe("network_failure");
-    expect(c!.event).toBe("$exception"); // a bug that merely saw a timeout still goes to error tracking
+    expect(events.map((e) => e.event)).toEqual(["$exception"]); // a bug that merely saw a timeout still goes to error tracking
+    const now = Date.UTC(2026, 9, 14, 12);
+    expect(networkFailureRows({ errors: [timeout, timeout, dns] }, now)).toEqual(expect.arrayContaining([
+      { day: Date.UTC(2026, 9, 14), source: "ZowiVpnProvider", type: "java.io.InterruptedIOException", count: 74 },
+      expect.objectContaining({ type: "java.net.UnknownHostException", count: 37 }),
+    ]));
+
+    // Two servers report the same failure; the next day's report sends one summary and clears the rows.
+    const a = await install(), b = await install();
+    await syncOk(a, { seq: 1, plugin_version: "0.6.1", errors: [timeout] });
+    await syncOk(b, { seq: 1, plugin_version: "0.6.1", errors: [timeout, dns] });
+    const [summary, ...rest] = await networkFailureSummaries(env, Date.now() + 86_400_000);
+    expect(rest).toHaveLength(0);
+    expect(summary).toMatchObject({ event: "network_failures_daily", person: false,
+      properties: { total: 111, reports: 3, by_source: { ZowiVpnProvider: 74 } } });
+    const left = await env.DB.prepare("SELECT count(*) AS n FROM network_failures").first<{ n: number }>();
+    expect(left!.n).toBe(0);
   });
 
   it("treats only network failures in lookups and syncs as expected", () => {

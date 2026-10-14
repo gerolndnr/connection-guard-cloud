@@ -24,6 +24,8 @@ export async function runMaintenance(env: Env, now = Date.now()) {
     env.DB.prepare("UPDATE access_rules SET removed_at = expires_at WHERE removed_at IS NULL AND expires_at IS NOT NULL AND expires_at <= ?").bind(now),
     env.DB.prepare("DELETE FROM access_rules WHERE removed_at IS NOT NULL AND removed_at < ?").bind(now - 30 * DAY),
     env.DB.prepare("DELETE FROM invites WHERE expires_at < ?").bind(now - DAY),
+    // Network-failure counters the daily report could not send (no PostHog key): a week at most.
+    env.DB.prepare("DELETE FROM network_failures WHERE day < ?").bind(now - 7 * DAY),
     // Error reports: kept while they recur, gone 30 days after the last occurrence.
     env.DB.prepare("DELETE FROM install_errors WHERE last_at < ?").bind(now - 30 * DAY),
   ]);
@@ -55,8 +57,33 @@ export async function reportDaily(env: Env, now = Date.now()) {
       $group_set: { active_servers: n.servers, enforcing_servers: n.enforce, platforms: [...n.platforms], plugin_versions: [...n.versions] },
     } });
   }
+  events.push(...await networkFailureSummaries(env, now));
   // PostHog accepts large batches, but keep each request small.
   for (let i = 0; i < events.length; i += 500) await sendEvents(env, events.slice(i, i + 500), now);
+}
+
+/**
+ * One `cg_network_failures_daily` event per finished UTC day: how often lookups and syncs failed on the network, per
+ * service and exception type. Rows that were sent are deleted. A single event a day instead of one per report keeps
+ * PostHog's activity view readable.
+ */
+export async function networkFailureSummaries(env: Env, now = Date.now()): Promise<ServerEvent[]> {
+  const today = Math.floor(now / DAY) * DAY;
+  const rows = (await env.DB.prepare("SELECT day, source, type, count, installs FROM network_failures WHERE day < ? ORDER BY day")
+    .bind(today).all<{ day: number; source: string; type: string; count: number; installs: number }>()).results;
+  const days = new Map<number, typeof rows>();
+  for (const r of rows) days.set(r.day, [...(days.get(r.day) ?? []), r]);
+  const events: ServerEvent[] = [];
+  for (const [day, list] of days) {
+    const by = (key: "source" | "type") => Object.fromEntries([...list.reduce((m, r) => m.set(r[key], (m.get(r[key]) ?? 0) + r.count),
+      new Map<string, number>())].sort((a, b) => b[1] - a[1]));
+    events.push({ event: "network_failures_daily", distinct_id: "connection-guard-cloud", person: false, properties: {
+      day: new Date(day).toISOString().slice(0, 10), total: list.reduce((n, r) => n + r.count, 0),
+      reports: list.reduce((n, r) => n + r.installs, 0), by_source: by("source"), by_type: by("type"),
+    } });
+  }
+  await env.DB.prepare("DELETE FROM network_failures WHERE day < ?").bind(today).run();
+  return events;
 }
 
 export async function scheduled(controller: ScheduledController, env: Env) {
