@@ -80,9 +80,43 @@ const topFrame = (r: ErrorReport) => {
  */
 type ErrorSource = { id: string; network_id: string | null; platform: string; java_version: string };
 
-/** PostHog Error Tracking events for a sync's reports: one `$exception` per fingerprint, without a person. */
+/**
+ * Network failures while asking a detection service or syncing (timeouts, DNS, refused or reset connections) are normal
+ * operations, not bugs: the plugin fails over or retries, and /cg doctor shows them. They go to analytics as
+ * `cg_network_failure`, counted per service, instead of into Error Tracking, where they buried the real errors.
+ */
+const NETWORK_FAILURES = new Set([
+  "java.net.SocketTimeoutException", "java.io.InterruptedIOException", "java.net.UnknownHostException", "java.net.SocketException",
+  "java.net.ConnectException", "java.net.NoRouteToHostException", "java.net.http.HttpTimeoutException",
+]);
+/** Exceptions that only carry another one; a network cause inside them is a network failure. A bug that merely saw a
+ * timeout (an IllegalStateException caused by one, say) stays in Error Tracking. */
+const WRAPPERS = new Set(["java.io.IOException", "java.io.UncheckedIOException", "java.util.concurrent.CompletionException",
+  "java.util.concurrent.ExecutionException"]);
+export const isNetworkFailure = (r: Pick<ErrorReport, "type" | "cause_type" | "context">) =>
+  (r.context === "LOOKUP" || r.context === "SYNC") &&
+  (NETWORK_FAILURES.has(r.type) || (WRAPPERS.has(r.type) && r.cause_type !== null && NETWORK_FAILURES.has(r.cause_type)));
+
+/** The service a failed request went to: its provider class ("ZowiVpnProvider"), else the top frame. */
+const failedSource = (r: ErrorReport) => {
+  const own = r.frames.map((f) => f.class.slice(f.class.lastIndexOf(".") + 1).split("$")[0]!)
+    .find((name) => /(Provider|Client|Sync|Downloader)$/.test(name) && name !== "ProviderHttp");
+  return own ?? topFrame(r);
+};
+
+/**
+ * Analytics events for a sync's reports, without a person: one `$exception` per fingerprint for Error Tracking, and one
+ * `cg_network_failure` per fingerprint for failures of the network (see NETWORK_FAILURES).
+ */
 export function exceptionEvents(install: ErrorSource, req: Pick<SyncRequest, "errors" | "plugin_version">): ServerEvent[] {
-  return (req.errors ?? []).map((r) => ({
+  return (req.errors ?? []).map((r) => isNetworkFailure(r) ? {
+    event: "network_failure", distinct_id: install.id, person: false, groups: { network: install.network_id },
+    properties: {
+      type: r.type, cause_type: r.cause_type, context: r.context, source: failedSource(r), top_frame: topFrame(r), count: r.count,
+      platform: install.platform, plugin_version: req.plugin_version, java_major: javaMajor(install.java_version),
+      linked: install.network_id !== null,
+    },
+  } : ({
     event: "$exception", distinct_id: install.id, person: false, groups: { network: install.network_id },
     properties: {
       $exception_list: [{
