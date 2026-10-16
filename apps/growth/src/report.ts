@@ -114,22 +114,62 @@ export function render(rows: Row[], end: number): Report {
     "", ...notes.map((x) => `- ${x}`),
   ].join("\n");
 
-  // HTML: inline styles only, a plain table that every mail client renders
-  const cell = "padding:6px 10px;border-bottom:1px solid #e5e5e5;text-align:right;white-space:nowrap";
-  const delta = (v: number | null) => `<span style="color:${v === null || Math.round(v) === 0 ? "#737373" : v > 0 ? "#047857" : "#b91c1c"}">${signed(v)}</span>`;
-  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#fafafa;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#171717">
-<div style="max-width:760px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:24px">
-<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#10b981;font-weight:600">Growth · ${esc(date)}</div>
-<h1 style="font-size:22px;margin:6px 0 4px">Connection Guard: ${n(cg.servers)} servers <span style="font-weight:500">${delta(cg.d7)} in 7 days</span></h1>
-${headline.map((h) => `<p style="margin:6px 0;font-size:14px;color:#404040">${esc(h)}</p>`).join("")}
-<table style="border-collapse:collapse;width:100%;margin-top:16px;font-size:14px">
-<tr style="color:#737373;font-size:12px"><th style="${cell};text-align:left">Product</th><th style="${cell}">Servers</th><th style="${cell}">1 d</th><th style="${cell}">7 d</th><th style="${cell}">30 d</th><th style="${cell}">Share</th><th style="${cell}">Players</th><th style="${cell};text-align:left">30 days</th></tr>
-${rows.map((r) => `<tr style="${r.product.key === "connection-guard" ? "background:#ecfdf5;font-weight:600" : r.product.legacy ? "color:#737373" : ""}">
-<td style="${cell};text-align:left"><a href="${r.platforms[0]!.url}" style="color:inherit">${esc(r.product.name)}</a></td><td style="${cell}">${n(r.servers)}</td><td style="${cell}">${delta(r.d1)}</td><td style="${cell}">${delta(r.d7)}</td><td style="${cell}">${delta(r.d30)}</td><td style="${cell}">${r.product.legacy ? "" : share(r)}</td><td style="${cell}">${n(r.players)}</td><td style="${cell};text-align:left;font-family:Menlo,Consolas,monospace;color:#10b981;letter-spacing:-1px">${esc(r.spark)}</td></tr>`).join("\n")}
-</table>
-<p style="font-size:13px;color:#404040;margin:14px 0 0">Connection Guard by platform: ${cg.platforms.map((p) => `<a href="${p.url}" style="color:inherit">${PLATFORM[p.platform]}</a> ${n(p.servers)}`).join(" · ")}</p>
-${missing.length ? `<p style="font-size:13px;color:#b45309;margin:10px 0 0">Incomplete today: ${esc(missing.join("; "))}.</p>` : ""}
-<ul style="font-size:12px;color:#737373;margin:18px 0 0;padding-left:18px">${notes.map((x) => `<li style="margin:4px 0">${esc(x)}</li>`).join("")}</ul>
-</div></body></html>`;
+  // HTML: one fluid column (max 600 px) of table rows with inline styles, so it holds in every client without media
+  // queries. The <style> block only refines: tighter padding on phones, dark mode where the client supports it.
+  const K = { bg: "#f5f5f5", card: "#ffffff", line: "#e5e5e5", fg: "#171717", fg2: "#525252", fg3: "#737373", acc: "#10b981", up: "#047857", down: "#b91c1c", own: "#ecfdf5", chip: "#f5f5f5" };
+  const tone = (v: number | null) => v === null || Math.round(v) === 0 ? ["fg3", K.fg3] : v > 0 ? ["up", K.up] : ["down", K.down];
+  const num = (v: number | null, size: number) => { const [cls, col] = tone(v); return `<span class="${cls}" style="color:${col};font-size:${size}px;font-weight:700">${signed(v)}</span>`; };
+  const chip = (label: string, v: number | null, extra = "") =>
+    `<span class="chip fg2" style="display:inline-block;margin:8px 6px 0 0;padding:4px 10px;border-radius:999px;background:${K.chip};color:${K.fg2};font-size:13px;line-height:18px;white-space:nowrap">${label} ${num(v, 13)}${extra}</span>`;
+  const sharePct = (r: Row) => total && r.servers !== null ? (r.servers / total) * 100 : 0;
+  const tile = (label: string, v: number | null, sub = "") =>
+    `<td width="33%" valign="top" style="padding:12px 8px;text-align:center;border:1px solid ${K.line};border-radius:12px" class="line">
+<div class="fg3" style="font-size:12px;color:${K.fg3};text-transform:uppercase;letter-spacing:.06em">${label}</div>
+<div class="kpi" style="margin-top:4px;line-height:1.1">${num(v, 24)}</div>${sub ? `<div class="fg3" style="font-size:12px;color:${K.fg3};margin-top:2px">${sub}</div>` : ""}</td>`;
+  const card = (r: Row) => {
+    const own = r.product.key === "connection-guard";
+    const meta = [r.product.legacy ? "predecessor, not in the share" : `share ${share(r)}`, `${n(r.players)} players`].join(" · ");
+    return `<tr><td class="px line${own ? " own" : ""}" style="padding:16px 24px;border-top:1px solid ${K.line};${own ? `background:${K.own};` : ""}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td valign="top"><a href="${r.platforms[0]!.url}" class="fg" style="color:${r.product.legacy ? K.fg3 : K.fg};text-decoration:none;font-size:16px;font-weight:${own ? 700 : 600}">${esc(r.product.name)}</a>
+<div class="fg3" style="font-size:12px;color:${K.fg3};margin-top:2px">${esc(meta)}</div></td>
+<td valign="top" align="right" style="white-space:nowrap;padding-left:12px"><div class="fg" style="font-size:22px;font-weight:700;color:${K.fg};line-height:1.1">${n(r.servers)}</div>
+<div class="fg3" style="font-size:12px;color:${K.fg3}">servers</div></td></tr></table>
+<div>${chip("1 d", r.d1)}${chip("7 d", r.d7, r.d7pct === null ? "" : `<span class="fg3" style="color:${K.fg3}">${pct(r.d7pct)}</span>`)}${chip("30 d", r.d30)}</div>
+${r.product.legacy ? "" : `<div class="track" style="margin-top:12px;height:4px;border-radius:2px;background:${K.line};font-size:0;line-height:0"><div style="width:${sharePct(r).toFixed(1)}%;height:4px;border-radius:2px;background:${K.acc}"></div></div>`}
+<div style="margin-top:8px;font-family:Menlo,Consolas,'Courier New',monospace;font-size:15px;line-height:18px;color:${K.acc};white-space:nowrap;overflow:hidden">${esc(r.spark)} <span class="fg3" style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:11px;color:${K.fg3}">30 days</span></div>
+</td></tr>`;
+  };
+  const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${esc(subject)}</title>
+<style>
+@media (max-width:520px){.outer{padding:0!important}.box{border-radius:0!important;border-left:0!important;border-right:0!important}.px{padding-left:16px!important;padding-right:16px!important}.h1{font-size:22px!important}}
+@media (prefers-color-scheme:dark){body,.outer{background:#0a0a0a!important}.box{background:#141414!important;border-color:#262626!important}.line{border-color:#262626!important}
+.fg{color:#ededed!important}.fg2{color:#a1a1a1!important}.fg3{color:#8a8a8a!important}.own{background:#0d2a1f!important}.chip{background:#1f1f1f!important}.track{background:#262626!important}
+.up{color:#34d399!important}.down{color:#f87171!important}}
+</style></head>
+<body style="margin:0;padding:0;background:${K.bg};-webkit-text-size-adjust:100%">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(headline.join(" "))}</div>
+<table role="presentation" class="outer" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${K.bg};padding:24px 12px"><tr><td align="center">
+<table role="presentation" class="box" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:${K.card};border:1px solid ${K.line};border-radius:16px;font-family:${font};color:${K.fg}">
+<tr><td class="px" style="padding:24px 24px 8px">
+<div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:${K.acc};font-weight:700">Growth · ${esc(date)}</div>
+<div class="h1 fg" style="font-size:26px;font-weight:800;letter-spacing:-.02em;color:${K.fg};margin-top:6px;line-height:1.2">Connection Guard: ${n(cg.servers)} servers</div>
+<div class="fg2" style="font-size:14px;color:${K.fg2};margin-top:4px">Share of the benchmark products: <b>${share(cg)}</b> · ${n(cg.players)} players</div>
+</td></tr>
+<tr><td class="px" style="padding:12px 24px 18px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="6" border="0" style="border-collapse:separate"><tr>
+${tile("1 day", cg.d1)}${tile("7 days", cg.d7, cg.d7pct === null ? "" : pct(cg.d7pct).trim().slice(1, -1))}${tile("30 days", cg.d30)}
+</tr></table>
+${growing ? `<div class="fg2" style="font-size:14px;color:${K.fg2};margin-top:12px">Fastest growing over 7 days: <b>${esc(growing.product.name)}</b>${esc(pct(growing.d7pct))}</div>` : ""}
+<div class="fg2" style="font-size:13px;color:${K.fg2};margin-top:8px">By platform: ${cg.platforms.map((p) => `<a href="${p.url}" class="fg2" style="color:${K.fg2}">${PLATFORM[p.platform]}</a>&nbsp;${n(p.servers)}`).join(" · ")}</div>
+</td></tr>
+${rows.map(card).join("\n")}
+${missing.length ? `<tr><td class="px" style="padding:12px 24px;border-top:1px solid ${K.line};font-size:13px;color:#b45309">Incomplete today: ${esc(missing.join("; "))}.</td></tr>` : ""}
+<tr><td class="px line" style="padding:16px 24px 22px;border-top:1px solid ${K.line}">
+${notes.map((x) => `<div class="fg3" style="font-size:12px;line-height:1.5;color:${K.fg3};margin-top:6px">${esc(x)}</div>`).join("")}
+</td></tr>
+</table></td></tr></table></body></html>`;
   return { subject, text, html };
 }
