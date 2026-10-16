@@ -1,0 +1,19 @@
+// Growth worker: a morning mail with bStats numbers of Connection Guard and the products in mc-antivpn-bench.
+// Stays inside the Workers Free plan: one cron run a day, 34 subrequests per run.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "connection-guard-growth",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-15",
+  "observability": { "enabled": true },
+  // No public route; the workers.dev address only answers with a valid RUN_TOKEN (see src/index.ts).
+  "workers_dev": true,
+  // 05:00 UTC: 06:00 in London, 07:00 in Berlin (summer time); one hour earlier in local time during winter.
+  "triggers": { "crons": ["0 5 * * *"] },
+  "vars": {
+    "MAIL_FROM": "growth@connectionguard.net",
+    "MAIL_TO": "gero.lindner@protonmail.com"
+  },
+  // Email Routing only delivers to verified destination addresses of the account (checked 16 Oct 2026).
+  "send_email": [{ "name": "MAIL", "destination_address": "gero.lindner@protonmail.com" }]
+}
