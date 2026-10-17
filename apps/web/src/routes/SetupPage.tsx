@@ -29,9 +29,14 @@ function Progress({ step }: { step: Step }) {
   );
 }
 
-function StepFrame({ step, title, lead, children, onBack, onNext, nextLabel = "Continue", nextDisabled, footnote }: {
+/**
+ * One step of the assistant. Back and Continue sit in a bar that sticks to the bottom of the screen while the step is
+ * taller than the window (the services step usually is) and rests after the content at its end: always in reach, and
+ * still after the choices, never above them. When Continue is disabled, the bar says why (`nextHint`).
+ */
+function StepFrame({ step, title, lead, children, onBack, onNext, nextLabel = "Continue", nextDisabled, nextHint, footnote }: {
   step: Step; title: string; lead: React.ReactNode; children: React.ReactNode; onBack?: (() => void) | undefined; onNext: () => void;
-  nextLabel?: string; nextDisabled?: boolean; footnote?: React.ReactNode;
+  nextLabel?: string; nextDisabled?: boolean; nextHint?: string | undefined; footnote?: React.ReactNode;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { heading.current?.focus(); }, [step]);
@@ -42,9 +47,14 @@ function StepFrame({ step, title, lead, children, onBack, onNext, nextLabel = "C
       <h1 ref={heading} tabIndex={-1} className="mt-1 text-2xl font-semibold tracking-[-0.025em] outline-none">{title}</h1>
       <p className="mt-2 max-w-prose text-fg-2">{lead}</p>
       <div className="mt-6">{children}</div>
-      <div className="mt-8 flex items-center justify-between gap-3">
-        {onBack ? <button type="button" className="btn btn-ghost" onClick={onBack}><ArrowLeft className="size-4" /> Back</button> : <span />}
-        <button type="button" className="btn btn-primary h-10 px-5" disabled={nextDisabled} onClick={onNext}>{nextLabel} <ArrowRight className="size-4" /></button>
+      <div className="sticky bottom-0 z-10 mt-8 border-t border-line bg-page/85 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md supports-[backdrop-filter]:bg-page/75">
+        <div className="flex items-center justify-between gap-3">
+          {onBack ? <button type="button" className="btn btn-ghost shrink-0" onClick={onBack}><ArrowLeft className="size-4" /> Back</button> : <span />}
+          <div className="flex min-w-0 items-center gap-3">
+            {nextDisabled && nextHint && <p role="status" className="min-w-0 text-right text-[0.8125rem] leading-snug text-warn-text">{nextHint}</p>}
+            <button type="button" className="btn btn-primary h-10 shrink-0 px-5" disabled={nextDisabled} onClick={onNext}>{nextLabel} <ArrowRight className="size-4" /></button>
+          </div>
+        </div>
       </div>
       {footnote && <p className="mt-4 text-right text-[0.8125rem] text-fg-3">{footnote}</p>}
     </div>
@@ -225,7 +235,7 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
     return (
       <>{connecting}
         <StepFrame step="goals" title="What should Connection Guard keep out?" lead={<>Choose what to check when a player joins <span className="font-medium text-fg">{name}</span>. You can change this any time.</>}
-          onNext={() => setStep(vpn ? "providers" : "mode")} nextDisabled={countryMode === "allow" && countries.length === 0}
+          onNext={() => setStep(vpn ? "providers" : "mode")} nextDisabled={countryMode === "allow" && countries.length === 0} nextHint="Pick at least one country first."
           footnote={<Link to="/n/$networkId" params={{ networkId }} className="text-fg-3 no-underline hover:text-fg">Skip setup</Link>}>
           <div className="space-y-3">
             <OptionCard checked={vpn} onToggle={() => setVpn(!vpn)} icon={<ShieldCheck className="size-4.5" />}
@@ -263,7 +273,8 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
           lead={failover
             ? "A new IP address goes to the first service; the next one only steps in when it fails or its limit is used up. Returning players are answered from the cache."
             : "Each new IP address is checked by every service you pick. Returning players are answered from the cache, so most logins cost nothing."}
-          onBack={() => setStep("goals")} onNext={() => setStep("mode")} nextDisabled={!providersOk}>
+          onBack={() => setStep("goals")} onNext={() => setStep("mode")} nextDisabled={!providersOk}
+          nextHint={chosen.length === 0 ? "Pick at least one service." : Object.values(providerErrors)[0]}>
           {v06 && !isRecommended && (
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-subtle px-4 py-3">
               <p className="text-[0.8125rem] text-fg-2"><span className="font-medium text-fg">Not sure?</span> Use what Connection Guard 0.6 sets up for new servers.</p>
@@ -388,7 +399,8 @@ function Assistant({ networkId, install }: { networkId: string; install: Install
       <>{connecting}
         <StepFrame step="mode" title={v06 ? "How strict from the start?" : "Start gently?"}
           lead={v06 ? "New 0.6 servers protect right away. Watching first shows you what would happen before anyone is refused." : "Watching first shows you what would happen, so you can catch surprises before a real player is locked out."}
-          onBack={() => setStep(vpn ? "providers" : "goals")} onNext={apply} nextLabel="Finish setup" nextDisabled={vpn && !providersOk}>
+          onBack={() => setStep(vpn ? "providers" : "goals")} onNext={apply} nextLabel="Finish setup" nextDisabled={vpn && !providersOk}
+          nextHint="Fix the services in the previous step first.">
           <div role="radiogroup" aria-label="Protection mode" className="space-y-3">{v06 ? [protect, watch] : [watch, protect]}</div>
         </StepFrame>
       </>
