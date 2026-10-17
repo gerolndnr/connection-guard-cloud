@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ChevronRight, CircleAlert, CircleCheck, ExternalLink, LoaderCircle, Terminal, TriangleAlert, WifiOff, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, CircleAlert, Plus, CircleCheck, ExternalLink, LoaderCircle, Terminal, TriangleAlert, WifiOff, X } from "lucide-react";
 import { SECRET_PATHS, supportsPath, type ConfigSnapshot } from "@cg/protocol";
 import { api, ApiError, type Install, type ServerConfig } from "../api.ts";
 import { Shell } from "../components/Shell.tsx";
@@ -99,6 +99,141 @@ function ErrorHint({ message }: { message: string | null | undefined }) {
     <div className="mt-2 text-[0.8125rem] text-fg-2">
       <p>{hint.text}</p>
       {hint.command && <pre className="mono mt-2 overflow-x-auto rounded-md border border-line bg-surface px-3 py-2 text-[0.75rem]">{hint.command}</pre>}
+    </div>
+  );
+}
+
+/** The page's sections, in order. "advanced" only appears when there is something to reset. */
+type SectionId = "mode" | "vpn" | "countries" | "actions" | "exemptions" | "advanced";
+const SECTION_LABEL: Record<SectionId, string> = {
+  mode: "Protection", vpn: "Detection", countries: "Countries", actions: "When flagged", exemptions: "Exemptions", advanced: "Advanced",
+};
+/** Which section a setting (or secret) lives in, so the navigation can mark unsaved changes and errors. */
+function sectionOf(path: string): SectionId {
+  if (path === "operation.mode") return "mode";
+  if (/^behavior\.(vpn|geo)\.exemptions$/.test(path)) return "exemptions";
+  if (/^behavior\.(vpn|geo)\.(kick-player|notify-staff|send-webhook)/.test(path)) return "actions";
+  if (path.startsWith("behavior.geo.") || path === "provider.geo.service" || path === "failure-policy.geo" || path === "provider.cache.expiration.geo") return "countries";
+  return "vpn";
+}
+
+/** The section nearest the top of the window, for the navigation's highlight. */
+function useScrollSpy(ids: string[]) {
+  const [active, setActive] = useState(ids[0]);
+  useEffect(() => {
+    const els = ids.map((id) => document.getElementById(id)).filter((e): e is HTMLElement => e !== null);
+    if (!els.length) return;
+    const update = () => {
+      // The last section whose top has passed a line a third down the window; at the very bottom, the last one.
+      const line = window.innerHeight / 3;
+      let current = els[0]!.id;
+      for (const el of els) if (el.getBoundingClientRect().top <= line) current = el.id;
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) current = els.at(-1)!.id;
+      setActive(current);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => { window.removeEventListener("scroll", update); window.removeEventListener("resize", update); };
+  }, [ids.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
+  return active;
+}
+
+const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+
+/** Section navigation: a column that stays in view on wide screens, a row of chips on phones. */
+function SectionNav({ ids, active, marks, desktopOnly, mobileOnly }: { ids: SectionId[]; active: string | undefined; marks: Partial<Record<SectionId, "dirty" | "error">>; desktopOnly?: boolean; mobileOnly?: boolean }) {
+  const dot = (id: SectionId) => marks[id] && <span aria-label={marks[id] === "error" ? "needs a fix" : "unsaved changes"} className={`size-1.5 shrink-0 rounded-full ${marks[id] === "error" ? "bg-danger" : "bg-warn"}`} />;
+  return (
+    <>
+      {!mobileOnly && <nav aria-label="Settings sections" className="hidden lg:block">
+        <ul className="sticky top-28 space-y-0.5 text-[0.8125rem]">
+          {ids.map((id) => (
+            <li key={id}>
+              <a href={`#${id}`} onClick={(e) => { e.preventDefault(); jump(id); }} aria-current={active === id ? "location" : undefined}
+                className={`flex items-center justify-between gap-2 rounded-md px-3 py-1.5 no-underline transition-colors ${active === id ? "bg-subtle font-medium text-fg" : "text-fg-2 hover:bg-subtle hover:text-fg"}`}>
+                {SECTION_LABEL[id]}{dot(id)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>}
+      {!desktopOnly && <nav aria-label="Settings sections" className="-mx-4 mt-5 overflow-x-auto px-4 lg:hidden">
+        <ul className="flex gap-2 text-[0.8125rem]">
+          {ids.map((id) => (
+            <li key={id}>
+              <a href={`#${id}`} onClick={(e) => { e.preventDefault(); jump(id); }}
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface px-3 py-1 text-fg-2 no-underline hover:text-fg">
+                {SECTION_LABEL[id]}{dot(id)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>}
+    </>
+  );
+}
+
+/** Expert settings of a section, folded away until needed; opens by itself when one of them is changed or wrong. */
+function Advanced({ open: mustOpen, summary, children }: { open?: boolean; summary?: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const shown = open || Boolean(mustOpen);
+  return (
+    <div>
+      <button type="button" aria-expanded={shown} onClick={() => setOpen(!shown)}
+        className="flex w-full items-center gap-2 px-6 py-3 text-left text-[0.8125rem] transition-colors hover:bg-subtle">
+        <ChevronRight aria-hidden className={`size-4 shrink-0 text-fg-3 transition-transform duration-150 ${shown ? "rotate-90" : ""}`} />
+        <span className="font-medium text-fg-2">Advanced</span>
+        {!shown && summary && <span className="min-w-0 truncate text-fg-3">{summary}</span>}
+      </button>
+      {shown && <div className="divide-y divide-line border-t border-line">{children}</div>}
+    </div>
+  );
+}
+
+/** A row of the detection list. Opens by itself when it has an error. */
+function ServiceRow({ index, name, badge, badgeTone, managed, error, move, control, children }: {
+  index?: number | undefined; name: string; badge?: string | undefined; badgeTone?: "danger" | undefined; managed?: boolean; error?: string | undefined;
+  move?: ReactNode; control?: ReactNode; children?: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const shown = (open || Boolean(error)) && Boolean(children);
+  return (
+    <li>
+      <div className="flex items-center gap-3 px-6 py-3">
+        {index !== undefined && <span className="num w-4 shrink-0 text-[0.8125rem] text-fg-3">{index}</span>}
+        <button type="button" aria-expanded={children ? shown : undefined} disabled={!children} onClick={() => setOpen(!shown)}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-default">
+          {children ? <ChevronRight aria-hidden className={`size-4 shrink-0 text-fg-3 transition-transform duration-150 ${shown ? "rotate-90" : ""}`} /> : <span className="w-4 shrink-0" />}
+          <span className="truncate font-medium">{name}</span>
+          {managed && <span className="badge badge-neutral h-5 shrink-0 text-[0.6875rem]" title="Set in the dashboard; overrides config.yml">Dashboard</span>}
+          {badge && <span className={`hidden truncate text-[0.75rem] sm:inline ${badgeTone === "danger" ? "text-danger-text" : "text-fg-3"}`}>{badge}</span>}
+        </button>
+        {move}
+        {control}
+      </div>
+      {shown && (
+        <div className="space-y-3 px-6 pb-4 pl-[3.25rem] text-[0.8125rem] leading-relaxed">
+          {badge && <p className={`sm:hidden ${badgeTone === "danger" ? "text-danger-text" : "text-fg-3"}`}>{badge}</p>}
+          {children}
+          {error && <p role="alert" className="text-danger-text">{error}</p>}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** The switched-off services, folded under one line. */
+function MoreServices({ count, open: mustOpen, children }: { count: number; open?: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const shown = open || Boolean(mustOpen);
+  return (
+    <div className="border-t border-line">
+      <button type="button" aria-expanded={shown} onClick={() => setOpen(!shown)} className="flex w-full items-center gap-2 px-6 py-3 text-left text-[0.8125rem] text-fg-2 transition-colors hover:bg-subtle hover:text-fg">
+        {shown ? <ChevronDown aria-hidden className="size-4 text-fg-3" /> : <Plus aria-hidden className="size-4 text-fg-3" />}
+        {shown ? "Switched-off services" : `${count} more ${count === 1 ? "service" : "services"}, switched off`}
+      </button>
+      {shown && <div className="border-t border-line">{children}</div>}
     </div>
   );
 }
@@ -254,6 +389,39 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
   for (const scope of ["vpn", "geo"]) if (v<boolean>(`behavior.${scope}.send-webhook.enabled`) && !hasKey(`behavior.${scope}.send-webhook.url`)) errors[`behavior.${scope}.send-webhook.enabled`] = "Add the Discord webhook URL.";
   const hasErrors = Object.keys(errors).length > 0;
 
+  /** One detection service in the list: name, key status and switch; description, caution and key field fold out. */
+  const serviceRow = (p: (typeof providers)[number], index: number | undefined, move: ReactNode) => {
+    const path = `provider.vpn.${p.key}.enabled`;
+    const on = v<boolean>(path) ?? false;
+    const keyed = p.keyPath ? hasKey(p.keyPath) : false;
+    const status = !p.keyPath ? "no key needed" : keyed ? "key set" : p.keyRequired ? "key missing" : "free tier, no key";
+    return (
+      <ServiceRow key={p.key} index={index} name={p.name} managed={managed(path)} error={errors[path]} badge={status}
+        badgeTone={p.keyPath && !keyed && p.keyRequired && on ? "danger" : undefined} move={move}
+        control={<Switch label={`Use ${p.name}`} checked={on} onChange={(x) => set(path, x)} />}>
+        <p className="text-fg-2">{providerBody(p, install.plugin_version, supportsPath(effective, "provider.vpn-failover.order"))}
+          {p.signup && <> <a href={p.signup} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-fg-2 hover:text-fg">Website <ExternalLink className="size-3" /></a></>}</p>
+        {p.caution && <p className={`flex gap-1.5 ${on ? "text-warn-text" : "text-fg-3"}`}><TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />{p.caution}</p>}
+        {p.keyPath && on && (
+          <SecretField state={secretState(p.keyPath)} edit={secretEdit(p.keyPath)} onEdit={(e) => setSecrets({ ...secrets, [p.keyPath!]: e })}
+            placeholder={`${p.name} API key${p.keyRequired ? "" : " (optional)"}`} />
+        )}
+      </ServiceRow>
+    );
+  };
+
+  // Navigation: which sections exist, which hold unsaved changes or errors.
+  const showAdvanced = canEdit && cfg.managed.length > 0;
+  const sectionIds: SectionId[] = ["mode", "vpn", "countries", "actions", "exemptions", ...(showAdvanced ? ["advanced" as const] : [])];
+  const marks: Partial<Record<SectionId, "dirty" | "error">> = {};
+  for (const f of [...dirtyFields, ...dirtySecrets.map(([k]) => k)]) marks[sectionOf(f)] = "dirty";
+  for (const f of Object.keys(errors)) marks[sectionOf(f)] = "error";
+  const inAny = (paths: string[]) => paths.some((p) => dirtyFields.includes(p) || p in errors);
+  const vpnAdvanced = ["provider.vpn-failover.enabled", "provider.max-external-attempts", "required-positive-flags", "failure-policy.vpn", "provider.cache.expiration.vpn"];
+  const geoAdvanced = ["provider.geo.service", "failure-policy.geo", "provider.cache.expiration.geo"];
+  const hours = (path: string) => Math.round((v<number>(path) ?? 60) / 60);
+  const policyWord = (path: string) => ({ OPEN: "let in", CLOSED: "refuse", OBSERVE: "let in and log" } as Record<string, string>)[v<string>(path)] ?? "";
+
   const save = async () => {
     if (!dirty || hasErrors) return;
     setSaving(true); setSaveError(null);
@@ -283,8 +451,9 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
     await qc.invalidateQueries({ queryKey: ["config", install.id] });
   };
 
-  return (
-    <div className="mx-auto max-w-3xl pb-24">
+  return <SettingsLayout sectionIds={sectionIds} marks={marks}>
+    {/* the header, status and summary, then the sections */}
+    <div className="pb-24">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-[-0.025em]">Settings</h1>
@@ -294,10 +463,30 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
           </p>
         </div>
       </div>
+      <SectionNavMobile sectionIds={sectionIds} marks={marks} />
       <div className="mt-6"><ApplyStatus cfg={cfg} server={name} install={install} /></div>
       {!canEdit && <p className="mt-4 text-[0.8125rem] text-fg-2">You can view these settings. Owners and admins can change them.</p>}
 
-      <fieldset disabled={!canEdit || saving} className="mt-6 space-y-6">
+      {/* At a glance: the settings as they stand in the form, each a shortcut to its section. */}
+      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {([
+          ["mode", "Mode", observing ? "Observe" : "Enforce"],
+          ["vpn", "Detection", enabledProviders.length === 0 && !(hasIntel && v<boolean>(INTEL)) ? "Off"
+            : [hasIntel && v<boolean>(INTEL) ? "Intel" : "", enabledProviders.length ? `${enabledProviders.length} ${enabledProviders.length === 1 ? "service" : "services"}` : ""].filter(Boolean).join(" + ")],
+          ["countries", "Countries", geoMode === "off" ? "Off" : geoMode === "allow" ? `Only ${geoList.length} allowed` : `${geoList.length} blocked`],
+          ["actions", "On a hit", observing ? "Log only" : [
+            v<boolean>("behavior.vpn.kick-player") ? "Refuse" : "Let in",
+            v<boolean>("behavior.vpn.send-webhook.enabled") ? "Discord" : "", v<boolean>("behavior.vpn.notify-staff") ? "staff" : "",
+          ].filter(Boolean).join(", ")],
+        ] as const).map(([id, label, value]) => (
+          <button key={id} type="button" onClick={() => jump(id)} className="rounded-lg bg-subtle px-3 py-2.5 text-left transition-colors hover:bg-line/60">
+            <span className="block text-[0.75rem] text-fg-3">{label}</span>
+            <span className="mt-0.5 flex items-center gap-1.5 truncate font-medium">{value}{marks[id] && <span className={`size-1.5 shrink-0 rounded-full ${marks[id] === "error" ? "bg-danger" : "bg-warn"}`} />}</span>
+          </button>
+        ))}
+      </div>
+
+      <fieldset disabled={!canEdit || saving} className="mt-6 min-w-0 space-y-6">
         <Section id="mode" title="Protection mode" managed={managed("operation.mode")} description={versionAtLeast(install.plugin_version, "0.6.0") ? "Enforce refuses flagged players; Observe only logs what would have happened." : "Start by observing. Switch to enforce when the decisions look right."}>
           <div className="px-6 py-4">
             <Choice name="Protection mode" value={v<string>("operation.mode") as "OBSERVE" | "ENFORCE"} onChange={(m) => set("operation.mode", m)} options={[
@@ -313,120 +502,92 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
         <Section id="vpn" title="VPN and proxy detection" description={failover
           ? "Enabled services are asked one after another about new IP addresses. Results are cached, so most logins cost no lookup at all."
           : "Each enabled service is asked about new IP addresses. Results are cached, so most logins cost no lookup at all."}>
-          {hasIntel && (
-            <Row label="Connection Guard Intel" managed={managed(INTEL)}
-              help={versionAtLeast(install.plugin_version, "0.6.1")
-                ? "Daily lists of VPN servers, Tor exits, public proxies and privacy relays, checked on your server before any service is asked. Player addresses never leave it."
-                : "Daily lists of VPN servers, Tor exits and privacy relays, checked on your server before any service is asked. Player addresses never leave it."}>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Switch label="Use Connection Guard Intel" checked={v<boolean>(INTEL) ?? false} onChange={(on) => set(INTEL, on)} />
-                  <span className="text-[0.8125rem] text-fg-2">{v<boolean>(INTEL) ? "On" : "Off"}</span>
-                </div>
+          {/* One list: Intel, then the services in the order they are asked; switched-off services folded at the end. */}
+          <ul className="divide-y divide-line">
+            {hasIntel && (
+              <ServiceRow name="Connection Guard Intel" managed={managed(INTEL) || managed(INTEL_RELAY)} badge="on your server"
+                control={<Switch label="Use Connection Guard Intel" checked={v<boolean>(INTEL) ?? false} onChange={(on) => set(INTEL, on)} />}>
+                <p className="text-fg-2">{versionAtLeast(install.plugin_version, "0.6.1")
+                  ? "Daily lists of VPN servers, Tor exits, public proxies and privacy relays, checked on your server before any service is asked. Player addresses never leave it."
+                  : "Daily lists of VPN servers, Tor exits and privacy relays, checked on your server before any service is asked. Player addresses never leave it."}</p>
                 {v<boolean>(INTEL) && supportsPath(effective, INTEL_RELAY) && (
                   <Segmented name="Privacy relays" value={(v<string>(INTEL_RELAY) ?? "ALLOW") as "ALLOW" | "VPN"} onChange={(x) => set(INTEL_RELAY, x)} options={[
                     { value: "ALLOW", title: "Let relays in", body: "Recommended. iCloud Private Relay is Apple's privacy feature for Safari and DNS, not a VPN service." },
                     { value: "VPN", title: "Treat as VPN", body: "Strict. Players behind iCloud Private Relay are refused like VPN users." },
                   ]} />
                 )}
-              </div>
-            </Row>
+              </ServiceRow>
+            )}
+            {(failover ? fullChain : enabledProviders).map((p, i) => {
+              const isFixed = fixed.includes(p);
+              const movable = failover && hasFailover && !isFixed && p.key !== "ip-api" && supportsPath(effective, "provider.vpn-failover.order");
+              const pos = chain.filter((x) => x.key !== "ip-api").findIndex((x) => x.key === p.key);
+              const lastMovable = chain.filter((x) => x.key !== "ip-api").length - 1;
+              return isFixed ? (
+                <ServiceRow key={p.key} index={failover ? i + 1 : undefined} name={p.name} badge="set in config.yml" />
+              ) : serviceRow(p, failover ? i + 1 : undefined, movable ? (
+                <span className="flex gap-0.5">
+                  <button type="button" className="btn btn-ghost size-7 p-0" aria-label={`Move ${p.name} up`} disabled={pos <= 0} onClick={() => moveInChain(p.key, -1)}><ArrowUp className="size-3.5" /></button>
+                  <button type="button" className="btn btn-ghost size-7 p-0" aria-label={`Move ${p.name} down`} disabled={pos >= lastMovable} onClick={() => moveInChain(p.key, 1)}><ArrowDown className="size-3.5" /></button>
+                </span>
+              ) : p.key === "ip-api" && failover ? <span className="text-[0.75rem] text-fg-3">always last</span> : undefined);
+            })}
+          </ul>
+          {providers.some((p) => !v<boolean>(`provider.vpn.${p.key}.enabled`)) && (
+            <MoreServices count={providers.filter((p) => !v<boolean>(`provider.vpn.${p.key}.enabled`)).length}
+              open={providers.some((p) => !v<boolean>(`provider.vpn.${p.key}.enabled`) && dirtyFields.includes(`provider.vpn.${p.key}.enabled`))}>
+              <ul className="divide-y divide-line">
+                {providers.filter((p) => !v<boolean>(`provider.vpn.${p.key}.enabled`)).map((p) => serviceRow(p, undefined, undefined))}
+              </ul>
+            </MoreServices>
           )}
-          {providers.map((p) => (
-            <Row key={p.key} managed={managed(`provider.vpn.${p.key}.enabled`)} error={errors[`provider.vpn.${p.key}.enabled`]}
-              label={<>{p.name}{p.signup && <a href={p.signup} target="_blank" rel="noreferrer" className="text-fg-3 hover:text-fg" aria-label={`${p.name} website`}><ExternalLink className="size-3.5" /></a>}</>}
-              help={providerBody(p, install.plugin_version, supportsPath(effective, "provider.vpn-failover.order"))}>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Switch label={`Use ${p.name}`} checked={v<boolean>(`provider.vpn.${p.key}.enabled`) ?? false} onChange={(on) => set(`provider.vpn.${p.key}.enabled`, on)} />
-                  <span className="text-[0.8125rem] text-fg-2">{v<boolean>(`provider.vpn.${p.key}.enabled`) ? "On" : "Off"}</span>
-                </div>
-                {p.caution && (
-                  <p className={`flex gap-1.5 text-[0.8125rem] ${v<boolean>(`provider.vpn.${p.key}.enabled`) ? "text-warn-text" : "text-fg-3"}`}>
-                    <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />{p.caution}
-                  </p>
-                )}
-                {p.keyPath && v<boolean>(`provider.vpn.${p.key}.enabled`) && (
-                  <SecretField state={secretState(p.keyPath)} edit={secretEdit(p.keyPath)} onEdit={(e) => setSecrets({ ...secrets, [p.keyPath!]: e })}
-                    placeholder={`${p.name} API key${p.keyRequired ? "" : " (optional)"}`} />
-                )}
-              </div>
-            </Row>
-          ))}
-          {hasFailover && (
-            <Row label="How services are asked" managed={managed("provider.vpn-failover.enabled")}
-              help="Applies to every enabled service, with or without a key.">
-              <Segmented name="Lookup strategy" value={failover ? "failover" : "voting"} onChange={(x) => set("provider.vpn-failover.enabled", x === "failover")} options={[
-                { value: "failover", title: "One after another", body: "Recommended. Fewer lookups: when a service fails or its daily limit is used up, the next one steps in." },
-                { value: "voting", title: "All at once", body: "Every service votes. More lookups, but you can require agreement." },
-              ]} />
-            </Row>
+          {failover && !hasFailover && fullChain.length > 0 && (
+            <p className="px-6 py-3 text-[0.75rem] text-fg-3">This plugin version keeps the order in config.yml (provider.vpn-failover.order). Connection Guard Intel and the Tor list are always checked first, IP-API last.</p>
           )}
-          {hasFailover && failover && enabledProviders.length > 0 && (
-            <Row label="Order" managed={managed("provider.vpn-failover.order")}
-              help="The first service that gives a clear answer decides. Local lists such as the Tor list are always checked first, IP-API always last.">
-              <ol className="divide-y divide-line overflow-hidden rounded-lg border border-line">
-                {chain.map((p, i) => {
-                  const movable = p.key !== "ip-api" && supportsPath(effective, "provider.vpn-failover.order");
-                  const last = chain.filter((x) => x.key !== "ip-api").length - 1;
-                  return (
-                    <li key={p.key} className="flex items-center gap-3 px-3 py-2">
-                      <span className="num w-5 text-[0.8125rem] text-fg-3">{i + 1}</span>
-                      <span className="min-w-0 flex-1 font-medium">{p.name}</span>
-                      {movable ? (
-                        <span className="flex gap-1">
-                          <button type="button" className="btn btn-ghost size-7 p-0" aria-label={`Move ${p.name} up`} disabled={i === 0} onClick={() => moveInChain(p.key, -1)}><ArrowUp className="size-3.5" /></button>
-                          <button type="button" className="btn btn-ghost size-7 p-0" aria-label={`Move ${p.name} down`} disabled={i >= last} onClick={() => moveInChain(p.key, 1)}><ArrowDown className="size-3.5" /></button>
-                        </span>
-                      ) : <span className="text-[0.75rem] text-fg-3">{p.key === "ip-api" ? "always last" : ""}</span>}
-                    </li>
-                  );
-                })}
-              </ol>
+          <Advanced open={inAny(vpnAdvanced)}
+            summary={[failover ? "one after another" : "all at once", `no answer: ${policyWord("failure-policy.vpn")}`, `cache ${hours("provider.cache.expiration.vpn")} h`].join(" · ")}>
+            {hasFailover && (
+              <Row label="How services are asked" managed={managed("provider.vpn-failover.enabled")}
+                help="Applies to every enabled service, with or without a key.">
+                <Segmented name="Lookup strategy" value={failover ? "failover" : "voting"} onChange={(x) => set("provider.vpn-failover.enabled", x === "failover")} options={[
+                  { value: "failover", title: "One after another", body: "Recommended. Fewer lookups: when a service fails or its daily limit is used up, the next one steps in." },
+                  { value: "voting", title: "All at once", body: "Every service votes. More lookups, but you can require agreement." },
+                ]} />
+              </Row>
+            )}
+            {hasFailover && failover && supportsPath(effective, "provider.max-external-attempts") && (
+              <Row label="Services asked per player" managed={managed("provider.max-external-attempts")}
+                help="At most this many services learn a player's address when the first ones fail. 1 sends each address to a single service only.">
+                <select className="input w-auto pr-8" value={v<number>("provider.max-external-attempts") ?? 16} onChange={(e) => set("provider.max-external-attempts", Number(e.target.value))}>
+                  {[1, 2, 3, 16].map((n) => <option key={n} value={n}>{n === 16 ? "As many as needed" : n === 1 ? "1 (strictest)" : n}</option>)}
+                </select>
+              </Row>
+            )}
+            {failover ? (
+              v<number>("required-positive-flags") > 1 && (
+                <p className="px-6 py-3 text-[0.75rem] text-fg-3">
+                  One clear answer decides while services are asked one after another. Your stored vote count of {v<number>("required-positive-flags")} applies again if you switch to all at once.
+                </p>
+              )
+            ) : (
+              <Row label="Votes needed" managed={managed("required-positive-flags")} error={errors["required-positive-flags"]}
+                help={implicitFailover
+                  ? "This server's plugin asks services one after another by default, so one clear answer decides. The vote count only applies if that is switched off in config.yml (provider.vpn-failover.enabled: false)."
+                  : "How many enabled services must agree before a player counts as using a VPN."}>
+                <select className="input w-auto pr-8" value={v<number>("required-positive-flags")} onChange={(e) => set("required-positive-flags", Number(e.target.value))}>
+                  {Array.from({ length: Math.max(1, enabledProviders.length, v<number>("required-positive-flags")) }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>{n} of {Math.max(enabledProviders.length, 1)}</option>
+                  ))}
+                </select>
+              </Row>
+            )}
+            <Row label="If no service answers" managed={managed("failure-policy.vpn")} help="Happens when services are down or a daily limit is used up.">
+              <Segmented name="VPN failure policy" value={v<string>("failure-policy.vpn") as "OPEN"} onChange={(x) => set("failure-policy.vpn", x)} options={FAILURE} />
             </Row>
-          )}
-          {!hasFailover && failover && fullChain.length > 0 && (
-            <Row label="Order" help="The first service that gives a clear answer decides. Connection Guard Intel and the Tor list are checked on the server first; IP-API is always last. This plugin version keeps the order in config.yml (provider.vpn-failover.order).">
-              <ol className="divide-y divide-line overflow-hidden rounded-lg border border-line">
-                {fullChain.map((p, i) => (
-                  <li key={p.key} className="flex items-center gap-3 px-3 py-2">
-                    <span className="num w-5 text-[0.8125rem] text-fg-3">{i + 1}</span>
-                    <span className="min-w-0 flex-1 font-medium">{p.name}</span>
-                    <span className="text-[0.75rem] text-fg-3">{p.key === "ip-api" ? "always last" : fixed.includes(p) ? "set in config.yml" : ""}</span>
-                  </li>
-                ))}
-              </ol>
+            <Row label="Reuse VPN results for" managed={managed("provider.cache.expiration.vpn")} help="How long a result is reused before an address is checked again. Longer saves daily lookups.">
+              <CacheHours path="provider.cache.expiration.vpn" value={v<number>("provider.cache.expiration.vpn")} set={set} />
             </Row>
-          )}
-          {hasFailover && failover && supportsPath(effective, "provider.max-external-attempts") && (
-            <Row label="Services asked per player" managed={managed("provider.max-external-attempts")}
-              help="At most this many services learn a player's address when the first ones fail. 1 sends each address to a single service only.">
-              <select className="input w-auto pr-8" value={v<number>("provider.max-external-attempts") ?? 16} onChange={(e) => set("provider.max-external-attempts", Number(e.target.value))}>
-                {[1, 2, 3, 16].map((n) => <option key={n} value={n}>{n === 16 ? "As many as needed" : n === 1 ? "1 (strictest)" : n}</option>)}
-              </select>
-            </Row>
-          )}
-          {failover ? (
-            v<number>("required-positive-flags") > 1 && (
-              <p className="px-6 py-3 text-[0.75rem] text-fg-3">
-                One clear answer decides while services are asked one after another. Your stored vote count of {v<number>("required-positive-flags")} applies again if you switch to all at once.
-              </p>
-            )
-          ) : (
-            <Row label="Votes needed" managed={managed("required-positive-flags")} error={errors["required-positive-flags"]}
-              help={implicitFailover
-                ? "This server's plugin asks services one after another by default, so one clear answer decides. The vote count only applies if that is switched off in config.yml (provider.vpn-failover.enabled: false)."
-                : "How many enabled services must agree before a player counts as using a VPN."}>
-              <select className="input w-auto pr-8" value={v<number>("required-positive-flags")} onChange={(e) => set("required-positive-flags", Number(e.target.value))}>
-                {Array.from({ length: Math.max(1, enabledProviders.length, v<number>("required-positive-flags")) }, (_, i) => i + 1).map((n) => (
-                  <option key={n} value={n}>{n} of {Math.max(enabledProviders.length, 1)}</option>
-                ))}
-              </select>
-            </Row>
-          )}
-          <Row label="If no service answers" managed={managed("failure-policy.vpn")} help="Happens when services are down or a daily limit is used up.">
-            <Segmented name="VPN failure policy" value={v<string>("failure-policy.vpn") as "OPEN"} onChange={(x) => set("failure-policy.vpn", x)} options={FAILURE} />
-          </Row>
+          </Advanced>
         </Section>
 
         <Section id="countries" title="Country rules" managed={managed("behavior.geo.type") || managed("behavior.geo.list")} description="Block connections from some countries, or allow only a few.">
@@ -453,6 +614,8 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
               </button>
             )}
           </div>
+          <Advanced open={inAny(geoAdvanced)}
+            summary={[geoMode !== "off" ? `lookup: ${v<string>("provider.geo.service")}` : "", geoMode !== "off" ? `unknown: ${policyWord("failure-policy.geo")}` : "", `cache ${hours("provider.cache.expiration.geo")} h`].filter(Boolean).join(" · ")}>
           {geoMode !== "off" && (
             <>
               <Row label="Country lookup" managed={managed("provider.geo.service")} help="Where the country of an IP address comes from.">
@@ -468,6 +631,10 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
               </Row>
             </>
           )}
+            <Row label="Reuse country results for" managed={managed("provider.cache.expiration.geo")} help="How long a country is reused before an address is looked up again.">
+              <CacheHours path="provider.cache.expiration.geo" value={v<number>("provider.cache.expiration.geo")} set={set} />
+            </Row>
+          </Advanced>
         </Section>
 
         <Section id="actions" title="When a player is flagged" description={observing ? "These apply once you switch to Enforce; in Observe mode players are only logged." : undefined}>
@@ -509,20 +676,8 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
           </Row>
         </Section>
 
-        <Section id="cache" title="Cache" description="How long a result is reused before an IP address is checked again. Longer saves daily lookups.">
-          {([["provider.cache.expiration.vpn", "VPN results"], ["provider.cache.expiration.geo", "Country results"]] as const).map(([path, label]) => (
-            <Row key={path} label={label} managed={managed(path)}>
-              <div className="flex items-center gap-2">
-                <input type="number" min={1} max={8760} className="input w-28" value={Math.round((v<number>(path) ?? 60) / 60)}
-                  onChange={(e) => set(path, Math.min(525_600, Math.max(1, Math.round(Number(e.target.value) || 1) * 60)))} />
-                <span className="text-fg-2">hours</span>
-              </div>
-            </Row>
-          ))}
-        </Section>
-
-        {canEdit && cfg.managed.length > 0 && (
-          <section className="card flex flex-wrap items-center justify-between gap-3 border-danger/30 px-6 py-4">
+        {showAdvanced && (
+          <section id="advanced" aria-label="Advanced" className="card flex scroll-mt-28 flex-wrap items-center justify-between gap-3 border-danger/30 px-6 py-4">
             <div>
               <p className="font-medium">Use config.yml only</p>
               <p className="text-[0.8125rem] text-fg-2">Removes every dashboard setting from {name}. The file on the server was never changed.</p>
@@ -536,7 +691,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
 
       {canEdit && !dirty && lastSave && (
         <div role="status" aria-live="polite" className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/90 backdrop-blur-md">
-          <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3 sm:px-6">
+          <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3 sm:px-6 lg:max-w-5xl lg:pl-[13.5rem]">
             {saveRejected ? (
               <>
                 <CircleAlert aria-hidden className="size-5 shrink-0 text-danger" />
@@ -576,7 +731,7 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
 
       {canEdit && dirty && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/90 backdrop-blur-md">
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6 lg:max-w-5xl lg:pl-[13.5rem]">
             {simRelevant && !hasErrors && <Impact result={simulation} loading={history.isFetching} />}
             <p className="min-w-0 flex-1 text-[0.8125rem]">
               {hasErrors ? <span className="text-danger-text">Fix the highlighted settings to save.</span>
@@ -597,7 +752,34 @@ function ServerSettings({ networkId, install, serverCount }: { networkId: string
         </div>
       )}
     </div>
+  </SettingsLayout>;
+}
+
+/** Hours input for a cache duration stored in minutes. */
+function CacheHours({ path, value, set }: { path: string; value: number | undefined; set: (path: string, value: number) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <input type="number" min={1} max={8760} className="input w-28" value={Math.round((value ?? 60) / 60)}
+        onChange={(e) => set(path, Math.min(525_600, Math.max(1, Math.round(Number(e.target.value) || 1) * 60)))} />
+      <span className="text-fg-2">hours</span>
+    </div>
   );
+}
+
+/** Page frame: the section navigation beside the content on wide screens. */
+function SettingsLayout({ sectionIds, marks, children }: { sectionIds: SectionId[]; marks: Partial<Record<SectionId, "dirty" | "error">>; children: ReactNode }) {
+  const active = useScrollSpy(sectionIds);
+  return (
+    <div className="mx-auto max-w-3xl lg:grid lg:max-w-5xl lg:grid-cols-[11rem_minmax(0,1fr)] lg:gap-10">
+      <SectionNav ids={sectionIds} active={active} marks={marks} desktopOnly />
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+/** The phone version of the navigation, under the page title. */
+function SectionNavMobile({ sectionIds, marks }: { sectionIds: SectionId[]; marks: Partial<Record<SectionId, "dirty" | "error">> }) {
+  return <SectionNav ids={sectionIds} active={undefined} marks={marks} mobileOnly />;
 }
 
 /** The save bar's what-if line: how these settings would have treated the last 7 days of logins. */
