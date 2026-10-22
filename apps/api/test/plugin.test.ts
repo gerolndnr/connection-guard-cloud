@@ -153,3 +153,26 @@ describe("anonymous VPN coverage status", () => {
     expect(JSON.parse(after!.status_json).vpn_unchecked_allowed).toEqual(next);
   });
 });
+
+describe("D1 budget", () => {
+  it("finds a server's decision batches by index, not by scanning the table", async () => {
+    const plan = await env.DB.prepare("EXPLAIN QUERY PLAN SELECT 1 FROM event_batches WHERE install_id = ? LIMIT 1").bind("x").all<{ detail: string }>();
+    expect(plan.results.map((r) => r.detail).join(" ")).toMatch(/SEARCH event_batches USING (COVERING )?INDEX event_batches_install \(install_id=\?\)/);
+  });
+
+  it("does not rewrite the status for running counters alone, but does for a real change", async () => {
+    const ins = await install();
+    const seen = async () => (await env.DB.prepare("SELECT last_seen_at, status_json FROM installs WHERE id = ?").bind(ins.install_id)
+      .first<{ last_seen_at: number; status_json: string }>())!;
+    const provider = syncRequest.status.providers[0]!;
+    const status = (attempts: number, mode = syncRequest.status.mode) =>
+      ({ ...syncRequest.status, mode, uptime_seconds: attempts, buffered_events: attempts,
+        providers: [{ ...provider, attempts, successes: attempts, daily_used: attempts }] });
+    await syncOk(ins, { seq: 1, events: [], status: status(1) });
+    const first = await seen();
+    await syncOk(ins, { seq: 2, events: [], status: status(9) });
+    expect(await seen()).toEqual(first);                       // only counters moved: no write
+    await syncOk(ins, { seq: 3, events: [], status: status(12, "ENFORCE") });
+    expect(JSON.parse((await seen()).status_json)).toMatchObject({ mode: "ENFORCE", buffered_events: 12 });
+  });
+});

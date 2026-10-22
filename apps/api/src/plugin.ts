@@ -322,11 +322,19 @@ plugin.post("/v1/sync", async (c) => {
   }
 
   const statusJson = JSON.stringify(req.status);
-  // Uptime changes on every sync; ignore it when deciding whether the status needs a D1 write.
+  // Running counters change on every sync on a busy server (uptime, lookups per service, daily budget used, buffered
+  // events). They alone don't make a status write: they are refreshed with last_seen_at every SEEN_WRITE_INTERVAL.
+  // Before, nearly every sync rewrote the row and its last_seen_at index (49k of 57k D1 rows written on 22 Oct 2026).
   const stable = (json: string | null) => {
     if (!json) return null;
-    const { uptime_seconds: _ignored, ...rest } = JSON.parse(json) as Record<string, unknown>;
-    return JSON.stringify(rest);
+    const { uptime_seconds: _u, buffered_events: _b, providers, ...rest } = JSON.parse(json) as Record<string, unknown>;
+    const steady = Array.isArray(providers)
+      ? providers.map((p) => {
+          const { attempts: _a, successes: _s, daily_used: _d, ...keep } = p as Record<string, unknown>;
+          return keep;
+        })
+      : providers;
+    return JSON.stringify({ ...rest, providers: steady });
   };
   const changed = stable(statusJson) !== stable(install.status_json) || req.plugin_version !== install.plugin_version
     || req.platform_version !== install.platform_version;
