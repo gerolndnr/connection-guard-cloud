@@ -330,7 +330,7 @@ plugin.post("/v1/sync", async (c) => {
   // window_seconds moved on every sync, and the interval was shorter than an idle server's 300 s).
   const stable = (json: string | null) => {
     if (!json) return null;
-    const { uptime_seconds: _u, buffered_events: _b, providers, vpn_unchecked_allowed: unchecked, ...rest } =
+    const { uptime_seconds: _u, buffered_events: _b, providers, vpn_unchecked_allowed: unchecked, local_address_logins: local, ...rest } =
       JSON.parse(json) as Record<string, unknown>;
     const steady = Array.isArray(providers)
       ? providers.map((p) => {
@@ -341,7 +341,8 @@ plugin.post("/v1/sync", async (c) => {
     const uncheckedSteady = unchecked && typeof unchecked === "object"
       ? (({ window_seconds: _w, ...keep }) => keep)(unchecked as Record<string, unknown>)
       : unchecked;
-    return JSON.stringify({ ...rest, providers: steady, vpn_unchecked_allowed: uncheckedSteady });
+    // The dashboard only shows whether private-address logins occur: the first one writes, later ones wait.
+    return JSON.stringify({ ...rest, providers: steady, vpn_unchecked_allowed: uncheckedSteady, local_address_logins: Number(local ?? 0) > 0 });
   };
   const changed = stable(statusJson) !== stable(install.status_json) || req.plugin_version !== install.plugin_version
     || req.platform_version !== install.platform_version;

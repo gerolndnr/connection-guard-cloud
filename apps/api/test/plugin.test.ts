@@ -191,6 +191,22 @@ describe("D1 budget", () => {
     expect(JSON.parse((await row(ins.install_id)).status_json).vpn_unchecked_allowed).toMatchObject({ total: 5 });
   });
 
+  it("writes the first private-address login and the grey-zone hints, not every further private login", async () => {
+    const ins = await install();
+    const local = (count: number) => ({ ...syncRequest.status, local_address_logins: count });
+    await syncOk(ins, { seq: 1, events: [], status: local(0) });
+    await syncOk(ins, { seq: 2, events: [], status: local(3) });
+    const first = await row(ins.install_id);
+    expect(JSON.parse(first.status_json).local_address_logins).toBe(3);
+    await syncOk(ins, { seq: 3, events: [], status: local(40) });
+    expect((await row(ins.install_id)).status_json).toBe(first.status_json);
+    const hinted = { ...unchecked(20), vpn_unchecked_allowed: { ...unchecked(20).vpn_unchecked_allowed,
+      signals: { "zowivpnprovider-0.hosting": 4 }, families: { ipv4: 3, ipv6: 1 } } };
+    await syncOk(ins, { seq: 4, events: [], status: hinted });
+    expect(JSON.parse((await row(ins.install_id)).status_json).vpn_unchecked_allowed)
+      .toMatchObject({ signals: { "zowivpnprovider-0.hosting": 4 }, families: { ipv6: 1 } });
+  });
+
   it("refreshes last_seen_at once the write interval has passed", async () => {
     const ins = await install();
     await syncOk(ins, { seq: 1, events: [] });

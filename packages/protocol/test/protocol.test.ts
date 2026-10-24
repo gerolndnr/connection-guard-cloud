@@ -29,6 +29,28 @@ describe("protocol v1", () => {
     expect(broken.status).not.toHaveProperty("vpn_unchecked_allowed");
   });
 
+  it("accepts grey-zone hints and the local-address count, keyed by source and never by address", () => {
+    const coverage = { total: 4, since_summary: 1, window_seconds: 300, reasons: { NO_EVIDENCE: 4 },
+      signals: { "zowi.hosting": 3, "blackbox.no_evidence": 1, "connectionguard-intel.no_evidence": 4, other: 1 }, families: { ipv4: 3, ipv6: 1 } };
+    const body = { ...syncRequest, status: { ...syncRequest.status, vpn_unchecked_allowed: coverage, local_address_logins: 7 } };
+    const parsed = SyncRequest.parse(body).status;
+    expect(parsed.vpn_unchecked_allowed).toEqual(coverage);
+    expect(parsed.local_address_logins).toBe(7);
+    for (const signals of [{ "192.0.2.1": 1 }, { "2001:db8::1.failed": 1 }, { "192.0.2.1.failed": 1 }, { "zowi.vpn": 1 },
+      { "zowi.hosting": -1 }, Object.fromEntries(Array.from({ length: 33 }, (_, i) => [`s${i}.failed`, 1]))])
+      expect(SyncRequest.safeParse({ ...body, status: { ...body.status, vpn_unchecked_allowed: { ...coverage, signals } } }).success).toBe(false);
+    expect(SyncRequest.safeParse({ ...body, status: { ...body.status, vpn_unchecked_allowed: { ...coverage, families: { ipv5: 1 } } } }).success).toBe(false);
+    expect(SyncRequest.safeParse({ ...body, status: { ...body.status, local_address_logins: -1 } }).success).toBe(false);
+  });
+
+  it("drops unreadable hints on their own and keeps the coverage counts", () => {
+    const coverage = { total: 2, since_summary: 0, window_seconds: 300, reasons: { NO_EVIDENCE: 2 }, signals: { "192.0.2.1": 2 }, families: { ipv4: 2 } };
+    const parsed = SyncRequest.parse(tolerateSync({ ...syncRequest,
+      status: { ...syncRequest.status, vpn_unchecked_allowed: coverage, local_address_logins: "many" } }).json).status;
+    expect(parsed.vpn_unchecked_allowed).toEqual({ total: 2, since_summary: 0, window_seconds: 300, reasons: { NO_EVIDENCE: 2 }, families: { ipv4: 2 } });
+    expect(parsed).not.toHaveProperty("local_address_logins");
+  });
+
   it("rejects unknown fields so the plugin cannot leak extra data", () => {
     expect(SyncRequest.safeParse({ ...syncRequest, player_names: ["x"] }).success).toBe(false);
     expect(SyncRequest.safeParse({ ...syncRequest, events: [{ ...syncRequest.events[0], name: "Notch" }] }).success).toBe(false);

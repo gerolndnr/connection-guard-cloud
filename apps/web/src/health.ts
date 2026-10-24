@@ -3,7 +3,7 @@
 // dismissed note comes back only when the situation changes (a server drops out again, a new day's quota...).
 import type { Install, InstallError, PluginRelease } from "./api.ts";
 import { ago, num, serverName, versionAtLeast } from "./format.ts";
-import { sourceLabel } from "./sources.ts";
+import { sourceKey, sourceLabel } from "./sources.ts";
 
 export interface Note {
   id: string; fingerprint: string; tone: "action" | "pencil"; title: string; detail?: string; command?: string;
@@ -79,6 +79,16 @@ export function providers(installs: Install[]): ProviderRow[] {
   return [...byId.values()].sort((a, b) => a.scope.localeCompare(b.scope) || a.id.localeCompare(b.id));
 }
 
+const SIGNAL_KINDS: Record<string, string> = { hosting: "hosting address only", no_evidence: "no decision", failed: "no answer" };
+/** "zowi.hosting" → "zowi: hosting address only"; unknown kinds pass through. */
+export function signalLabel(key: string): string {
+  const dot = key.lastIndexOf(".");
+  if (dot < 0) return key;
+  const kind = key.slice(dot + 1), source = key.slice(0, dot);
+  if (kind === "no_evidence" && sourceKey(source) === "blackbox") return "Blackbox listing not confirmed";
+  return `${sourceLabel(source)} ${SIGNAL_KINDS[kind] ?? kind}`;
+}
+
 /** "0.6.1-SNAPSHOT" → "0.6": a different minor version is more than a bug-fix release behind. */
 const minor = (v: string) => (v.match(/\d+/g) ?? []).slice(0, 2).join(".");
 
@@ -98,10 +108,19 @@ export function notes(installs: Install[], now = Date.now(), release: PluginRele
     if (coverage && coverage.total > 0) {
       const reasons = Object.entries(coverage.reasons).filter(([, count]) => count! > 0)
         .map(([reason, count]) => `${reason.toLowerCase().replace(/_/g, " ")}: ${num(count!)}`).join(", ");
+      // From 0.6.2: which source left which hint, so "no evidence" can be told apart from a hosting address.
+      const hints = Object.entries(coverage.signals ?? {}).filter(([, count]) => count > 0).sort(([, a], [, b]) => b - a)
+        .map(([key, count]) => `${signalLabel(key)}: ${num(count)}`).join(", ");
+      const v6 = coverage.families?.ipv6 ?? 0;
       out.push({ id: `vpn-unchecked:${i.id}`, installId: i.id, fingerprint: `${coverage.total}:${coverage.since_summary > 0}`,
         tone: coverage.since_summary > 0 ? "action" : "pencil",
         title: `${num(coverage.total)} ${coverage.total === 1 ? "login passed" : "logins passed"} without a VPN result on ${serverName(i)}`,
-        detail: `${num(coverage.since_summary)} since the last console summary.${reasons ? ` Reasons: ${reasons}.` : ""} Totals are since the plugin started; intentional exceptions and refused connections are excluded. Check /cg doctor and provider quotas.` });
+        detail: `${num(coverage.since_summary)} since the last console summary.${reasons ? ` Reasons: ${reasons}.` : ""}${hints ? ` Hints: ${hints}.` : ""}${v6 > 0 ? ` ${num(v6)} over IPv6.` : ""} Totals are since the plugin started; intentional exceptions and refused connections are excluded. Check /cg doctor and provider quotas.` });
+    }
+    if ((i.status?.local_address_logins ?? 0) > 0) {
+      out.push({ id: `local-addresses:${i.id}`, installId: i.id, fingerprint: "local", tone: "pencil",
+        title: `Players reach ${serverName(i)} from private network addresses`,
+        detail: `${num(i.status!.local_address_logins!)} logins came from a loopback, LAN or CGNAT address, which no lookup can judge, so Connection Guard skipped VPN and country checks for them. Behind Velocity or BungeeCord, turn on IP forwarding or install Connection Guard on the proxy. On a LAN server you can dismiss this.` });
     }
     if (!i.online) out.push({ id: `offline:${i.id}`, fingerprint: String(i.last_seen_at), installId: i.id, tone: "action", title: `${serverName(i)} stopped reporting`, detail: `Last seen ${ago(i.last_seen_at, now)}. If the server is running, check that it can reach api.connectionguard.net.` });
   }
