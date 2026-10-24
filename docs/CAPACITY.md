@@ -26,7 +26,9 @@ Queues are deliberately not used: the free plan allows only 10,000 operations a 
 - **Few D1 writes per sync:**
   - the hourly rollup, only if there were checks
   - one event batch row, only for linked installs with events
-  - the install row, only when its status changed or every 4 minutes
+  - the install row, only when its status changed (running counters and the age of the unchecked-VPN window don't
+    count), every 8 minutes otherwise, or on every sync while someone has the network open in the dashboard
+  - `last_seq` alone, only after a sync that counted something (it only guards against counting a retry twice)
 - **Event batches** are one gzip'd row per sync, not one row per login.
 - **Analytics Engine** gets one data point per sync, with no personal data.
 

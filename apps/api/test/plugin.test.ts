@@ -175,4 +175,58 @@ describe("D1 budget", () => {
     await syncOk(ins, { seq: 3, events: [], status: status(12, "ENFORCE") });
     expect(JSON.parse((await seen()).status_json)).toMatchObject({ mode: "ENFORCE", buffered_events: 12 });
   });
+
+  const row = async (id: string) => (await env.DB.prepare("SELECT last_seen_at, last_seq, status_json FROM installs WHERE id = ?").bind(id)
+    .first<{ last_seen_at: number; last_seq: number; status_json: string }>())!;
+  const unchecked = (window_seconds: number, total = 4) =>
+    ({ ...syncRequest.status, vpn_unchecked_allowed: { total, since_summary: total, window_seconds, reasons: { NO_EVIDENCE: total } } });
+
+  it("ignores the age of the unchecked-VPN window, but not new unchecked admissions", async () => {
+    const ins = await install();
+    await syncOk(ins, { seq: 1, events: [], status: unchecked(20) });
+    const first = await row(ins.install_id);
+    await syncOk(ins, { seq: 2, events: [], status: unchecked(320) });
+    expect((await row(ins.install_id)).status_json).toBe(first.status_json);
+    await syncOk(ins, { seq: 3, events: [], status: unchecked(330, 5) });
+    expect(JSON.parse((await row(ins.install_id)).status_json).vpn_unchecked_allowed).toMatchObject({ total: 5 });
+  });
+
+  it("refreshes last_seen_at once the write interval has passed", async () => {
+    const ins = await install();
+    await syncOk(ins, { seq: 1, events: [] });
+    const old = Date.now() - 9 * 60_000;
+    await env.DB.prepare("UPDATE installs SET last_seen_at = ? WHERE id = ?").bind(old, ins.install_id).run();
+    await syncOk(ins, { seq: 2, events: [] });
+    expect((await row(ins.install_id)).last_seen_at).toBeGreaterThan(old + 8 * 60_000);
+  });
+
+  it("writes every sync while someone has the network open, so the dashboard's counters stay live", async () => {
+    const ins = await install();
+    const cookie = await login();
+    expect((await claim(cookie, ins.link_code!)).status).toBe(201);
+    // Linking marks the network as watched (the assistant opens next); start from nobody looking.
+    await env.DB.prepare("UPDATE networks SET watched_until = 0 WHERE id = (SELECT network_id FROM installs WHERE id = ?)").bind(ins.install_id).run();
+    await env.DB.prepare("UPDATE installs SET hot_until = 0 WHERE id = ?").bind(ins.install_id).run();
+    const provider = syncRequest.status.providers[0]!;
+    const status = (attempts: number) => ({ ...syncRequest.status, providers: [{ ...provider, attempts, successes: attempts }] });
+    await syncOk(ins, { seq: 1, events: [], status: status(1) });
+    await syncOk(ins, { seq: 2, events: [], status: status(2) });
+    expect(JSON.parse((await row(ins.install_id)).status_json).providers[0].attempts).toBe(1);   // nobody looking: no write
+    await api(cookie, `/installs/${ins.install_id}/config`);                                      // settings page open
+    await syncOk(ins, { seq: 3, events: [], status: status(3) });
+    expect(JSON.parse((await row(ins.install_id)).status_json).providers[0].attempts).toBe(3);
+  });
+
+  it("stores last_seq only for a sync that counted something", async () => {
+    const ins = await install();
+    const idle = { ...syncRequest.counters, checks: 0, lookups: 0 };
+    await syncOk(ins, { seq: 1, events: [], counters: idle });
+    await syncOk(ins, { seq: 2, events: [], counters: idle });
+    expect((await row(ins.install_id)).last_seq).toBe(1);           // nothing to protect against a retry
+    await syncOk(ins, { seq: 3, events: [] });                       // counted checks
+    expect((await row(ins.install_id)).last_seq).toBe(3);
+    await syncOk(ins, { seq: 3, events: [] });                       // its retry is still not counted twice
+    const rollup = await env.DB.prepare("SELECT SUM(checks) AS n FROM rollups_hourly WHERE install_id = ?").bind(ins.install_id).first<{ n: number }>();
+    expect(rollup!.n).toBe(syncRequest.counters.checks);
+  });
 });
