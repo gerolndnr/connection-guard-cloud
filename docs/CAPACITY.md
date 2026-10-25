@@ -38,6 +38,12 @@ Queues are deliberately not used: the free plan allows only 10,000 operations a 
   (4,100 writes with the purge), so the cap holds about five such servers at full size; later windows are dropped
   (signals are best effort, nothing else depends on them). The daily cron purges rows older than 7 days and the old
   budget rows (both counted above) and publishes `intel:signals` to KV with one aggregate query (one KV write a day).
+- **Connection-probe counts** (Velocity plugins 0.6.2+, linked servers that send signals) arrive with the signal window,
+  at most once per six hours per install, as one `probe_windows` row (a JSON array of at most 600 counts). The insert checks
+  the day's limit of 2,000 windows in the same statement. The daily cron adds past days into `probe_daily` with one
+  `INSERT … SELECT FROM json_each` (one row per day, signal, value and label, about 100 to 600 a day) and deletes the
+  windows, so a window costs two row writes and storage stays at two days of windows plus 90 days of daily totals
+  (well under 10 MB). There is no public endpoint: `scripts/probe-report.mjs` reads the totals through wrangler.
 - **Analytics Engine** gets one data point per sync, with no personal data.
 
 ## Rough numbers

@@ -118,3 +118,19 @@ export const syncRequestWithSignals: SyncRequest = {
     overflow: 0,
   },
 };
+
+/** A 0.6.2 Velocity sync with connection-probe counts for the same window: values per verdict, never a login. */
+export const syncRequestWithProbe: SyncRequest = {
+  ...syncRequestWithSignals, seq: 10,
+  probe: {
+    logins: 6,
+    overflow: 0,
+    counts: [
+      { s: "all", v: "all", l: "vpn", n: 2 },
+      { s: "all", v: "all", l: "clean", n: 4 },
+      { s: "mss_class", v: "wireguard", l: "vpn", n: 2 },
+      { s: "mss_class", v: "standard", l: "clean", n: 4 },
+      { s: "ping_gap", v: "<10", l: "clean", n: 4 },
+    ],
+  },
+};

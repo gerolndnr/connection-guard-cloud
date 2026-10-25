@@ -259,6 +259,28 @@ export const NetworkSignals = z.object({
 }).strict();
 export type NetworkSignals = z.infer<typeof NetworkSignals>;
 
+/**
+ * Connection-probe counts (Velocity plugins from 0.6.2, linked servers that contribute signals): per six-hour window, how
+ * often each measured connection trait value occurred on logins the plugin judged VPN, hosting or clean or could not
+ * judge. Signal names and values are short closed tokens (a bucket such as "<40", a class such as "wireguard"); never a
+ * record, address, prefix, account, name, skin or locale. The plugin holds back windows with fewer than five logins.
+ */
+export const MAX_PROBE_COUNTS = 600;
+export const ProbeLabel = z.enum(["vpn", "hosting", "clean", "unlabelled"]);
+export const ProbeCount = z.object({
+  s: z.string().regex(/^[a-z0-9_]{1,40}$/),
+  // Never an address, even one that would fit the token rules.
+  v: z.string().regex(/^[a-z0-9_<>=.-]{1,24}$/).refine((v) => !/^\d+\.\d+\.\d+\.\d+$/.test(v), "address-shaped value"),
+  l: ProbeLabel,
+  n: count,
+}).strict();
+export const ProbeCounts = z.object({
+  logins: z.number().int().min(5).max(1_000_000_000),
+  overflow: count,
+  counts: z.array(ProbeCount).max(MAX_PROBE_COUNTS),
+}).strict();
+export type ProbeCounts = z.infer<typeof ProbeCounts>;
+
 export const CommandResult = z.object({
   id: z.string().regex(/^cmd_[A-Za-z0-9]{12,32}$/),
   ok: z.boolean(),
@@ -278,6 +300,8 @@ export const SyncRequest = z.object({
   errors: z.array(ErrorReport).max(MAX_ERRORS_PER_SYNC).optional(),
   // Plugins from 0.6.2, once per six-hour window.
   signals: NetworkSignals.optional(),
+  // Velocity plugins from 0.6.2, with the signal window.
+  probe: ProbeCounts.optional(),
 }).strict();
 export type SyncRequest = z.infer<typeof SyncRequest>;
 
@@ -331,6 +355,15 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
     if (body.signals === undefined) delete body.signals;
   } else if ("signals" in body) {
     delete body.signals;
+  }
+  // Probe counts likewise: a count this version cannot read is dropped on its own, an unreadable block as a whole.
+  if (typeof body.probe === "object" && body.probe !== null && !Array.isArray(body.probe)) {
+    const probe = { ...(body.probe as Record<string, unknown>) };
+    if (Array.isArray(probe.counts)) probe.counts = probe.counts.slice(0, MAX_PROBE_COUNTS).filter((x) => ProbeCount.safeParse(x).success);
+    body.probe = ProbeCounts.safeParse(probe).success ? probe : undefined;
+    if (body.probe === undefined) delete body.probe;
+  } else if ("probe" in body) {
+    delete body.probe;
   }
   const status = body.status;
   if (typeof status === "object" && status !== null && !Array.isArray(status)) {
