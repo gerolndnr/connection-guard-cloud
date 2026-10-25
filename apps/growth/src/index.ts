@@ -4,6 +4,7 @@
 import { EmailMessage } from "cloudflare:email";
 import { PRODUCTS } from "./products";
 import { mime } from "./mail";
+import { paused } from "./pause";
 import { buildRows, render, type ProjectData, type Report, type Series } from "./report";
 
 export interface Env {
@@ -12,6 +13,8 @@ export interface Env {
   MAIL_TO: string;
   /** Optional secret: with it, POST /run sends the mail now and GET /preview shows it (Authorization: Bearer <token>). */
   RUN_TOKEN?: string;
+  /** Optional "YYYY-MM-DD": no morning mail before that UTC day; POST /run still sends. */
+  PAUSE_UNTIL?: string;
 }
 
 const UA = "ConnectionGuardGrowth/1.0 (+https://github.com/gerolndnr/connection-guard)";
@@ -65,6 +68,7 @@ const authorized = (req: Request, env: Env) =>
 
 export default {
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext) {
+    if (paused(env.PAUSE_UNTIL, Date.now())) { console.log("paused until", env.PAUSE_UNTIL); return; }
     ctx.waitUntil(send(env).then((r) => console.log("sent", r.subject)));
   },
   async fetch(req: Request, env: Env) {

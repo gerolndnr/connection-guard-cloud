@@ -8,6 +8,7 @@ sparkline. The products and their bStats project IDs are in `src/products.ts`; V
 - **Mail:** Cloudflare Email Routing (`send_email` binding) from `growth@connectionguard.net`. It only delivers to
   verified destination addresses of the account; to change `MAIL_TO`, verify the address in Cloudflare first and update
   both `vars.MAIL_TO` and `send_email[0].destination_address` in `wrangler.jsonc`.
+- **Pause:** `vars.PAUSE_UNTIL` (`YYYY-MM-DD`) skips the morning mail before that UTC day; `POST /run` still sends.
 - **Send now / preview:** with the `RUN_TOKEN` secret, `POST /run` sends the mail and `GET /preview` shows it
   (`Authorization: Bearer <token>`). Without the token every request is a 404.
 
