@@ -11,31 +11,40 @@ export const MIN_SOURCES = 3;
 export const MIN_ACCOUNTS = 10;
 const MAX_PUBLISHED = 20_000;
 export const KV_KEY = "intel:signals";
-/** Signals may write at most this many rows a day (the free plan allows 100,000 for everything); later windows are dropped. */
+/**
+ * Signals may cost at most this many D1 row writes a day (the free plan allows 100,000 for everything); later windows
+ * are dropped. A window of n prefixes costs 2n + 1: n rows now, the same n deleted by the purge a week later, and the
+ * budget row itself.
+ */
 export const SIGNAL_ROWS_PER_DAY = 20_000;
+export const windowCost = (prefixes: number) => 2 * prefixes + 1;
 
 /**
- * One statement for the whole window: D1 expands the JSON itself, so a window costs one query and one written row per
- * prefix, whatever its size, plus the budget check and counter (the free plan allows 50 queries per invocation and 100 bound parameters per query).
+ * One batch, so one transaction, for the whole window: D1 expands the JSON itself, so a window costs two queries whatever
+ * its size (the free plan allows 50 queries per invocation and 100 bound parameters per query). Both statements check
+ * the same budget inside the transaction, so concurrent windows can never reserve more than the day allows: either
+ * both write or neither does.
  */
 export async function recordSignals(env: Env, source: string, signals: NetworkSignals, now: number): Promise<boolean> {
-  const n = signals.prefixes.length, day = Math.floor(now / DAY) * DAY;
-  if (n === 0) return false;
-  const used = await env.DB.prepare("SELECT rows FROM signal_budget WHERE day = ?").bind(day).first<{ rows: number }>();
-  if ((used?.rows ?? 0) + n > SIGNAL_ROWS_PER_DAY) return false;
-  await env.DB.batch([env.DB.prepare(
+  const n = signals.prefixes.length, day = Math.floor(now / DAY) * DAY, cost = windowCost(n);
+  if (n === 0 || cost > SIGNAL_ROWS_PER_DAY) return false;
+  const fits = "(SELECT COALESCE(MAX(rows), 0) FROM signal_budget WHERE day = ?1) + ?4 <= ?5";
+  const [, reserved] = await env.DB.batch([env.DB.prepare(
     `INSERT INTO network_signals (day, prefix, source, logins, accounts, vpn, denied, banned, allowed_by_rule)
      SELECT ?1, json_extract(value, '$.p'), ?2, json_extract(value, '$.logins'), json_extract(value, '$.accounts'),
        json_extract(value, '$.vpn'), json_extract(value, '$.denied'), json_extract(value, '$.banned'),
        json_extract(value, '$.allowed_by_rule')
-     FROM json_each(?3) WHERE true
+     FROM json_each(?3) WHERE ${fits}
      ON CONFLICT(day, prefix, source) DO UPDATE SET logins = logins + excluded.logins, accounts = MAX(accounts, excluded.accounts),
        vpn = vpn + excluded.vpn, denied = denied + excluded.denied, banned = banned + excluded.banned,
        allowed_by_rule = allowed_by_rule + excluded.allowed_by_rule`,
-  ).bind(day, source, JSON.stringify(signals.prefixes)),
-  env.DB.prepare("INSERT INTO signal_budget (day, rows) VALUES (?1, ?2) ON CONFLICT(day) DO UPDATE SET rows = rows + excluded.rows")
-    .bind(day, n)]);
-  return true;
+  ).bind(day, source, JSON.stringify(signals.prefixes), cost, SIGNAL_ROWS_PER_DAY),
+  // The budget is updated after the rows, so this check still sees the value the first statement saw.
+  env.DB.prepare(
+    `INSERT INTO signal_budget (day, rows) SELECT ?1, ?4 WHERE ${fits}
+     ON CONFLICT(day) DO UPDATE SET rows = rows + excluded.rows`,
+  ).bind(day, null, null, cost, SIGNAL_ROWS_PER_DAY)]);
+  return (reserved?.meta.changes ?? 0) > 0;
 }
 
 /** The published document (GET /v1/intel/signals.json). */

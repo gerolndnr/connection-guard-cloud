@@ -1,6 +1,5 @@
 -- Network signals for Connection Guard Intel (plugins from 0.6.2): per UTC day, prefix (IPv4 /24, IPv6 /48) and source,
--- counts only. `source` is the network for linked servers and the install for unlinked ones, so a network with many
--- servers counts once. Rows are kept 7 days (cron.ts); the daily cron publishes only prefixes several sources report.
+-- counts only. Only linked servers contribute; `source` is their network, so a network with many servers counts once. Rows are kept 7 days (cron.ts); the daily cron publishes only prefixes several sources report.
 CREATE TABLE network_signals (
   day INTEGER NOT NULL,              -- start of the UTC day, ms
   prefix TEXT NOT NULL,
