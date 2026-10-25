@@ -5,7 +5,7 @@ import type { Env } from "./env.ts";
 import { DAY } from "./util.ts";
 
 export const SIGNAL_RETENTION = 7 * DAY;
-/** A prefix is published once this many different networks (or unlinked servers) reported it within SIGNAL_RETENTION. */
+/** A prefix is published once this many different linked networks reported it within SIGNAL_RETENTION. */
 export const MIN_SOURCES = 3;
 /** ...and their largest windows add up to at least this many accounts. */
 export const MIN_ACCOUNTS = 10;
