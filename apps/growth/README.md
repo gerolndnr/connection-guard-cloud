@@ -14,5 +14,5 @@ sparkline. The products and their bStats project IDs are in `src/products.ts`; V
 
 ```bash
 pnpm --filter @cg/growth test
-pnpm --filter @cg/growth deploy
+pnpm --filter @cg/growth run deploy
 ```
