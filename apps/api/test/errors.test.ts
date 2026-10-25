@@ -80,6 +80,8 @@ describe("plugin error reports", () => {
   it("treats only network failures in lookups and syncs as expected", () => {
     expect(isNetworkFailure({ type: "java.net.SocketTimeoutException", cause_type: null, context: "LOOKUP" })).toBe(true);
     expect(isNetworkFailure({ type: "java.io.IOException", cause_type: "java.net.ConnectException", context: "SYNC" })).toBe(true);
+    expect(isNetworkFailure({ type: "javax.net.ssl.SSLHandshakeException", cause_type: "sun.security.provider.certpath.SunCertPathBuilderException", context: "SYNC" })).toBe(true);
+    expect(isNetworkFailure({ type: "javax.net.ssl.SSLPeerUnverifiedException", cause_type: null, context: "SYNC" })).toBe(true);
     expect(isNetworkFailure({ type: "java.net.SocketTimeoutException", cause_type: null, context: "STARTUP" })).toBe(false);
     expect(isNetworkFailure({ type: "java.lang.IllegalArgumentException", cause_type: null, context: "LOOKUP" })).toBe(false);
     expect(isNetworkFailure({ type: "java.nio.file.FileSystemException", cause_type: null, context: "SYNC" })).toBe(false);

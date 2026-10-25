@@ -319,7 +319,8 @@ ConnectionGuardIntel intel = ConnectionGuardIntel.download();
 <span class="text-[#8f8f8f]">// on login: in memory, no request</span>
 ConnectionGuardIntel.Result r = intel.lookup(address);
 if (r.block()) &#123;
-  event.disallow(<span class="text-[#34d399]">"VPNs are not allowed here."</span>);
+  event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
+      <span class="text-[#34d399]">"VPNs are not allowed here."</span>);
 &#125;
 <span class="text-[#8f8f8f]">// r.categories(): [VPN] · r.labels(): [MOBILE]</span></pre>
         <figcaption class="mt-2 text-[0.8125rem] text-fg-3">The Java client in a Paper plugin. Node.js and Python work the same way: <code class="mono">downloadIntel()</code> and <code class="mono">Intel.download()</code>.</figcaption>

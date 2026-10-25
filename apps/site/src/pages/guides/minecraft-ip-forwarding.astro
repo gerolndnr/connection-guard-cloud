@@ -1,0 +1,71 @@
+---
+import Guide from "../../layouts/Guide.astro";
+const faq = [
+  { q: "Why do all players have the IP 127.0.0.1 on my backend server?", a: "The backend only sees the connection from your Velocity or BungeeCord proxy. If the proxy runs on the same machine, that is 127.0.0.1; otherwise it is the proxy's address. Player info forwarding passes the real address and UUID from the proxy to the backend." },
+  { q: "Should I use modern or legacy forwarding with Velocity?", a: "Modern forwarding whenever all backends run Minecraft 1.13 or newer: it is protected by a shared secret, so a stranger can't fake it. Legacy (BungeeCord-style) forwarding is only for older backends, and then the backend must be unreachable from the internet." },
+  { q: "Where should I install an anti-VPN plugin in a network?", a: "On the proxy players connect to. It sees every player's real address and one installation covers all backends. On a backend without forwarding, the plugin checks the proxy's address instead of the player's." },
+  { q: "Do I still need online-mode on the backend?", a: "Set online-mode=false in each backend's server.properties. The proxy authenticates players with Mojang and forwards the verified identity. Keep online-mode on at the proxy." },
+  { q: "Is player info forwarding the same as PROXY protocol?", a: "No. Forwarding carries the player's address from your proxy to your backends. PROXY protocol carries it from a DDoS protection service to your proxy. Behind a protection service you usually need both, each on its own hop." },
+];
+const toc: [string, string][] = [
+  ["symptom", "The symptom"],
+  ["why", "Why it happens"],
+  ["velocity", "Velocity: modern forwarding"],
+  ["bungeecord", "BungeeCord: ip_forward"],
+  ["firewall", "Close the backends"],
+  ["plugins", "Where security plugins belong"],
+  ["faq", "FAQ"],
+];
+---
+<Guide
+  title="Every Player Has the Same IP? Fix IP Forwarding on Velocity and BungeeCord"
+  h1="Every player has the same IP? Fix IP forwarding"
+  description="Players show up as 127.0.0.1 or your proxy's address on Paper or Spigot behind Velocity or BungeeCord. How to turn on player info forwarding and keep it secure."
+  lede="Your backend logs every player as 127.0.0.1, IP bans hit everyone, and anti-VPN plugins act strangely. One missing setting causes all of it."
+  path="/guides/minecraft-ip-forwarding"
+  og="/og/guides.png"
+  published="2026-10-25"
+  modified="2026-10-25"
+  minutes={5}
+  toc={toc}
+  faq={faq}
+>
+  <h2 id="symptom">The symptom</h2>
+  <ul>
+    <li>Backend logs show every player from <code>127.0.0.1</code>, a <code>10.x</code>, <code>172.x</code> or <code>192.168.x</code> address, or your proxy's public address.</li>
+    <li>Players get offline-mode UUIDs on the backend, so their inventories and permissions seem to vanish.</li>
+    <li>IP bans, alt checks and anti-VPN or country rules on the backend hit everyone at once, or nobody.</li>
+    <li>Velocity warns at startup: <code>Player info forwarding is disabled! All players will appear to be connecting from the proxy and will have offline-mode UUIDs.</code></li>
+  </ul>
+
+  <h2 id="why">Why it happens</h2>
+  <p>In a network, players connect to Velocity or BungeeCord, and the proxy opens its own connection to the backend. The backend sees the proxy, not the player. <strong>Player info forwarding</strong> lets the proxy pass the player's real address and verified UUID along with that connection. It is off until you turn it on at both ends.</p>
+
+  <h2 id="velocity">Velocity: modern forwarding</h2>
+  <p>For backends on Minecraft 1.13 and newer. In <code>velocity.toml</code>:</p>
+  <pre><code>player-info-forwarding-mode = "modern"</code></pre>
+  <p>Velocity keeps the shared secret in <code>forwarding.secret</code> next to <code>velocity.toml</code>. On each Paper backend, in <code>config/paper-global.yml</code>:</p>
+  <pre><code>proxies:
+  velocity:
+    enabled: true
+    online-mode: true   # same value as online-mode in velocity.toml
+    secret: 'the contents of forwarding.secret'</code></pre>
+  <p>Set <code>online-mode=false</code> in the backend's <code>server.properties</code>, keep <code>settings.bungeecord: false</code> in <code>spigot.yml</code>, and restart the backend. On Paper 1.18.2 and older the same options live in <code>paper.yml</code> under <code>settings.velocity-support</code>.</p>
+  <p>Backends older than 1.13 need legacy forwarding: <code>player-info-forwarding-mode = "legacy"</code> plus <code>settings.bungeecord: true</code> in <code>spigot.yml</code>. Legacy forwarding has no secret, so the backend must be unreachable from the internet. The <code>bungeeguard</code> mode with the BungeeGuard plugin adds a token. Details: <a href="https://docs.papermc.io/velocity/player-information-forwarding">PaperMC's forwarding docs</a>.</p>
+
+  <h2 id="bungeecord">BungeeCord and Waterfall: ip_forward</h2>
+  <p>In the proxy's <code>config.yml</code>:</p>
+  <pre><code>ip_forward: true</code></pre>
+  <p>On each Spigot or Paper backend, in <code>spigot.yml</code>:</p>
+  <pre><code>settings:
+  bungeecord: true</code></pre>
+  <p>Set <code>online-mode=false</code> in the backend's <code>server.properties</code> and restart. BungeeCord forwarding carries no secret: anyone who can reach the backend directly can claim any name, UUID and address. The next section is not optional here.</p>
+
+  <h2 id="firewall">Close the backends</h2>
+  <p>Backends in a network should never be reachable from the internet. Bind them to <code>127.0.0.1</code> when the proxy runs on the same machine, or allow their ports only from the proxy's address in the firewall. That protects forwarding and keeps your backends out of reach of attacks that target them directly.</p>
+  <p>Behind a DDoS protection service there is one more hop: the service to your proxy. That hop uses PROXY protocol, not forwarding. See <a href="/guides/minecraft-ddos-protection-real-ip">real player IPs behind DDoS protection</a>.</p>
+
+  <h2 id="plugins">Where security plugins belong</h2>
+  <p>Install anti-VPN, country and anti-bot plugins <strong>on the proxy</strong>. It sees every player's real address first and one installation covers every backend. Connection Guard runs on Velocity and BungeeCord from the same JAR as on Paper: <a href="/velocity-anti-vpn">Velocity</a>, <a href="/bungeecord-anti-vpn">BungeeCord</a>.</p>
+  <p>On a backend without forwarding, such a plugin checks the proxy's address for every player. A private address like <code>127.0.0.1</code> can't be judged by any detection service, and some of them list private addresses as VPNs. The result can be that nobody gets in. Fix the forwarding, or move the plugin to the proxy.</p>
+</Guide>

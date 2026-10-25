@@ -10,7 +10,6 @@ import {
 import { openSecrets } from "./secrets.ts";
 import type { AppEnv, Env } from "./env.ts";
 import { governorState, nextSyncIn } from "./governor.ts";
-import { KV_KEY as SIGNALS_KEY, recordSignals } from "./signals.ts";
 import {
   DAY, gzipJson, hourStart, mergeCounts, newId, newLinkCode, newSecret, readBody, sha256Hex, timingSafeEqualHex,
 } from "./util.ts";
@@ -83,13 +82,16 @@ const topFrame = (r: ErrorReport) => {
 type ErrorSource = { id: string; network_id: string | null; platform: string; java_version: string };
 
 /**
- * Network failures while asking a detection service or syncing (timeouts, DNS, refused or reset connections) are normal
+ * Network failures while asking a detection service or syncing (timeouts, DNS, TLS, refused or reset connections) are normal
  * operations, not bugs: the plugin fails over or retries, and /cg doctor shows them. They go to analytics as
  * `cg_network_failure`, counted per service, instead of into Error Tracking, where they buried the real errors.
  */
 const NETWORK_FAILURES = new Set([
   "java.net.SocketTimeoutException", "java.io.InterruptedIOException", "java.net.UnknownHostException", "java.net.SocketException",
   "java.net.ConnectException", "java.net.NoRouteToHostException", "java.net.http.HttpTimeoutException",
+  // TLS refused on the way (an intercepting proxy or an outdated trust store on the server), not in the plugin.
+  "javax.net.ssl.SSLException", "javax.net.ssl.SSLHandshakeException", "javax.net.ssl.SSLPeerUnverifiedException",
+  "javax.net.ssl.SSLProtocolException",
 ]);
 /** Exceptions that only carry another one; a network cause inside them is a network failure. A bug that merely saw a
  * timeout (an IllegalStateException caused by one, say) stays in Error Tracking. */
@@ -207,14 +209,6 @@ function javaMajor(v: string): number | null {
 
 export const plugin = new Hono<AppEnv>();
 
-/** The prefixes several networks reported, for the Intel build (connection-guard-intel). Public: counts per prefix only. */
-plugin.get("/v1/intel/signals.json", async (c) => {
-  const body = await c.env.PUBLIC.get(SIGNALS_KEY);
-  c.header("cache-control", "public, max-age=3600");
-  c.header("access-control-allow-origin", "*");
-  return c.body(body ?? JSON.stringify({ as_of: null, prefixes: [] }), 200, { "content-type": "application/json" });
-});
-
 plugin.post("/v1/installs", async (c) => {
   const env = c.env;
   const ip = c.req.header("cf-connecting-ip") ?? "local";
@@ -323,8 +317,6 @@ plugin.post("/v1/sync", async (c) => {
     }
 
     if (req.errors?.length) await recordErrors(c, install, req, now);
-    // A network with many servers is one source; an unlinked server is its own.
-    if (req.signals?.prefixes.length) await recordSignals(env, install.network_id ?? install.id, req.signals, now);
 
     for (const result of req.command_results) {
       await env.DB.prepare(
@@ -361,7 +353,7 @@ plugin.post("/v1/sync", async (c) => {
   // last_seq only guards against counting a retried body twice, so a sync that counted nothing needn't store it:
   // the plugin's seq only grows (it is persisted and at least the clock), so the next sync is fresh anyway.
   const counted = req.counters.checks > 0 || req.counters.lookups > 0 || req.events.length > 0
-    || (req.errors?.length ?? 0) > 0 || req.command_results.length > 0 || (req.signals?.prefixes.length ?? 0) > 0;
+    || (req.errors?.length ?? 0) > 0 || req.command_results.length > 0;
   if (fresh && (changed || watched || now - install.last_seen_at > SEEN_WRITE_INTERVAL)) {
     await env.DB.prepare(
       "UPDATE installs SET status_json = ?, plugin_version = ?, platform_version = ?, last_seq = ?, last_seen_at = ? WHERE id = ?",
