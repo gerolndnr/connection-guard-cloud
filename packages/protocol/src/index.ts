@@ -223,6 +223,42 @@ export const ErrorReport = z.object({
 }).strict().refine((r) => r.first_at <= r.last_at, "first_at after last_at");
 export type ErrorReport = z.infer<typeof ErrorReport>;
 
+/**
+ * Network signals for Connection Guard Intel (plugins from 0.6.2): per IPv4 /24 or IPv6 /48 prefix seen in a six-hour
+ * window, counts only. Never an address, account, name or rule. Prefixes are written as the plugin's
+ * NetworkSignals.prefix writes them; private, loopback, CGNAT and link-local ranges are never valid.
+ */
+export const MAX_SIGNAL_PREFIXES = 512;
+const V4_PREFIX = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.0\/24$/;
+const V6_PREFIX = /^([0-9a-f]{1,4}):([0-9a-f]{1,4}):([0-9a-f]{1,4})::\/48$/;
+export function isPublicSignalPrefix(p: string): boolean {
+  const v4 = V4_PREFIX.exec(p);
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])];
+    return !(a === 0 || a === 10 || a === 127 || a >= 224 || (a === 100 && b >= 64 && b < 128) || (a === 169 && b === 254)
+      || (a === 172 && b >= 16 && b < 32) || (a === 192 && b === 168));
+  }
+  const v6 = V6_PREFIX.exec(p);
+  if (!v6) return false;
+  const first = parseInt(v6[1]!, 16);
+  // Only global unicast (2000::/3) is a player's address.
+  return first >= 0x2000 && first < 0x4000;
+}
+export const SignalPrefix = z.object({
+  p: z.string().max(48).refine(isPublicSignalPrefix),
+  logins: count,
+  accounts: count,
+  vpn: count,
+  denied: count,
+  banned: count,
+  allowed_by_rule: count,
+}).strict();
+export const NetworkSignals = z.object({
+  prefixes: z.array(SignalPrefix).max(MAX_SIGNAL_PREFIXES),
+  overflow: count,
+}).strict();
+export type NetworkSignals = z.infer<typeof NetworkSignals>;
+
 export const CommandResult = z.object({
   id: z.string().regex(/^cmd_[A-Za-z0-9]{12,32}$/),
   ok: z.boolean(),
@@ -240,6 +276,8 @@ export const SyncRequest = z.object({
   command_results: z.array(CommandResult).max(64),
   // Plugins from 0.5.2; older ones never send it.
   errors: z.array(ErrorReport).max(MAX_ERRORS_PER_SYNC).optional(),
+  // Plugins from 0.6.2, once per six-hour window.
+  signals: NetworkSignals.optional(),
 }).strict();
 export type SyncRequest = z.infer<typeof SyncRequest>;
 
@@ -284,6 +322,15 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
     });
     droppedEvents = body.events.length - kept.length;
     body.events = kept;
+  }
+  // Network signals are optional: an unreadable prefix is dropped on its own, an unreadable block as a whole.
+  if (typeof body.signals === "object" && body.signals !== null && !Array.isArray(body.signals)) {
+    const sig = { ...(body.signals as Record<string, unknown>) };
+    if (Array.isArray(sig.prefixes)) sig.prefixes = sig.prefixes.slice(0, MAX_SIGNAL_PREFIXES).filter((x) => SignalPrefix.safeParse(x).success);
+    body.signals = NetworkSignals.safeParse(sig).success ? sig : undefined;
+    if (body.signals === undefined) delete body.signals;
+  } else if ("signals" in body) {
+    delete body.signals;
   }
   const status = body.status;
   if (typeof status === "object" && status !== null && !Array.isArray(status)) {

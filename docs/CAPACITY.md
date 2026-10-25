@@ -30,6 +30,14 @@ Queues are deliberately not used: the free plan allows only 10,000 operations a 
     count), every 8 minutes otherwise, or on every sync while someone has the network open in the dashboard
   - `last_seq` alone, only after a sync that counted something (it only guards against counting a retry twice)
 - **Event batches** are one gzip'd row per sync, not one row per login.
+- **Network signals** (plugin 0.6.2+) arrive at most once per six hours per install, with at most 512 prefixes, and go into
+  `network_signals` with one `INSERT … SELECT FROM json_each(?)` per window (one row per day, prefix and source, summed on
+  conflict). Each window costs `2n + 1` row writes for `n` prefixes: the rows, their deletion by the purge a week later, and
+  the `signal_budget` row. `signal_budget` caps that total at 20,000 a day; the check and the writes run in one D1 batch
+  (one transaction), so concurrent windows cannot exceed it. A server can send up to about 2,000 prefix rows a day
+  (4,100 writes with the purge), so the cap holds about five such servers at full size; later windows are dropped
+  (signals are best effort, nothing else depends on them). The daily cron purges rows older than 7 days and the old
+  budget rows (both counted above) and publishes `intel:signals` to KV with one aggregate query (one KV write a day).
 - **Analytics Engine** gets one data point per sync, with no personal data.
 
 ## Rough numbers

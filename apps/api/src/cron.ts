@@ -4,6 +4,7 @@ import { recomputeGovernor } from "./governor.ts";
 import { DAY } from "./util.ts";
 import { sendEvents, type ServerEvent } from "./analytics.ts";
 import { runAlerts } from "./alerts.ts";
+import { publishSignals } from "./signals.ts";
 
 export const UNCLAIMED_RETENTION = 30 * DAY;
 export const ROLLUP_RETENTION = 395 * DAY; // ~13 months
@@ -87,7 +88,7 @@ export async function networkFailureSummaries(env: Env, now = Date.now()): Promi
 }
 
 export async function scheduled(controller: ScheduledController, env: Env) {
-  if (controller.cron === "17 3 * * *") { await runMaintenance(env); await reportDaily(env); return; }
+  if (controller.cron === "17 3 * * *") { await runMaintenance(env); await publishSignals(env); await reportDaily(env); return; }
   await recomputeGovernor(env);
   // Discord alerts every 15 minutes (the 5-minute cron at :00, :15, :30 and :45).
   if (new Date(controller.scheduledTime).getUTCMinutes() % 15 === 0) await runAlerts(env, controller.scheduledTime);
