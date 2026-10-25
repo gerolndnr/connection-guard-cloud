@@ -48,8 +48,14 @@ function Rules({ networkId, view, manage, prefill }: { networkId: string; view: 
   const serverNames = new Map(view.installs.map((i) => [i.id, serverName(i)]));
   // Opened from an insight with a suggested rule: bring the builder into view once the page has rendered.
   useEffect(() => { if (prefill?.target) document.getElementById("rules")?.scrollIntoView({ block: "start" }); }, [prefill?.target]);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const remove = async (r: AccessRuleView) => {
-    await api.removeRule(networkId, r.id);
+    setRemoving(r.id); setRemoveError(null);
+    try { await api.removeRule(networkId, r.id); }
+    // Already gone (a second click, or someone else removed it): the refreshed list shows that.
+    catch (err) { if (!(err instanceof ApiError && err.status === 404)) setRemoveError("The rule could not be removed. Try again."); }
+    finally { setRemoving(null); }
     await qc.invalidateQueries({ queryKey: ["rules", networkId] });
   };
 
@@ -74,11 +80,12 @@ function Rules({ networkId, view, manage, prefill }: { networkId: string; view: 
                   {" · "}added {ago(r.created_at)}{r.created_by_name ? ` by ${r.created_by_name}` : ""}
                 </p>
               </div>
-              {manage && <button type="button" className="btn btn-ghost size-8 shrink-0 p-0" aria-label="Remove rule" title="Remove rule" onClick={() => remove(r)}><Trash2 className="size-4" /></button>}
+              {manage && <button type="button" className="btn btn-ghost size-8 shrink-0 p-0" aria-label="Remove rule" title="Remove rule" disabled={removing === r.id} onClick={() => remove(r)}>{removing === r.id ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <Trash2 className="size-4" />}</button>}
             </li>
           ))}
         </ul>
       ) : <p className="px-6 py-5 text-fg-2">{rules.isPending ? "Loading…" : "No rules yet. Open a decision and choose “Was this wrong?” to add one."}</p>}
+      {removeError && <p role="alert" className="border-t border-line px-6 py-3 text-[0.8125rem] text-danger-text">{removeError}</p>}
       {manage && <RuleBuilder networkId={networkId} view={view} prefill={prefill} />}
       <p className="border-t border-line px-6 py-3 text-[0.75rem] leading-relaxed text-fg-3">
         Rules for a player or an address come first, then rules for networks, providers, countries and connection types. Within each, Refuse beats Let in.

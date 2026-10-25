@@ -82,13 +82,16 @@ const topFrame = (r: ErrorReport) => {
 type ErrorSource = { id: string; network_id: string | null; platform: string; java_version: string };
 
 /**
- * Network failures while asking a detection service or syncing (timeouts, DNS, refused or reset connections) are normal
+ * Network failures while asking a detection service or syncing (timeouts, DNS, TLS, refused or reset connections) are normal
  * operations, not bugs: the plugin fails over or retries, and /cg doctor shows them. They go to analytics as
  * `cg_network_failure`, counted per service, instead of into Error Tracking, where they buried the real errors.
  */
 const NETWORK_FAILURES = new Set([
   "java.net.SocketTimeoutException", "java.io.InterruptedIOException", "java.net.UnknownHostException", "java.net.SocketException",
   "java.net.ConnectException", "java.net.NoRouteToHostException", "java.net.http.HttpTimeoutException",
+  // TLS refused on the way (an intercepting proxy or an outdated trust store on the server), not in the plugin.
+  "javax.net.ssl.SSLException", "javax.net.ssl.SSLHandshakeException", "javax.net.ssl.SSLPeerUnverifiedException",
+  "javax.net.ssl.SSLProtocolException",
 ]);
 /** Exceptions that only carry another one; a network cause inside them is a network failure. A bug that merely saw a
  * timeout (an IllegalStateException caused by one, say) stays in Error Tracking. */
