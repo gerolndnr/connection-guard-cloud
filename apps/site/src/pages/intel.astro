@@ -300,6 +300,33 @@ provider:
     </div>
   </section>
 
+  <section id="use" aria-labelledby="use-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site grid grid-cols-[minmax(0,1fr)] gap-12 py-16 sm:py-20 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+      <div>
+        <h2 id="use-h" class="section-title">Use Intel in your plugin or bot.</h2>
+        <p class="lede mt-4">The lists are free for any project, not only Connection Guard. One file per language downloads them, checks the signature and every hash, and answers lookups on your machine. The addresses you check are never sent anywhere, and there is no quota.</p>
+        <ul class="mt-8 grid gap-3 text-[0.9375rem] leading-relaxed text-fg-2">
+          <li><a class="underline" href={`${INTEL_REPO}/blob/main/clients/java/ConnectionGuardIntel.java`}>Java 11+</a>: Paper, Velocity and BungeeCord plugins. No dependencies; copy the file.</li>
+          <li><a class="underline" href={`${INTEL_REPO}/blob/main/clients/js/cg-intel.mjs`}>Node.js 18+</a>: discord.js bots. No dependencies.</li>
+          <li><a class="underline" href={`${INTEL_REPO}/blob/main/clients/python/cg_intel.py`}>Python 3.9+</a>: discord.py bots and scripts. Needs <code class="mono text-fg">cryptography</code>.</li>
+        </ul>
+        <p class="mt-6 text-[0.9375rem] leading-relaxed text-fg-2">Each answer names the lists an address is on and sets <code class="mono text-fg">block</code> for VPN, Tor and proxies. An address on no list is unknown, not clean. Download once a day; the lists are rebuilt at 03:17 UTC and refused when older than 72 hours. Code under MIT; the sources' terms are in <a class="underline" href={`${INTEL_REPO}/blob/main/SOURCES.md`}>SOURCES.md</a>.</p>
+      </div>
+      <figure>
+        <pre class="mono overflow-x-auto rounded-xl border border-line bg-[#0a0a0a] px-5 py-4 text-[0.8125rem] leading-relaxed text-[#ededed]"><span class="text-[#8f8f8f]">// once a day, off the main thread</span>
+ConnectionGuardIntel intel = ConnectionGuardIntel.download();
+
+<span class="text-[#8f8f8f]">// on login: in memory, no request</span>
+ConnectionGuardIntel.Result r = intel.lookup(address);
+if (r.block()) &#123;
+  event.disallow(<span class="text-[#34d399]">"VPNs are not allowed here."</span>);
+&#125;
+<span class="text-[#8f8f8f]">// r.categories(): [VPN] · r.labels(): [MOBILE]</span></pre>
+        <figcaption class="mt-2 text-[0.8125rem] text-fg-3">The Java client in a Paper plugin. Node.js and Python work the same way: <code class="mono">downloadIntel()</code> and <code class="mono">Intel.download()</code>.</figcaption>
+      </figure>
+    </div>
+  </section>
+
   <section id="sources" aria-labelledby="sources-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
     <div class="container-site py-16 sm:py-20">
       <div class="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
