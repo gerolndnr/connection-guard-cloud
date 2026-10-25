@@ -12,7 +12,9 @@
   "triggers": { "crons": ["0 5 * * *"] },
   "vars": {
     "MAIL_FROM": "growth@connectionguard.net",
-    "MAIL_TO": "gero.lindner@protonmail.com"
+    "MAIL_TO": "gero.lindner@protonmail.com",
+    // Owner asked on 25 Oct 2026: no morning mail until 28 Nov; the first one comes on 28 Nov. Remove or clear to end early.
+    "PAUSE_UNTIL": "2026-11-28"
   },
   // Email Routing only delivers to verified destination addresses of the account (checked 16 Oct 2026).
   "send_email": [{ "name": "MAIL", "destination_address": "gero.lindner@protonmail.com" }]
