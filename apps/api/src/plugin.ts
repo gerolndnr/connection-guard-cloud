@@ -11,6 +11,7 @@ import { openSecrets } from "./secrets.ts";
 import type { AppEnv, Env } from "./env.ts";
 import { governorState, nextSyncIn } from "./governor.ts";
 import { KV_KEY as SIGNALS_KEY, recordSignals } from "./signals.ts";
+import { recordProbe } from "./probe.ts";
 import {
   DAY, gzipJson, hourStart, mergeCounts, newId, newLinkCode, newSecret, readBody, sha256Hex, timingSafeEqualHex,
 } from "./util.ts";
@@ -329,6 +330,8 @@ plugin.post("/v1/sync", async (c) => {
     // Only linked servers contribute signals (owner decision, 25 Oct 2026); a network with many servers is one source.
     // The plugin sends none before linking; a body that carries them anyway is stored without them.
     if (req.signals?.prefixes.length && install.network_id) await recordSignals(env, install.network_id, req.signals, now);
+    // Connection-probe counts travel with the signals, under the same rule: linked servers only.
+    if (req.probe?.counts.length && install.network_id) await recordProbe(env, install.network_id, req.probe, now);
 
     for (const result of req.command_results) {
       await env.DB.prepare(
@@ -365,7 +368,8 @@ plugin.post("/v1/sync", async (c) => {
   // last_seq only guards against counting a retried body twice, so a sync that counted nothing needn't store it:
   // the plugin's seq only grows (it is persisted and at least the clock), so the next sync is fresh anyway.
   const counted = req.counters.checks > 0 || req.counters.lookups > 0 || req.events.length > 0
-    || (req.errors?.length ?? 0) > 0 || req.command_results.length > 0 || (req.signals?.prefixes.length ?? 0) > 0;
+    || (req.errors?.length ?? 0) > 0 || req.command_results.length > 0 || (req.signals?.prefixes.length ?? 0) > 0
+    || (req.probe?.counts.length ?? 0) > 0;
   if (fresh && (changed || watched || now - install.last_seen_at > SEEN_WRITE_INTERVAL)) {
     await env.DB.prepare(
       "UPDATE installs SET status_json = ?, plugin_version = ?, platform_version = ?, last_seq = ?, last_seen_at = ? WHERE id = ?",

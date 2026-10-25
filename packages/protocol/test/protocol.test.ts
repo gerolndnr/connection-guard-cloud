@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Command, GATED_PATHS, InstallRequest, SyncRequest, SyncResponse, isConfigPath, isPublicSignalPrefix, supportsPath, tolerateSync } from "../src/index.ts";
-import { installRequest, syncRequest, syncRequestWithErrors, syncRequestWithSignals, syncResponse } from "../src/examples.ts";
+import { installRequest, syncRequest, syncRequestWithErrors, syncRequestWithProbe, syncRequestWithSignals, syncResponse } from "../src/examples.ts";
 
 describe("protocol v1", () => {
   it("accepts the canonical examples", () => {
@@ -67,6 +67,23 @@ describe("protocol v1", () => {
     expect(SyncRequest.parse(mixed).signals).toEqual({ overflow: 2, prefixes: [good] });
     expect(SyncRequest.parse(tolerateSync({ ...syncRequest, signals: { prefixes: "all" } }).json)).not.toHaveProperty("signals");
     expect(SyncRequest.parse(tolerateSync({ ...syncRequest, signals: 3 }).json)).not.toHaveProperty("signals");
+  });
+
+  it("accepts connection-probe counts as closed tokens per verdict only", () => {
+    expect(SyncRequest.parse(syncRequestWithProbe)).toEqual(syncRequestWithProbe);
+    const probe = syncRequestWithProbe.probe!, good = probe.counts[2]!;
+    for (const bad of [{ ...good, v: "203.0.113.24" }, { ...good, v: "x".repeat(25) }, { ...good, v: "Steve" }, { ...good, s: "skin url" }, { ...good, l: "player" }, { ...good, n: -1 }, { ...good, ip: "x" }])
+      expect(SyncRequest.safeParse({ ...syncRequest, probe: { ...probe, counts: [bad] } }).success, JSON.stringify(bad)).toBe(false);
+    // Fewer than five logins say too much about each one: the plugin waits, the API refuses.
+    expect(SyncRequest.safeParse({ ...syncRequest, probe: { ...probe, logins: 4 } }).success).toBe(false);
+  });
+
+  it("drops unreadable probe counts on their own and an unreadable probe block as a whole", () => {
+    const probe = syncRequestWithProbe.probe!, good = probe.counts[2]!;
+    const mixed = tolerateSync({ ...syncRequest, probe: { ...probe, counts: [good, { ...good, v: "Steve" }, { ...good, l: "new" }] } }).json;
+    expect(SyncRequest.parse(mixed).probe).toEqual({ ...probe, counts: [good] });
+    expect(SyncRequest.parse(tolerateSync({ ...syncRequest, probe: { ...probe, logins: 2 } }).json)).not.toHaveProperty("probe");
+    expect(SyncRequest.parse(tolerateSync({ ...syncRequest, probe: [] }).json)).not.toHaveProperty("probe");
   });
 
   it("rejects unknown fields so the plugin cannot leak extra data", () => {
