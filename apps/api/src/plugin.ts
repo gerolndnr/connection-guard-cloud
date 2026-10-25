@@ -19,8 +19,9 @@ const LINK_CODE_TTL = DAY;
 // open the link, and the setup assistant should not wait for the server to notice it was linked.
 // About 120 extra requests per new install, negligible against the daily budget.
 const ONBOARDING_WINDOW = 30 * 60_000;
-// Only touch installs.last_seen_at this often when nothing else changed, to save D1 writes.
-const SEEN_WRITE_INTERVAL = 4 * 60_000;
+// Only touch installs.last_seen_at this often when nothing else changed, to save D1 writes. Below the dashboard's
+// 20-minute online window with room for a missed sync: an idle server (300 s) writes every second sync.
+const SEEN_WRITE_INTERVAL = 8 * 60_000;
 
 type Ctx = Context<AppEnv>;
 
@@ -322,19 +323,39 @@ plugin.post("/v1/sync", async (c) => {
   }
 
   const statusJson = JSON.stringify(req.status);
-  // Uptime changes on every sync; ignore it when deciding whether the status needs a D1 write.
+  // Running counters change on every sync on a busy server (uptime, lookups per service, daily budget used, buffered
+  // events, the age of the unchecked-VPN window). They alone don't make a status write: they are refreshed with
+  // last_seen_at every SEEN_WRITE_INTERVAL, or on every sync while someone has the network open in the dashboard.
+  // Before, nearly every sync rewrote the row and its last_seen_at index (51k of 63k D1 rows written on 24 Oct 2026:
+  // window_seconds moved on every sync, and the interval was shorter than an idle server's 300 s).
   const stable = (json: string | null) => {
     if (!json) return null;
-    const { uptime_seconds: _ignored, ...rest } = JSON.parse(json) as Record<string, unknown>;
-    return JSON.stringify(rest);
+    const { uptime_seconds: _u, buffered_events: _b, providers, vpn_unchecked_allowed: unchecked, local_address_logins: local, ...rest } =
+      JSON.parse(json) as Record<string, unknown>;
+    const steady = Array.isArray(providers)
+      ? providers.map((p) => {
+          const { attempts: _a, successes: _s, daily_used: _d, ...keep } = p as Record<string, unknown>;
+          return keep;
+        })
+      : providers;
+    const uncheckedSteady = unchecked && typeof unchecked === "object"
+      ? (({ window_seconds: _w, ...keep }) => keep)(unchecked as Record<string, unknown>)
+      : unchecked;
+    // The dashboard only shows whether private-address logins occur: the first one writes, later ones wait.
+    return JSON.stringify({ ...rest, providers: steady, vpn_unchecked_allowed: uncheckedSteady, local_address_logins: Number(local ?? 0) > 0 });
   };
   const changed = stable(statusJson) !== stable(install.status_json) || req.plugin_version !== install.plugin_version
     || req.platform_version !== install.platform_version;
-  if (fresh && (changed || now - install.last_seen_at > SEEN_WRITE_INTERVAL)) {
+  const watched = install.watched_until > now || install.hot_until > now;
+  // last_seq only guards against counting a retried body twice, so a sync that counted nothing needn't store it:
+  // the plugin's seq only grows (it is persisted and at least the clock), so the next sync is fresh anyway.
+  const counted = req.counters.checks > 0 || req.counters.lookups > 0 || req.events.length > 0
+    || (req.errors?.length ?? 0) > 0 || req.command_results.length > 0;
+  if (fresh && (changed || watched || now - install.last_seen_at > SEEN_WRITE_INTERVAL)) {
     await env.DB.prepare(
       "UPDATE installs SET status_json = ?, plugin_version = ?, platform_version = ?, last_seq = ?, last_seen_at = ? WHERE id = ?",
     ).bind(statusJson, req.plugin_version, req.platform_version, req.seq, now, install.id).run();
-  } else if (fresh) {
+  } else if (fresh && counted) {
     await env.DB.prepare("UPDATE installs SET last_seq = ? WHERE id = ?").bind(req.seq, install.id).run();
   }
 

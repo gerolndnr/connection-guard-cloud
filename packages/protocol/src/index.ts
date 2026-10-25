@@ -84,6 +84,13 @@ export const ProviderStatus = z.object({
   daily_budget: count.nullable(),
 }).strict();
 
+// Which configured source left which kind of hint on an unchecked admission, e.g. "zowi.hosting",
+// "blackbox.no_evidence", "proxycheck.failed", plus "other" past the cap. The source part has no dots, so an
+// address can never pass as a key.
+export const UncheckedSignals = z.record(z.string().regex(/^(?:[a-z0-9_-]{1,48}\.(?:hosting|no_evidence|failed)|other)$/), count)
+  .refine((v) => Object.keys(v).length <= 32, "too many signals");
+export const AddressFamilies = z.partialRecord(z.enum(["ipv4", "ipv6"]), count);
+
 // Cumulative plugin-lifetime counts, never a delta to add again on each heartbeat.
 // Deliberate exemptions and CG-denied connections are excluded. No player data.
 export const VpnUncheckedAllowed = z.object({
@@ -91,6 +98,9 @@ export const VpnUncheckedAllowed = z.object({
   since_summary: count,
   window_seconds: count,
   reasons: z.partialRecord(DetectionReason, count),
+  // Absent on plugins before 0.6.2.
+  signals: UncheckedSignals.optional(),
+  families: AddressFamilies.optional(),
 }).strict().refine((v) => v.since_summary <= v.total, "window exceeds lifetime total");
 export type VpnUncheckedAllowed = z.infer<typeof VpnUncheckedAllowed>;
 
@@ -104,6 +114,9 @@ export const Status = z.object({
   buffered_events: count,
   dropped_events: count,
   vpn_unchecked_allowed: VpnUncheckedAllowed.optional(),
+  // Lifetime count of logins from loopback/private/CGNAT/link-local addresses, which skip VPN and country checks.
+  // Usually a backend behind a proxy without IP forwarding. Absent on plugins before 0.6.2.
+  local_address_logins: count.optional(),
   // Only once linked: effective values of the dashboard-configurable settings, and which come from the dashboard.
   config: ConfigSnapshot.nullable(),
   managed: z.array(z.string()).max(64),
@@ -286,8 +299,11 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
       if (typeof v.reasons === "object" && v.reasons !== null && !Array.isArray(v.reasons)) {
         v.reasons = Object.fromEntries(Object.entries(v.reasons).filter(([key]) => DetectionReason.safeParse(key).success));
       }
+      if ("signals" in v && !UncheckedSignals.safeParse(v.signals).success) delete v.signals;
+      if ("families" in v && !AddressFamilies.safeParse(v.families).success) delete v.families;
       s.vpn_unchecked_allowed = v;
     }
+    if ("local_address_logins" in s && !count.safeParse(s.local_address_logins).success) delete s.local_address_logins;
     if ("vpn_unchecked_allowed" in s && !VpnUncheckedAllowed.safeParse(s.vpn_unchecked_allowed).success) delete s.vpn_unchecked_allowed;
     // A new failure reason on a provider reads as "no reason given" rather than losing the status.
     if (Array.isArray(s.providers)) {

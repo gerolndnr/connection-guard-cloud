@@ -29,3 +29,27 @@ describe("unchecked VPN admissions", () => {
     expect(coverageNotes(install({ total: 0, since_summary: 0, window_seconds: 300, reasons: {} }))).toEqual([]);
   });
 });
+
+describe("grey-zone hints and private addresses", () => {
+  it("names which source left which hint and how many came over IPv6", () => {
+    const note = coverageNotes(install({ total: 9, since_summary: 2, window_seconds: 300, reasons: { NO_EVIDENCE: 9 },
+      signals: { "zowivpnprovider-0.hosting": 6, "blackboxvpnprovider-0.no_evidence": 3, "proxycheckvpnprovider-0.failed": 1 },
+      families: { ipv4: 7, ipv6: 2 } }))[0]!;
+    expect(note.detail).toContain("Hints: zowi hosting address only: 6, Blackbox listing not confirmed: 3, ProxyCheck no answer: 1.");
+    expect(note.detail).toContain("2 over IPv6.");
+  });
+  it("says nothing extra for plugins without hints", () => {
+    const note = coverageNotes(install({ total: 1, since_summary: 0, window_seconds: 300, reasons: { TIMEOUT: 1 } }))[0]!;
+    expect(note.detail).not.toContain("Hints"); expect(note.detail).not.toContain("IPv6");
+  });
+  it("points at proxy forwarding once players arrive from private addresses", () => {
+    const base = install();
+    const local = (count?: number) => notes([{ ...base, status: { ...base.status!, local_address_logins: count } }], 1000)
+      .filter((n) => n.id.startsWith("local-addresses:"));
+    expect(local()).toEqual([]); expect(local(0)).toEqual([]);
+    const [note] = local(12);
+    expect(note!.title).toBe("Players reach Lobby from private network addresses");
+    expect(note!.detail).toContain("12 logins"); expect(note!.detail).toContain("IP forwarding");
+    expect(local(40)[0]!.fingerprint).toBe(note!.fingerprint);
+  });
+});
