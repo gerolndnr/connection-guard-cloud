@@ -1,0 +1,108 @@
+---
+import Guide from "../../layouts/Guide.astro";
+const faq = [
+  { q: "Why do all my players show the same IP behind TCPShield or NeoProtect?", a: "Players connect to the protection service, and the service opens a new connection to your server. Unless it passes the player's address along, your server only sees the service's own addresses. Turn on PROXY protocol in the provider's panel and on your proxy or server, or use the provider's forwarding plugin." },
+  { q: "Does Connection Guard work behind DDoS protection?", a: "Yes, as long as the real player address reaches your server. Connection Guard reads the address your proxy or server reports at login. With PROXY protocol on Velocity, BungeeCord or Paper, or with the TCPShield plugin, that is the player's address. We test Velocity and BungeeCord with PROXY protocol v2 directly, and the public benchmark joins every platform through PROXY protocol." },
+  { q: "What is PROXY protocol?", a: "A short header that a proxy puts in front of each connection. It carries the client's address and port. Velocity, BungeeCord and Paper can read it natively, so no extra plugin is needed." },
+  { q: "Should I enable PROXY protocol on Paper behind Velocity?", a: "No. Enable it only where the protection service connects: on Velocity or BungeeCord in a network, or on Paper when it stands alone. Paper behind Velocity gets the address through Velocity's player info forwarding instead." },
+  { q: "Is it safe to enable PROXY protocol?", a: "Only with a firewall. A server that accepts PROXY headers believes whatever address the header names. Allow connections to that port only from your protection service's addresses, so nobody can connect directly and claim any address they like." },
+  { q: "Does Cloudflare Spectrum pass the real IP?", a: "Spectrum can add PROXY protocol v1 or v2, but Cloudflare's documentation lists that feature as Enterprise-only. On other plans your server sees Cloudflare's addresses, and no anti-VPN plugin can judge the players behind them." },
+];
+const toc: [string, string][] = [
+  ["why", "Why the real IP matters"],
+  ["how", "How the address gets through"],
+  ["providers", "Setup per provider"],
+  ["platforms", "Settings per platform"],
+  ["firewall", "Lock the direct route"],
+  ["check", "Check that it works"],
+  ["tested", "What we tested"],
+  ["faq", "FAQ"],
+];
+---
+<Guide
+  title="Real Player IPs Behind Minecraft DDoS Protection (TCPShield, NeoProtect, Infinity-Filter)"
+  h1="Real player IPs behind DDoS protection"
+  description="Behind TCPShield, NeoProtect, Infinity-Filter or Cloudflare your server sees the protection's IP, not the player's. How PROXY protocol fixes it on Velocity, BungeeCord and Paper."
+  lede="DDoS protection hides your server, and by default it hides your players too. Bans, anti-VPN checks and country rules only work when the real address arrives. Here is how to make sure it does."
+  path="/guides/minecraft-ddos-protection-real-ip"
+  og="/og/guides.png"
+  published="2026-10-25"
+  modified="2026-10-25"
+  minutes={7}
+  toc={toc}
+  faq={faq}
+>
+  <h2 id="why">Why the real IP matters</h2>
+  <p>A Minecraft DDoS protection service such as TCPShield, NeoProtect or Infinity-Filter works as a <strong>reverse proxy</strong>. Players connect to the service, it filters the traffic, and it opens a fresh connection to your server. From your server's point of view, every player now comes from a handful of the service's own addresses.</p>
+  <p>Everything that depends on the player's address breaks quietly:</p>
+  <ul>
+    <li><strong>IP bans</strong> hit the protection service, so they ban everyone or nobody.</li>
+    <li><strong>Anti-VPN checks</strong> look up the service's data-center address. Depending on the plugin and its sources, that either refuses every player as a data-center connection or lets every player through unchecked. Both are wrong.</li>
+    <li><strong>Country rules</strong> see the service's location instead of the player's.</li>
+    <li><strong>Alt detection and logs</strong> lump all players together.</li>
+  </ul>
+  <p>The fix is the same for all of them: pass the real address from the protection service to your server.</p>
+
+  <h2 id="how">How the address gets through</h2>
+  <p>There are two ways, and you use exactly one of them:</p>
+  <ol>
+    <li><strong>PROXY protocol.</strong> The service puts a small header in front of each connection that names the player's address. Velocity, BungeeCord and Paper read it natively. This is the standard and what most providers recommend.</li>
+    <li><strong>A forwarding plugin from the provider.</strong> The service hides the address in the login handshake, and the provider's plugin on your server restores it. TCPShield and Infinity-Filter offer one. It is the fallback for software without PROXY protocol support, such as plain Spigot.</li>
+  </ol>
+  <div class="callout"><p>Never enable both. A connection wrapped twice breaks the handshake, and players can't join.</p></div>
+
+  <h2 id="providers">Setup per provider</h2>
+  <p>Panels change; the provider's own documentation is the reference. As of October 2026:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Provider</th><th scope="col">Recommended</th><th scope="col">Alternative</th><th scope="col">Good to know</th></tr></thead>
+      <tbody>
+        <tr><td>TCPShield</td><td>PROXY protocol v2 (supported since February 2022)</td><td>TCPShield plugin</td><td>The plugin is incompatible with PROXY protocol. With the plugin, keep <code>only-allow-proxy-connections: true</code> in production. Plain Spigot needs ProtocolLib for the plugin.</td></tr>
+        <tr><td>NeoProtect</td><td>PROXY protocol, enabled under Backends</td><td>None needed</td><td>Panel and server must match. Once on, direct connections stop working.</td></tr>
+        <tr><td>Infinity-Filter</td><td>PROXY protocol, on by default for new networks</td><td>Forward plugin with a per-network token</td><td>Turn the panel toggle off before using the plugin, and remove the plugin before turning it back on.</td></tr>
+        <tr><td>Cloudflare Spectrum</td><td>PROXY protocol v1 or v2</td><td>None</td><td>Cloudflare lists PROXY protocol for Spectrum as Enterprise-only. Without it, your server only sees Cloudflare's addresses.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Using a protection that filters on the network level instead, such as a host's built-in DDoS protection? Then nothing sits between player and server, the address arrives unchanged, and you don't need any of this.</p>
+
+  <h2 id="platforms">Settings per platform</h2>
+  <p>Enable PROXY protocol <strong>where the protection service connects</strong>, nowhere else.</p>
+  <h3 id="velocity">Velocity</h3>
+  <p>In <code>velocity.toml</code>, in the <code>[advanced]</code> section:</p>
+  <pre><code>haproxy-protocol = true</code></pre>
+  <h3 id="bungeecord">BungeeCord and Waterfall</h3>
+  <p>In <code>config.yml</code>, on the listener players connect to:</p>
+  <pre><code>listeners:
+- host: 0.0.0.0:25577
+  proxy_protocol: true</code></pre>
+  <h3 id="paper">Paper, standalone</h3>
+  <p>Only when no Velocity or BungeeCord sits in front of it. In <code>config/paper-global.yml</code>:</p>
+  <pre><code>proxies:
+  proxy-protocol: true</code></pre>
+  <h3 id="network">Backends in a network</h3>
+  <p>Backends behind Velocity or BungeeCord don't speak PROXY protocol. They get the address through the proxy's player info forwarding, which you set up separately: see <a href="/guides/minecraft-ip-forwarding">IP forwarding on Velocity and BungeeCord</a>. Install Connection Guard on the proxy; one installation covers every backend.</p>
+
+  <h2 id="firewall">Lock the direct route</h2>
+  <p>A server that accepts PROXY headers trusts the address in them. Anyone who can reach that port directly can send a header with any address they like and dodge your bans and checks. Velocity and BungeeCord warn about this in the console for a reason.</p>
+  <ul>
+    <li>Allow the Minecraft port only from your protection service's addresses. Providers publish them; NeoProtect, for example, offers <a href="https://api.neoprotect.net/v2/public/servers/txt">a plain list</a>.</li>
+    <li>Keep backend ports closed to the internet entirely, or reachable only from your proxy.</li>
+    <li>Don't publish the server's own address anywhere, including old DNS records. Once it leaks, attackers skip the protection.</li>
+  </ul>
+
+  <h2 id="check">Check that it works</h2>
+  <ol>
+    <li>Join the server yourself and look at the console. Velocity logs <code>[connected player] Name (/address:port) has connected</code>, BungeeCord <code>[Name,/address:port] &lt;-&gt; InitialHandler has connected</code>. It should show your own home address, not the provider's.</li>
+    <li>Run <code>/cg info &lt;player&gt;</code>. Connection Guard shows the address with its network and location. If the network is your protection provider, the real address isn't arriving.</li>
+    <li>If every player shows the same few addresses, PROXY protocol is off on one side. If players can't join at all right after the handshake, it is on only on one side, or both PROXY protocol and the forwarding plugin are active.</li>
+  </ol>
+
+  <h2 id="tested">What we tested</h2>
+  <p>Connection Guard reads the address that Velocity, BungeeCord or Paper report at login, so it works with whichever method fills it in. We checked that directly:</p>
+  <ul>
+    <li><strong>Velocity 3.5.1 and BungeeCord build 2102 with PROXY protocol v2</strong> (25 October 2026): a deny rule on a documentation address refused exactly the player whose PROXY header carried that address, and a connection without a header was not accepted at all.</li>
+    <li><strong>Paper, Folia, Velocity and BungeeCord</strong> in the <a href="/benchmark">public benchmark</a>: every test join enters through PROXY protocol v2, and Connection Guard decides on the address in the header.</li>
+    <li><strong>The TCPShield plugin</strong> restores the address during the handshake, before any login event, according to <a href="https://github.com/TCPShield/RealIP">its source code</a>. We didn't run it ourselves.</li>
+  </ul>
+</Guide>

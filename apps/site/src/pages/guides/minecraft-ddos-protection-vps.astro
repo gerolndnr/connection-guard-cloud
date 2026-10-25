@@ -1,0 +1,111 @@
+---
+import Guide from "../../layouts/Guide.astro";
+const faq = [
+  { q: "Can I protect my Minecraft server from DDoS with a cheap VPS?", a: "Partly. A VPS at a host with built-in DDoS filtering, running Velocity in front of your real server, hides the server's address and absorbs common floods. It is not as strong as a Minecraft-specific protection service with a global network, and it costs money where some of those services have free plans." },
+  { q: "Is a VPS better than TCPShield's or Infinity-Filter's free plan?", a: "Usually not in raw protection. Those services filter Minecraft traffic specifically and spread attacks over a larger network. A VPS wins on control, privacy and limits: no third party in the connection, no player or bandwidth cap from a protection plan, and everything configurable." },
+  { q: "Does Hetzner or OVH protect a Minecraft server on a VPS?", a: "Both filter attacks on the network level for free. Hetzner names reflection attacks, UDP floods and SYN floods. OVHcloud's game-specific filtering is tied to its dedicated game servers; its VPS range gets the general protection. Neither promises to understand the Minecraft protocol on a VPS." },
+  { q: "Do I need PROXY protocol with my own VPS?", a: "No. Players connect straight to Velocity on the VPS, so Velocity sees their real address. Between VPS and backend you use Velocity's player info forwarding." },
+  { q: "What stops bot attacks in this setup?", a: "The host's network filter doesn't, because bot joins look like real players. An anti-bot plugin on Velocity, such as the open-source Sonar, handles join and ping floods; Connection Guard handles VPN, proxy and country rules." },
+];
+const toc: [string, string][] = [
+  ["verdict", "The short answer"],
+  ["attacks", "What attacks look like"],
+  ["setup-idea", "The VPS setup"],
+  ["covers", "What it covers"],
+  ["gaps", "What it doesn't cover"],
+  ["compare", "Compared with protection services"],
+  ["when", "When it's the right choice"],
+  ["how", "Set it up"],
+  ["faq", "FAQ"],
+];
+---
+<Guide
+  title="DIY Minecraft DDoS Protection With a VPS: Does It Really Work?"
+  h1="Your own DDoS protection with a VPS: does it work?"
+  description="Put Velocity on a VPS with built-in DDoS filtering in front of your Minecraft server. What that protects against, where it falls short, and how it compares to TCPShield and others."
+  lede="Renting a small VPS and running your proxy there is a popular way to protect a Minecraft server. It helps more than nothing and less than many guides claim. Here is an honest look before you build it."
+  path="/guides/minecraft-ddos-protection-vps"
+  og="/og/guides.png"
+  published="2026-10-25"
+  modified="2026-10-25"
+  minutes={9}
+  toc={toc}
+  faq={faq}
+>
+  <h2 id="verdict">The short answer</h2>
+  <div class="callout">
+    <p><strong>A real improvement, not a full replacement.</strong> A VPS proxy hides your server's address and lets your host filter the common floods. That is often enough for small and medium servers. It doesn't match a Minecraft-specific protection service once someone attacks you seriously, and for many small servers a free plan from such a service is the simpler and stronger option.</p>
+  </div>
+
+  <h2 id="attacks">What attacks look like</h2>
+  <p>Not every attack is the same, and each layer of protection handles different kinds:</p>
+  <ul>
+    <li><strong>Volume floods.</strong> Masses of junk traffic, often reflected through misconfigured third-party services, fill the line to your server. Nothing on the server itself can help; the filtering has to happen upstream.</li>
+    <li><strong>Connection floods.</strong> Huge numbers of half-open TCP connections (SYN floods) or junk aimed at the Minecraft port exhaust the server or its network stack.</li>
+    <li><strong>Bot floods.</strong> Thousands of fake players join, ping or spam the login. Each connection looks valid on the network level, so only something that understands Minecraft can tell them apart.</li>
+  </ul>
+  <p>Many attacks on small servers only work because the attacker knows the server's real address, typically a home connection or a host without filtering. Hiding that address is half the battle.</p>
+
+  <h2 id="setup-idea">The VPS setup</h2>
+  <p>You rent a small VPS from a host with built-in DDoS filtering and run Velocity on it. Players connect to the VPS; Velocity forwards them to your real server over a private connection. Your real server's address never appears anywhere public.</p>
+  <pre><code>Player --> VPS (host DDoS filter) --> Velocity + anti-bot + Connection Guard
+                                      |  private tunnel or firewall
+                                      v
+                                      your Paper server(s)</code></pre>
+
+  <h2 id="covers">What it covers</h2>
+  <ul>
+    <li><strong>Your server's address stays hidden.</strong> Attacks hit the VPS, not your home connection or game host. If the VPS is overwhelmed, your backend and its data are untouched, and you can move the proxy elsewhere.</li>
+    <li><strong>The host filters common floods for free.</strong> Hetzner, for example, describes automatic filtering for DNS and NTP reflection, UDP floods and SYN floods, the latter with challenge-response. OVHcloud includes its general anti-DDoS on VPS too.</li>
+    <li><strong>Bot floods are handled on Velocity.</strong> An anti-bot plugin such as <a href="https://github.com/jonesdevelopment/sonar">Sonar</a> (open source, GPL-3.0) checks joins before they reach your server.</li>
+    <li><strong>Real addresses without extra setup.</strong> Players connect straight to Velocity, so bans, Connection Guard's VPN checks and country rules see their real address. No PROXY protocol needed.</li>
+    <li><strong>No third party in the connection.</strong> Player addresses and traffic stay between you and your host.</li>
+  </ul>
+
+  <h2 id="gaps">What it doesn't cover</h2>
+  <ul>
+    <li><strong>No global network.</strong> Protection services spread an attack over many locations (anycast). Your VPS is one machine in one place: everything that gets past the host's filter lands on it, and players far away get extra latency.</li>
+    <li><strong>Generic filters.</strong> A host's DDoS filter protects all its customers and doesn't promise to understand Minecraft. OVHcloud reserves its game-specific filtering for dedicated game servers. Floods that look like valid Minecraft traffic reach your VPS.</li>
+    <li><strong>No published capacity for you.</strong> Hosts don't promise how large an attack your VPS survives, or how they react to repeated attacks. Read your host's terms before you rely on it.</li>
+    <li><strong>A single point of failure.</strong> If the VPS goes down, so does your network, unless you run a second proxy and switch DNS.</li>
+    <li><strong>You run it.</strong> Updates, firewall, monitoring and the response during an attack are your job.</li>
+    <li><strong>It costs money.</strong> A small VPS runs a few euros a month. Some protection services start at zero.</li>
+  </ul>
+
+  <h2 id="compare">Compared with protection services</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col"></th><th scope="col">Server exposed</th><th scope="col">Own VPS proxy</th><th scope="col">Free plan of a protection service</th><th scope="col">Paid protection service</th></tr></thead>
+      <tbody>
+        <tr><td>Hides your server's address</td><td>No</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Volume floods</td><td>Your host, if any</td><td>Host filter, one location</td><td>Provider network</td><td>Provider network, larger capacity</td></tr>
+        <tr><td>Minecraft-aware filtering</td><td>No</td><td>Only via plugins on Velocity</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Bot floods</td><td>Plugins</td><td>Plugins (e.g. Sonar)</td><td>Provider, plus plugins</td><td>Provider, plus plugins</td></tr>
+        <tr><td>Real player addresses</td><td>Yes</td><td>Yes</td><td>With PROXY protocol</td><td>With PROXY protocol</td></tr>
+        <tr><td>Third party sees traffic</td><td>No</td><td>Only your host</td><td>Yes</td><td>Yes</td></tr>
+        <tr><td>Cost</td><td>None</td><td>A few euros a month</td><td>None, within limits</td><td>Monthly fee</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Free plans have limits. As of October 2026, TCPShield's free plan includes 1 TB of traffic a month for one network, and Infinity-Filter's free plan covers up to 20 players at once. Check the current plans before you choose.</p>
+
+  <h2 id="when">When it's the right choice</h2>
+  <p><strong>A VPS proxy fits</strong> when your server runs at home or at a host without filtering, when you want no third party in the connection, when you'd outgrow a free plan's limits, or when you want full control over the proxy and its plugins.</p>
+  <p><strong>Pick a protection service instead</strong> when you are already being attacked repeatedly, when your players are spread across continents, or when you don't want to run and watch a server yourself. Many networks start with a VPS and move to a service once they become a target. With PROXY protocol, your plugins keep seeing real addresses: see <a href="/guides/minecraft-ddos-protection-real-ip">real player IPs behind DDoS protection</a>.</p>
+
+  <h2 id="how">Set it up</h2>
+  <h3 id="host">1. Choose the VPS</h3>
+  <p>Pick a host with built-in DDoS filtering in a location close to most of your players. Velocity itself needs little; start with a small plan and watch CPU and traffic. Make sure the host's terms allow game servers and proxies for your own use.</p>
+  <h3 id="velocity">2. Run Velocity on the VPS</h3>
+  <p>Install Velocity with <code>online-mode = true</code> and <code>player-info-forwarding-mode = "modern"</code>, and add your backend under <code>[servers]</code>. Set up forwarding on the backend as described in <a href="/guides/minecraft-ip-forwarding">IP forwarding on Velocity and BungeeCord</a>.</p>
+  <h3 id="private">3. Connect the backend privately</h3>
+  <p>The best option is a tunnel such as WireGuard from the backend to the VPS. The backend then needs no open port at all, even at home. Otherwise allow the backend's Minecraft port only from the VPS address in its firewall.</p>
+  <h3 id="firewall">4. Close everything else on the VPS</h3>
+  <p>Open only the Minecraft port (TCP 25565) to the world, limit SSH to your own address or keys, and keep UDP closed unless you run Geyser for Bedrock players.</p>
+  <h3 id="plugins">5. Add the plugins on Velocity</h3>
+  <p>An anti-bot plugin for join and ping floods, and <a href="/velocity-anti-vpn">Connection Guard</a> for VPN, proxy and country rules. Both run on the proxy, so one installation covers every backend.</p>
+  <h3 id="address">6. Retire the old address</h3>
+  <p>If players used to connect to your server directly, that address is known. Change it if you can, or at least close it to everything except the VPS. Point your domain, and any SRV record, at the VPS, and check that old DNS records don't still reveal the backend.</p>
+  <h3 id="verify">7. Check it</h3>
+  <p>Join through your domain and check the Velocity console: the line <code>[connected player] Name (/address:port) has connected</code> should show your home address. Then try to reach the backend's port from outside the VPS; it must not answer.</p>
+</Guide>

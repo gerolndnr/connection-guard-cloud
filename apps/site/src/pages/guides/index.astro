@@ -6,16 +6,19 @@ import { breadcrumbs } from "../../lib/seo";
 const guides = [
   { href: "/guides/block-vpn-minecraft-server", title: "How to block VPNs on a Minecraft server", body: "Why prevent-proxy-connections isn't enough, how anti-VPN plugins decide, and a setup that doesn't lock out real players.", minutes: 8 },
   { href: "/guides/block-countries-minecraft-server", title: "How to block countries on a Minecraft server", body: "Blocklists vs. allowlists, the exact config, how accurate IP geolocation is, and how to stay fair.", minutes: 6 },
+  { href: "/guides/minecraft-ddos-protection-real-ip", title: "Real player IPs behind DDoS protection", body: "TCPShield, NeoProtect, Infinity-Filter or Cloudflare in front of your server: how PROXY protocol keeps bans and anti-VPN checks working.", minutes: 7 },
+  { href: "/guides/minecraft-ip-forwarding", title: "Every player has the same IP? Fix IP forwarding", body: "Players show up as 127.0.0.1 behind Velocity or BungeeCord. Turn on player info forwarding and keep your backends closed.", minutes: 5 },
+  { href: "/guides/minecraft-ddos-protection-vps", title: "Your own DDoS protection with a VPS: does it work?", body: "Velocity on a VPS with built-in filtering in front of your server. What it covers, where it falls short, and when a service is better.", minutes: 9 },
 ];
 ---
 <Base title="Minecraft Server Security Guides | Connection Guard"
-  description="Practical guides for Minecraft server owners: block VPNs and proxies, set up country rules, and avoid false positives on Paper, Spigot, BungeeCord and Velocity."
+  description="Practical guides for Minecraft server owners: block VPNs and proxies, set up country rules, keep real player IPs behind DDoS protection, and fix IP forwarding on Paper, Spigot, BungeeCord and Velocity."
   path="/guides" og="/og/guides.png" schema={[breadcrumbs([["Guides", "/guides"]])]}>
   <section class="border-b border-line">
     <div class="container-site py-12 sm:py-16">
       <Breadcrumbs items={[["Guides", "/guides"]]} />
       <h1 class="display mt-6 text-[clamp(2.25rem,5vw,3.25rem)]">Guides for server owners</h1>
-      <p class="lede mt-5">Practical, honest answers about VPNs, proxies and country rules on Minecraft servers.</p>
+      <p class="lede mt-5">Practical, honest answers about VPNs, proxies, country rules and DDoS protection on Minecraft servers.</p>
     </div>
   </section>
   <section class="container-site py-12 sm:py-16">
