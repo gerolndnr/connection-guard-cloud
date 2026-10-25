@@ -106,3 +106,15 @@ export const errorReport: ErrorReport = {
   last_at: 1_791_099_990_000,
 };
 export const syncRequestWithErrors: SyncRequest = { ...syncRequest, seq: 8, plugin_version: "0.5.2", errors: [errorReport] };
+
+/** A 0.6.2 sync that closes a six-hour signal window: prefixes and counts, no addresses or accounts. */
+export const syncRequestWithSignals: SyncRequest = {
+  ...syncRequest, seq: 9, plugin_version: "0.6.2",
+  signals: {
+    prefixes: [
+      { p: "203.0.113.0/24", logins: 3, accounts: 2, vpn: 1, denied: 0, banned: 0, allowed_by_rule: 0 },
+      { p: "2001:db8:1::/48", logins: 1, accounts: 1, vpn: 0, denied: 0, banned: 0, allowed_by_rule: 0 },
+    ],
+    overflow: 0,
+  },
+};

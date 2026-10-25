@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Command, GATED_PATHS, InstallRequest, SyncRequest, SyncResponse, isConfigPath, supportsPath, tolerateSync } from "../src/index.ts";
-import { installRequest, syncRequest, syncRequestWithErrors, syncResponse } from "../src/examples.ts";
+import { Command, GATED_PATHS, InstallRequest, SyncRequest, SyncResponse, isConfigPath, isPublicSignalPrefix, supportsPath, tolerateSync } from "../src/index.ts";
+import { installRequest, syncRequest, syncRequestWithErrors, syncRequestWithSignals, syncResponse } from "../src/examples.ts";
 
 describe("protocol v1", () => {
   it("accepts the canonical examples", () => {
@@ -49,6 +49,24 @@ describe("protocol v1", () => {
       status: { ...syncRequest.status, vpn_unchecked_allowed: coverage, local_address_logins: "many" } }).json).status;
     expect(parsed.vpn_unchecked_allowed).toEqual({ total: 2, since_summary: 0, window_seconds: 300, reasons: { NO_EVIDENCE: 2 }, families: { ipv4: 2 } });
     expect(parsed).not.toHaveProperty("local_address_logins");
+  });
+
+  it("accepts network signals as public /24 and /48 prefixes with counts only", () => {
+    expect(SyncRequest.parse(syncRequestWithSignals)).toEqual(syncRequestWithSignals);
+    for (const p of ["198.51.100.0/24", "8.8.8.0/24", "2a01:4f8:c0c::/48", "2001:db8:0::/48"]) expect(isPublicSignalPrefix(p), p).toBe(true);
+    for (const p of ["10.1.2.0/24", "192.168.0.0/24", "127.0.0.0/24", "100.64.3.0/24", "172.16.9.0/24", "169.254.1.0/24", "224.0.0.0/24",
+      "203.0.113.5/32", "203.0.113.0/23", "256.1.1.0/24", "fd00:1:2::/48", "fe80:0:0::/48", "2001:db8:1:2::/64", "2001:DB8:1::/48"])
+      expect(isPublicSignalPrefix(p), p).toBe(false);
+    const withAccount = { ...syncRequestWithSignals, signals: { overflow: 0, prefixes: [{ ...syncRequestWithSignals.signals!.prefixes[0], uuid: "x" }] } };
+    expect(SyncRequest.safeParse(withAccount).success).toBe(false);
+  });
+
+  it("drops unreadable signal prefixes on their own and an unreadable signal block as a whole", () => {
+    const good = syncRequestWithSignals.signals!.prefixes[0]!;
+    const mixed = tolerateSync({ ...syncRequest, signals: { overflow: 2, prefixes: [good, { ...good, p: "10.0.0.0/24" }, { ...good, logins: -1 }] } }).json;
+    expect(SyncRequest.parse(mixed).signals).toEqual({ overflow: 2, prefixes: [good] });
+    expect(SyncRequest.parse(tolerateSync({ ...syncRequest, signals: { prefixes: "all" } }).json)).not.toHaveProperty("signals");
+    expect(SyncRequest.parse(tolerateSync({ ...syncRequest, signals: 3 }).json)).not.toHaveProperty("signals");
   });
 
   it("rejects unknown fields so the plugin cannot leak extra data", () => {

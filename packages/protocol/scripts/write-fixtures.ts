@@ -1,5 +1,5 @@
 import { writeFileSync, mkdirSync } from "node:fs";
-import { installRequest, syncRequest, syncRequestWithErrors, syncResponse } from "../src/examples.ts";
+import { installRequest, syncRequest, syncRequestWithErrors, syncRequestWithSignals, syncResponse } from "../src/examples.ts";
 import { InstallRequest, SyncRequest, SyncResponse } from "../src/index.ts";
 
 const out = new URL("../fixtures/", import.meta.url);
@@ -10,6 +10,8 @@ write("install-request.json", InstallRequest.parse(installRequest));
 write("sync-request.json", SyncRequest.parse(syncRequest));
 // A 0.5.2 sync with one aggregated error report (cloud.error-reports): class names and own frames only, no message.
 write("sync-request-errors.json", SyncRequest.parse(syncRequestWithErrors));
+// A 0.6.2 sync closing a six-hour network-signal window: prefixes and counts only.
+write("sync-request-signals.json", SyncRequest.parse(syncRequestWithSignals));
 write("sync-response.json", SyncResponse.parse(syncResponse));
 // A response with an unknown command type: the plugin must reject the command, not the whole response.
 write("sync-response-unknown-command.json", { ...syncResponse, config: null, commands: [{ id: "cmd_zzzzzzzzzzzz", type: "console.execute", command: "op attacker" }] });
