@@ -173,6 +173,10 @@ export const EventRule = z.object({
   selected: z.boolean(),
 }).strict();
 
+// The name the player reported at login (plugins from 0.6.2). Not authentication proof: identity_trust says how far
+// the entry is verified, and offline-mode, Floodgate and pre-authentication entries have a name but no verified UUID.
+export const PlayerName = z.string().min(1).max(32).regex(/^[^\p{Cc}\p{Cf}\p{Cs}]+$/u);
+
 // One login decision. Only sent once the install is linked to a network.
 export const DecisionEvent = z.object({
   id: JavaUuid,
@@ -184,6 +188,7 @@ export const DecisionEvent = z.object({
   reason: DecisionReason,
   identity_trust: IdentityTrust,
   uuid: JavaUuid.nullable(),
+  name: PlayerName.optional(),
   ip: Ip,
   vpn: Check,
   geo: Check,
@@ -315,7 +320,14 @@ export function tolerateSync(json: unknown): { json: unknown; dropped_events: nu
     delete body.errors;
   }
   if (Array.isArray(body.events) && body.events.length <= MAX_EVENTS_PER_SYNC) {
-    const kept = body.events.filter((e) => {
+    // An unreadable reported name costs only the name, never the decision.
+    const events = body.events.map((e) => {
+      if (typeof e !== "object" || e === null || !("name" in e) || PlayerName.safeParse((e as { name: unknown }).name).success) return e;
+      issues.add("name");
+      const { name: _name, ...rest } = e as Record<string, unknown>;
+      return rest;
+    });
+    const kept = events.filter((e) => {
       const r = DecisionEvent.safeParse(e);
       if (!r.success) for (const key of issueKeys(r.error)) issues.add(key);
       return r.success;

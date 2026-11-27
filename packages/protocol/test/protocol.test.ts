@@ -71,7 +71,15 @@ describe("protocol v1", () => {
 
   it("rejects unknown fields so the plugin cannot leak extra data", () => {
     expect(SyncRequest.safeParse({ ...syncRequest, player_names: ["x"] }).success).toBe(false);
-    expect(SyncRequest.safeParse({ ...syncRequest, events: [{ ...syncRequest.events[0], name: "Notch" }] }).success).toBe(false);
+    expect(SyncRequest.safeParse({ ...syncRequest, events: [{ ...syncRequest.events[0], email: "x@example.com" }] }).success).toBe(false);
+  });
+
+  it("accepts the reported player name (0.6.2) and keeps a decision whose name is unreadable", () => {
+    expect(SyncRequest.safeParse({ ...syncRequest, events: [{ ...syncRequest.events[0], name: "Notch" }] }).success).toBe(true);
+    const tolerated = tolerateSync({ ...syncRequest, events: [{ ...syncRequest.events[0], name: "bad\u202ename" }] });
+    expect(tolerated.dropped_events).toBe(0);
+    expect(tolerated.issues).toContain("name");
+    expect((tolerated.json as { events: object[] }).events[0]).not.toHaveProperty("name");
   });
 
   it("accepts time-limited rules and capabilities", () => {

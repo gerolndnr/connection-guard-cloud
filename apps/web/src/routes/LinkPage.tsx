@@ -54,7 +54,7 @@ export function LinkPage() {
   const [target, setTarget] = useState<string>("new");
   const [networkName, setNetworkName] = useState("");
   const [serverName, setServerName] = useState("");
-  const [accepted, setAccepted] = useState(false);
+  const [acceptance, setAcceptance] = useState<{ version: string; target: string } | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -82,16 +82,18 @@ export function LinkPage() {
     );
   }
 
-  const ready = accepted && (Boolean(token) || !turnstileOn) && (target !== "new" || networkName.trim().length > 0) && !busy;
+  const dpaVersion = config.data?.dpa_version;
+  const accepted = acceptance?.version === dpaVersion && acceptance?.target === target;
+  const ready = Boolean(dpaVersion) && accepted && (Boolean(token) || !turnstileOn) && (target !== "new" || networkName.trim().length > 0) && !busy;
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ready || !config.data) return;
+    if (!ready || !dpaVersion) return;
     setBusy(true); setError(null);
     try {
       const res = await api.claim(code, {
         ...(target === "new" ? { network_name: networkName.trim() } : { network_id: target }),
         ...(serverName.trim() ? { server_name: serverName.trim() } : {}),
-        accept_dpa: true, dpa_version: config.data.dpa_version, turnstile_token: token ?? "not-configured",
+        accept_dpa: true, dpa_version: dpaVersion, turnstile_token: token ?? "not-configured",
       });
       setLinked(true);
       track("link_claimed", { install_id: res.install_id, source: src ?? "unknown", new_network: target === "new", server_named: Boolean(serverName.trim()), platform: preview.data?.install.platform });
@@ -153,18 +155,20 @@ export function LinkPage() {
               <legend className="sr-only">Data processing</legend>
               <p className="text-sm font-medium">Data processing</p>
               <ul className="mt-3 space-y-2 text-[0.8125rem] text-fg-2">
-                {["After linking, each check is sent: IP address, verified player UUID, the verdict and what each provider said.",
-                  "Decisions are deleted after 30 days. Hourly totals stay for 13 months. Everything is stored in the EU.",
+                {["After linking, the plugin sends check results, IP addresses and verified UUIDs where available. From 0.6.2 it can also send the reported player name, which is stored only under the updated agreement.",
+                  "Decisions are deleted after 30 days. Hourly totals stay for about 13 months. The decisions database is in the EU.",
                   "You are the controller for your players' data; Connection Guard processes it only to show you this dashboard.",
                   "Unlinking a server deletes its decisions at once."].map((t) => (
                   <li key={t} className="flex gap-2"><Check aria-hidden className="mt-0.5 size-3.5 shrink-0 text-fg-3" />{t}</li>
                 ))}
               </ul>
               <label className="mt-4 flex cursor-pointer items-start gap-3 border-t border-line pt-4">
-                <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-0.5 size-4 accent-[var(--accent)]" />
+                <input type="checkbox" checked={accepted} disabled={!dpaVersion}
+                  onChange={(e) => setAcceptance(e.target.checked && dpaVersion ? { version: dpaVersion, target } : null)}
+                  className="mt-0.5 size-4 accent-[var(--accent)]" />
                 <span>
-                  I accept the <a href="https://connectionguard.net/terms" target="_blank" rel="noopener" className="underline underline-offset-4">terms of service</a> and
-                  the <a href="https://connectionguard.net/dpa" target="_blank" rel="noopener" className="underline underline-offset-4">data processing agreement</a> (version {config.data?.dpa_version}) for this server.
+                  I am authorised to accept the <a href="https://connectionguard.net/terms" target="_blank" rel="noopener" className="underline underline-offset-4">terms of service</a> and
+                  the <a href="https://connectionguard.net/dpa" target="_blank" rel="noopener" className="underline underline-offset-4">data processing agreement</a> {dpaVersion && `(version ${dpaVersion}) `}for this network, and I accept them.
                   <span className="mt-1 block text-[0.75rem] text-fg-3">Binding German versions: <a href="https://connectionguard.net/nutzungsbedingungen" target="_blank" rel="noopener" lang="de" className="underline underline-offset-4">Nutzungsbedingungen</a>, <a href="https://connectionguard.net/avv" target="_blank" rel="noopener" lang="de" className="underline underline-offset-4">AVV</a></span>
                 </span>
               </label>

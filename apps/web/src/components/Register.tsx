@@ -17,6 +17,14 @@ const trustText: Record<RegisterEvent["identity_trust"], string> = {
 
 const primarySource = (e: RegisterEvent) => e.sources.find((s) => s.country || s.isp) ?? e.sources[0];
 
+/** The name the plugin reported with the decision, else the Mojang name for its verified UUID, else null. */
+export function displayName(e: RegisterEvent, players?: Map<string, string | null>): string | null {
+  return e.name ?? (e.uuid ? players?.get(e.uuid) ?? null : null);
+}
+
+/** A reported name without verified identity (offline mode, before authentication) is the player's own claim. */
+export const unverifiedName = (e: RegisterEvent) => Boolean(e.name) && e.identity_trust === "UNTRUSTED";
+
 /** Decisions table. Rows open the why sheet; the newest rows briefly highlight when they arrive. */
 export function DecisionTable({ events, installs, selected, onSelect, compact = false, narrow = false, fresh, players }: {
   events: RegisterEvent[]; installs: Install[]; selected?: string | null; onSelect?: ((e: RegisterEvent) => void) | undefined;
@@ -49,13 +57,17 @@ export function DecisionTable({ events, installs, selected, onSelect, compact = 
               <td>
                 <div className="flex min-w-0 items-baseline gap-2">
                   {(() => {
-                    const player = e.uuid ? players?.get(e.uuid) : null;
+                    const player = displayName(e, players);
                     const label = player
-                      ? <><span className="font-medium">{player}</span> <span className="mono text-[0.8125rem] font-normal text-fg-3">{e.ip}</span></>
+                      ? <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <bdi className="max-w-full truncate font-medium" title={player}>{player}</bdi>
+                          {unverifiedName(e) && <span className="whitespace-nowrap text-[0.75rem] text-fg-2">Not verified</span>}
+                          <span className="mono text-[0.8125rem] font-normal text-fg-3">{e.ip}</span>
+                        </span>
                       : <span className="mono font-medium">{e.ip}</span>;
                     return onSelect
-                      ? <button type="button" className="truncate text-left hover:underline" onClick={(ev) => { ev.stopPropagation(); onSelect(e); }}>{label}</button>
-                      : <span className="truncate">{label}</span>;
+                      ? <button type="button" className="min-w-0 text-left hover:underline" onClick={(ev) => { ev.stopPropagation(); onSelect(e); }}>{label}</button>
+                      : <span className="min-w-0">{label}</span>;
                   })()}
                   {multi && <span className="hidden truncate text-[0.8125rem] text-fg-3 sm:inline">{names.get(e.install_id)}</span>}
                 </div>
@@ -130,7 +142,9 @@ export function WhySheet({ event, installs, onClose, networkId, canManage = fals
       <div className="px-5 py-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            {playerName && <p className="truncate text-lg font-semibold tracking-tight">{playerName}</p>}
+            {playerName && <p className="break-words text-lg font-semibold tracking-tight">
+              <bdi>{playerName}</bdi>{unverifiedName(event) && <span className="ml-2 text-[0.8125rem] font-normal text-fg-2">Not verified</span>}
+            </p>}
             <p className={`mono truncate ${playerName ? "text-[0.875rem] text-fg-2" : "text-lg font-semibold tracking-tight"}`}>{event.ip}</p>
             <p className="num mt-0.5 text-[0.8125rem] text-fg-2">{day(event.at)}, {clock(event.at)}{install ? ` · ${serverName(install)}` : ""}</p>
           </div>
@@ -226,7 +240,9 @@ function Fixes({ event, networkId, playerName, installs }: { event: RegisterEven
     setBusy(f.key); setConfirm(null);
     const limited = f.effect !== "DENY" ? minutes : null;
     try {
-      const res = await api.addRule(networkId, { effect: f.effect, scope: f.scope, target: f.target, note: playerName ? `from decision: ${playerName}` : "from decision", expires_in_minutes: limited });
+      // Do not retain a reported name past the life of its decision by copying it into a rule note.
+      const note = playerName && !event.name ? `from decision: ${playerName}` : "from decision";
+      const res = await api.addRule(networkId, { effect: f.effect, scope: f.scope, target: f.target, note, expires_in_minutes: limited });
       const n = res.servers ?? servers;
       const span = limited ? ` ${RULE_DURATIONS.find((d) => d.minutes === limited)?.long ?? ""}` : "";
       setDone((d) => ({ ...d, [f.key]: res.duplicate ? "Already a rule. Remove it under Network to change it."

@@ -1,4 +1,4 @@
-// Minecraft player names for UUIDs (and UUIDs for names), looked up at Mojang on demand.
+// Public Minecraft profile names for UUIDs, looked up at Mojang on demand.
 // Names are public profile data. They are cached for a day in Cloudflare's edge cache, never stored in D1.
 // Only definite answers are cached: a found profile, or Mojang saying there is none. A rate limit, block or
 // timeout is retried on the next request instead of hiding the name for a day.
@@ -8,7 +8,6 @@ const DAY_SECONDS = 86_400;
 const compact = (uuid: string) => uuid.replace(/-/g, "").toLowerCase();
 const dashed = (hex: string) => `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 export const isUuid = (s: string) => /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(s);
-export const isPlayerName = (s: string) => /^[A-Za-z0-9_]{3,16}$/.test(s);
 
 /** A found value, NONE when Mojang has no such profile, FAILED when it could not tell (never cached). */
 const NONE = "";
@@ -26,13 +25,13 @@ async function cached(key: string, load: () => Promise<Lookup>): Promise<Lookup>
 }
 
 /** One profile request. 204/404 mean "no such profile"; anything else that is not a 200 with the field is a failure. */
-async function profile(url: string, field: "id" | "name"): Promise<Lookup> {
+async function profile(url: string): Promise<Lookup> {
   const host = new URL(url).host;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(4000), headers: { accept: "application/json" } });
     if (res.status === 204 || res.status === 404) return NONE;
     if (res.status === 200) {
-      const value = ((await res.json()) as Record<string, unknown>)[field];
+      const value = ((await res.json()) as Record<string, unknown>).name;
       if (typeof value === "string" && value) return value;
     }
     // Host and status only: never the UUID or name that was asked for.
@@ -45,9 +44,9 @@ async function profile(url: string, field: "id" | "name"): Promise<Lookup> {
 }
 
 /** Ask each Mojang endpoint in turn until one gives a definite answer. */
-async function firstDefinite(urls: string[], field: "id" | "name"): Promise<Lookup> {
+async function firstDefinite(urls: string[]): Promise<Lookup> {
   for (const url of urls) {
-    const value = await profile(url, field);
+    const value = await profile(url);
     if (value !== FAILED) return value;
   }
   return FAILED;
@@ -68,16 +67,7 @@ export async function namesFor(uuids: string[]): Promise<Record<string, string |
     return [u, await cached(`n/${id}`, () => firstDefinite([
       `https://sessionserver.mojang.com/session/minecraft/profile/${id}`,
       `https://api.minecraftservices.com/minecraft/profile/lookup/${id}`,
-    ], "name"))];
+    ]))];
   }));
   return Object.fromEntries(entries.filter(([, v]) => v !== FAILED).map(([u, v]) => [u, v || null]));
-}
-
-export async function uuidForName(name: string): Promise<string | null> {
-  if (!isPlayerName(name)) return null;
-  const id = await cached(`u/${name.toLowerCase()}`, () => firstDefinite([
-    `https://api.mojang.com/users/profiles/minecraft/${name}`,
-    `https://api.minecraftservices.com/minecraft/profile/lookup/name/${name}`,
-  ], "id"));
-  return id ? dashed(compact(id)) : null;
 }
