@@ -10,11 +10,13 @@ export function usePlayerNames(uuids: (string | null | undefined)[]): Map<string
     queryKey: ["players", missing.join(",")],
     queryFn: async () => {
       const { names } = await api.players(missing);
-      for (const u of missing) known.set(u, names[u] ?? null);
+      // A UUID the API left out could not be looked up right now; it stays unknown and is asked again later.
+      for (const u of missing) if (u in names) known.set(u, names[u] ?? null);
       return names;
     },
     enabled: missing.length > 0,
-    staleTime: Infinity,
+    // Answered UUIDs leave `missing`, so this only re-asks for ones whose lookup failed, at most every 5 minutes.
+    staleTime: 5 * 60_000,
     refetchInterval: false,
   });
   void q.data;
