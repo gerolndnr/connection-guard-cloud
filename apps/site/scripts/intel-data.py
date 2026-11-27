@@ -46,6 +46,21 @@ def unavailable(s):
     return sum(errors.get(k, 0) for k in ('timeout', 'network', 'unavailable')) > (s.get('subjects') or 0) / 2
 
 
+def with_asn_terms(m):
+    """Manifest sources, with URL and terms filled in for RIPEstat ASN sources. Since 27 Nov 2026 Intel gives those
+    once under `asn_sources` (URL template, terms, names) instead of in every entry."""
+    shared = m.get('asn_sources') or {}
+    out = []
+    for s in m['sources']:
+        found = re.match(r'(?:asn|operator-asn|mobile-asn)-([0-9]+)$', s['id'])
+        if found and shared and 'terms' not in s:
+            asn = found.group(1)
+            s = dict(s, url=shared['url'].replace('{asn}', asn),
+                     terms=f"RIPEstat (RIS) announced prefixes of AS{asn} {shared.get('names', {}).get(asn, '')}; {shared['terms']}")
+        out.append(s)
+    return out
+
+
 def source_label(src):
     """A readable name for a manifest source: the GitHub repository, the AS name, or the operator."""
     url, terms, sid = src.get('url') or '', src.get('terms') or '', src['id']
@@ -118,7 +133,7 @@ def main():
     proxy = (m.get('additional_lists') or {}).get('PROXY') or {}
     lists['PROXY'] = dict(networks=proxy.get('networks'), addresses=proxy.get('addresses'))
     sources = [dict(id=s['id'], category=s['category'], name=source_label(s), licence=licence(s), terms=s.get('terms'),
-                    url=s.get('url'), entries=s.get('entries'), ok=s.get('status') == 'ok') for s in m['sources']]
+                    url=s.get('url'), entries=s.get('entries'), ok=s.get('status') == 'ok') for s in with_asn_terms(m)]
     out = dict(
         benchmark=dict(run=newest_meta['run'], date=(newest_meta.get('started') or '')[:10], subjects=newest_meta.get('subjects'),
                        services=rows, intel_cohorts=cohorts),
