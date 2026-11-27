@@ -59,11 +59,15 @@ export function DecisionTable({ events, installs, selected, onSelect, compact = 
                   {(() => {
                     const player = displayName(e, players);
                     const label = player
-                      ? <><span className="font-medium" title={unverifiedName(e) ? "Name reported by the player, not verified" : undefined}>{player}</span> <span className="mono text-[0.8125rem] font-normal text-fg-3">{e.ip}</span></>
+                      ? <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <bdi className="max-w-full truncate font-medium" title={player}>{player}</bdi>
+                          {unverifiedName(e) && <span className="whitespace-nowrap text-[0.75rem] text-fg-2">Not verified</span>}
+                          <span className="mono text-[0.8125rem] font-normal text-fg-3">{e.ip}</span>
+                        </span>
                       : <span className="mono font-medium">{e.ip}</span>;
                     return onSelect
-                      ? <button type="button" className="truncate text-left hover:underline" onClick={(ev) => { ev.stopPropagation(); onSelect(e); }}>{label}</button>
-                      : <span className="truncate">{label}</span>;
+                      ? <button type="button" className="min-w-0 text-left hover:underline" onClick={(ev) => { ev.stopPropagation(); onSelect(e); }}>{label}</button>
+                      : <span className="min-w-0">{label}</span>;
                   })()}
                   {multi && <span className="hidden truncate text-[0.8125rem] text-fg-3 sm:inline">{names.get(e.install_id)}</span>}
                 </div>
@@ -138,7 +142,9 @@ export function WhySheet({ event, installs, onClose, networkId, canManage = fals
       <div className="px-5 py-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            {playerName && <p className="truncate text-lg font-semibold tracking-tight">{playerName}</p>}
+            {playerName && <p className="break-words text-lg font-semibold tracking-tight">
+              <bdi>{playerName}</bdi>{unverifiedName(event) && <span className="ml-2 text-[0.8125rem] font-normal text-fg-2">Not verified</span>}
+            </p>}
             <p className={`mono truncate ${playerName ? "text-[0.875rem] text-fg-2" : "text-lg font-semibold tracking-tight"}`}>{event.ip}</p>
             <p className="num mt-0.5 text-[0.8125rem] text-fg-2">{day(event.at)}, {clock(event.at)}{install ? ` · ${serverName(install)}` : ""}</p>
           </div>
@@ -151,7 +157,6 @@ export function WhySheet({ event, installs, onClose, networkId, canManage = fals
           <Row label="Mode">{event.mode === "ENFORCE" ? "Enforce" : "Observe (logs only)"}</Row>
           <Row label="Reason">{reasonLabel(event)}</Row>
           <Row label="Identity">{trustText[event.identity_trust]}</Row>
-          {playerName && unverifiedName(event) && <Row label="Name"><span>{playerName} <span className="text-fg-3">· reported by the player, not verified</span></span></Row>}
           {event.uuid && <Row label="Player UUID"><span className="mono break-all text-[0.8125rem]">{event.uuid}</span></Row>}
           <Row label="Checked in"><span className="num">{ms(event.duration_ms)}</span></Row>
           <Row label="VPN check">{checkText(event.vpn)}</Row>
@@ -235,7 +240,9 @@ function Fixes({ event, networkId, playerName, installs }: { event: RegisterEven
     setBusy(f.key); setConfirm(null);
     const limited = f.effect !== "DENY" ? minutes : null;
     try {
-      const res = await api.addRule(networkId, { effect: f.effect, scope: f.scope, target: f.target, note: playerName ? `from decision: ${playerName}` : "from decision", expires_in_minutes: limited });
+      // Do not retain a reported name past the life of its decision by copying it into a rule note.
+      const note = playerName && !event.name ? `from decision: ${playerName}` : "from decision";
+      const res = await api.addRule(networkId, { effect: f.effect, scope: f.scope, target: f.target, note, expires_in_minutes: limited });
       const n = res.servers ?? servers;
       const span = limited ? ` ${RULE_DURATIONS.find((d) => d.minutes === limited)?.long ?? ""}` : "";
       setDone((d) => ({ ...d, [f.key]: res.duplicate ? "Already a rule. Remove it under Network to change it."

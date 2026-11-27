@@ -22,7 +22,7 @@ export function RegisterPage() {
   const [q, setQ] = useState(initialQ ?? "");
   const [selected, setSelected] = useState<RegisterEvent | null>(null);
   useEffect(() => { const t = window.setTimeout(() => setQ(input.trim()), 250); return () => window.clearTimeout(t); }, [input]);
-  // Only that a search happened; the search text may be an IP address.
+  // Only that a search happened; the search text may identify a player.
   useEffect(() => { if (q) track("decisions_searched", { filter }); }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const net = useQuery({ queryKey: ["network", networkId], queryFn: () => api.network(networkId) });
@@ -61,10 +61,10 @@ export function RegisterPage() {
           <div role="group" aria-label="Filter" className="segmented">
             {FILTERS.map((f) => <button key={f.id} type="button" aria-pressed={filter === f.id} onClick={() => { setFilter(f.id); track("decisions_filtered", { filter: f.id }); }}>{f.label}</button>)}
           </div>
-          <label className="relative w-full sm:w-80">
-            <span className="sr-only">Search by IP, UUID, country code or ISP</span>
+          <label className="ph-no-capture relative w-full sm:w-80">
+            <span className="sr-only">Search by player name, IP, UUID, country code or ISP</span>
             <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-3" />
-            <input className="input pl-9" placeholder="Search player, IP, UUID, country code, ISP" value={input} onChange={(e) => setInput(e.target.value)} />
+            <input className="input pl-9" placeholder="Search player, IP, UUID, country code, ISP" maxLength={128} value={input} onChange={(e) => setInput(e.target.value)} />
           </label>
         </div>
 
@@ -75,7 +75,7 @@ export function RegisterPage() {
             <p role="alert" className="px-4 py-8 text-center text-danger-text">Decisions could not be loaded. They retry every minute.</p>
           ) : rows.length === 0 ? (
             <div className="px-4 py-12 text-center text-fg-2">
-              {q ? <>No decision matches <span className="mono font-medium text-fg">{q}</span>. Search works on IPs, UUIDs, two-letter country codes and ISP names.</>
+              {q ? <>No matching decisions. Search by stored player name, IP, UUID, two-letter country code or ISP.</>
                 : filter === "refused" ? "Nothing refused in the last 30 days."
                 : filter === "would" ? "Nothing would have been refused."
                 : filter === "errors" ? "No errors."

@@ -1,28 +1,28 @@
 {
-  "fetchedAt": "2026-10-13T14:36:47.712Z",
+  "fetchedAt": "2026-11-27T23:48:31.128Z",
   "sources": {
     "modrinth": {
       "name": "Modrinth",
       "url": "https://modrinth.com/plugin/connectionguard",
-      "downloads": 3569,
+      "downloads": 3797,
       "stale": false
     },
     "spigot": {
       "name": "SpigotMC",
       "url": "https://www.spigotmc.org/resources/121509/",
-      "downloads": 1114,
+      "downloads": 1193,
       "stale": false
     },
     "github": {
       "name": "GitHub",
       "url": "https://github.com/gerolndnr/connection-guard/releases",
-      "downloads": 696,
+      "downloads": 1144,
       "stale": false
     },
     "hangar": {
       "name": "Hangar",
       "url": "https://hangar.papermc.io/gerolndnr/connection-guard",
-      "downloads": 103,
+      "downloads": 111,
       "stale": false
     }
   },

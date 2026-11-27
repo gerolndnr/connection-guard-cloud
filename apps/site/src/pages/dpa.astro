@@ -23,29 +23,29 @@ const toc: [string, string][] = [
   description="Data processing agreement under Art. 28 GDPR for server operators who link a Minecraft server to the Connection Guard dashboard."
   alternate={{ lang: "de", path: "/avv", label: "Deutsche Fassung (AVV)" }} toc={toc}>
 
-  <p><strong>Version {LEGAL_VERSION}.</strong> This is a translation; the German <a href="/avv" hreflang="de">Auftragsverarbeitungsvertrag</a> is legally binding. This agreement under Art. 28(3) GDPR applies between the operator of a Minecraft server who links the server to the dashboard (<strong>controller</strong>) and {address} (<strong>processor</strong>). It is concluded electronically (Art. 28(9) GDPR) when the controller accepts it while linking a server.</p>
+  <p><strong>Version {LEGAL_VERSION}.</strong> This is a translation; the German <a href="/avv" hreflang="de">Auftragsverarbeitungsvertrag</a> is legally binding. This agreement under Art. 28(3) GDPR applies between the operator of the Minecraft servers linked to the dashboard (<strong>controller</strong>) and {address} (<strong>processor</strong>). It is concluded electronically (Art. 28(9) GDPR). The controller or a person authorised to enter into the agreement on its behalf accepts it for the network when linking or in the dashboard. Acceptance applies to all servers linked to that network. The dashboard records the network, account, version and time.</p>
 
   <h2 id="preamble">1. Preamble</h2>
-  <p>The Connection Guard plugin checks players' connections on the controller's server. When the controller links a server to the dashboard at app.connectionguard.net, the plugin sends the results of these checks to the processor so that the controller can view them and manage the server there. The controller is responsible for processing the players' data; the processor processes it only on the controller's behalf.</p>
+  <p>The Connection Guard plugin checks players' connections on the controller's server. When the controller links a server to the dashboard at app.connectionguard.net, the plugin sends the results of these checks to the processor so that the controller can view them and manage the server there. The processor processes these results solely on the controller's behalf. Separately transmitted network signals for Connection Guard Intel are outside this agreement; see the <a href="/privacy#network-signals">privacy policy</a> for how they are processed.</p>
 
   <h2 id="subject">2. Subject matter, nature, purpose and duration</h2>
   <p><strong>Subject matter and purpose:</strong> providing the dashboard for the controller's linked servers. This covers receiving, storing, analysing, displaying and deleting check results, and sending the settings and commands the controller triggers in the dashboard to the controller's servers.</p>
-  <p><strong>Nature of processing:</strong> collection (receipt from the plugin), storage, organisation, retrieval, consultation, aggregation into statistics, display, transmission to the controller's server, erasure. For display, public player names for UUIDs are looked up at Mojang (section 6).</p>
-  <p><strong>Duration:</strong> as long as at least one of the controller's servers is linked. For a server, the agreement ends when it is unlinked or the controller turns the cloud link off in the plugin; otherwise when the account is deleted.</p>
+  <p><strong>Nature of processing:</strong> receipt, storage, organisation, retrieval, search, aggregation into statistics, display, transmission to the controller's server and erasure. Names reported at login are used for display and search in the decision log. For entries without a reported name, public profile names for verified UUIDs may be looked up for display (section 6).</p>
+  <p><strong>Duration:</strong> while the relevant server is linked. Turning the cloud connection off in the plugin stops transmission but does not delete data already stored. Processing for a server ends when it is unlinked or its network is deleted; section 9 applies to return and deletion.</p>
 
   <h2 id="data">3. Types of personal data and categories of data subjects</h2>
   <p><strong>Data subjects:</strong> players who connect to a linked server of the controller or who are named in its rules and exemptions.</p>
   <p><strong>Types of data:</strong></p>
   <ul>
-    <li>Per login check: time, IP address, the player's verified UUID, the name the player reported at login (plugin 0.6.2 or newer; it is not verified unless the UUID is), verdict and reason, rules applied, and the answers of the detection services (country, network or ASN, provider, risk score, VPN or proxy detection).</li>
+    <li>Per login check: time, IP address, verified UUID where available, identity trust status, verdict and reason, rules applied, and answers from the detection services (country, network or ASN, provider, risk score, VPN or proxy detection). From plugin 0.6.2 a check can also contain the name the player reported at login. The name alone is not proof of identity. The dashboard marks unverified identities.</li>
     <li>Entries in exemptions and access rules set by the controller: player name, UUID or IP address and an optional note.</li>
-    <li>For entries without a reported name: public Minecraft player names for their UUIDs, looked up for display and cached for at most 24 hours, but not stored.</li>
+    <li>For entries without a reported name: public Minecraft profile names for their UUIDs, where available. These are cached for up to 24 hours and are not added to the decision log.</li>
     <li>Hourly statistics derived from these, which no longer identify individuals.</li>
   </ul>
   <p>No special categories of personal data (Art. 9 GDPR) are processed.</p>
 
   <h2 id="instructions">4. Instructions</h2>
-  <p>The processor processes the data only on documented instructions from the controller (Art. 28(3)(a) GDPR), unless required to do so by Union or German law; in that case it informs the controller before processing, unless that law prohibits it. Instructions are this agreement, the plugin's configuration and all of the controller's settings and actions in the dashboard (for example unlinking, settings, access rules). Further instructions are given in text form to {OPERATOR.privacyEmail}. If the processor considers an instruction unlawful, it informs the controller without delay.</p>
+  <p>The processor processes the data only on documented instructions from the controller, including transfers to third countries (Art. 28(3)(a) GDPR). If Union or Member State law requires processing, the processor informs the controller of that requirement beforehand unless that law prohibits notification on important grounds of public interest. Instructions are this agreement, the plugin's configuration, and the controller's settings and actions in the dashboard (for example unlinking, settings, access rules). Further instructions are given in text form to {OPERATOR.privacyEmail}. If the processor considers an instruction unlawful, it informs the controller without delay.</p>
 
   <h2 id="obligations">5. Obligations of the processor</h2>
   <ul>
@@ -56,27 +56,29 @@ const toc: [string, string][] = [
   </ul>
 
   <h2 id="subprocessors">6. Sub-processors</h2>
-  <p>The controller gives general authorisation to engage further processors (Art. 28(2) GDPR). Those engaged when the agreement is concluded are listed in Annex 2. On the controller's instruction, UUIDs are also sent to Mojang AB (Sweden) to look up public player names; Mojang processes them as a separate controller. Alerts sent to a Discord webhook that the controller connects contain no player data. The processor binds them contractually to a level of protection equivalent to this agreement (Art. 28(4) GDPR). It announces intended changes at least 30 days in advance on this page and in the dashboard. The controller may object on important data protection grounds; it may then end the link without any disadvantage.</p>
+  <p>Under this agreement the controller gives general written authorisation to engage further processors (Art. 28(2) GDPR). Annex 2 lists the sub-processors used. The processor imposes the same data protection obligations on them by contract and is liable to the controller for their performance (Art. 28(4) GDPR). It gives notice on this page and in the dashboard at least 30 days before adding or replacing a sub-processor, so that the controller can object. If the controller objects, both parties will consider a solution; the controller may end the link free of charge.</p>
+  <p>To find missing public profile names, the dashboard looks up verified Minecraft UUIDs through Mojang/Microsoft profile services. The lookup does not send names reported by the plugin or search terms from the decision log. These profile services act as separate controllers for the lookup. Discord alerts sent by the dashboard contain no player data.</p>
 
   <h2 id="transfers">7. Processing outside the EU</h2>
-  <p>The data is stored in the EU. Access by sub-processors from third countries, in particular the USA, is only permitted where the requirements of Art. 44 et seq. GDPR are met, for example through an adequacy decision (EU-U.S. Data Privacy Framework) or the EU standard contractual clauses.</p>
+  <p>The decisions database (Cloudflare D1) is restricted to the EU. Cloudflare operates the service on its global network, which may involve processing or access outside the European Economic Area. Such transfers take place in accordance with section 4 and only if the requirements of Art. 44 et seq. GDPR are met, for example under an applicable adequacy decision or the EU standard contractual clauses under Art. 46(2)(c) GDPR with any required supplementary measures.</p>
 
   <h2 id="assistance">8. Assistance to the controller</h2>
   <ul>
-    <li><strong>Data subject rights:</strong> the dashboard lets the controller find a player's data (search by IP address, UUID or name), review it and delete it by unlinking a server. Beyond that, the processor assists with requests under Art. 12 to 23 GDPR. If a player contacts the processor directly, it refers the player to the controller where it can identify the controller.</li>
+    <li><strong>Data subject rights:</strong> the dashboard supports search by IP address, UUID or stored name. The processor assists the controller on request with deletion or correction of individual records and other requests under Art. 12 to 23 GDPR. It promptly forwards requests received directly from players to the responsible controller where it can identify them, and responds only on their instruction.</li>
     <li><strong>Art. 32 to 36 GDPR:</strong> it assists the controller with security, breach notifications, data protection impact assessments and prior consultation, as far as it has the relevant information.</li>
   </ul>
 
   <h2 id="deletion">9. Deletion and return</h2>
-  <p>Login check entries are deleted after 30 days, hourly statistics after 13 months. Unlinking a server deletes its entries immediately. When the agreement ends, the processor deletes all remaining personal data of the controller unless storage is required by law (Art. 28(3)(g) GDPR). On request, the controller can receive a copy beforehand.</p>
+  <p>Login check entries are deleted after 30 days in a daily cleanup; hourly statistics are deleted after about 13 months. Unlinking a server removes its entries from the active database. If the controller wants the data returned, it can instruct the processor by emailing {OPERATOR.privacyEmail} before deleting it.</p>
+  <p>When the processing services end, the processor, at the controller's choice, deletes all remaining personal data processed on its behalf or returns it in a commonly used electronic format and deletes existing copies. This does not apply to data whose storage is required by Union or Member State law (Art. 28(3)(g) GDPR). Deleted records may remain in Cloudflare D1's automatic recovery history for up to seven days. That history is used only for recovery. On restore, any deletions instructed in the meantime are applied before the data is put back into use.</p>
 
   <h2 id="audits">10. Information and audits</h2>
-  <p>The processor makes available all information necessary to demonstrate compliance with Art. 28 GDPR and allows for audits (Art. 28(3)(h) GDPR). The source code of the dashboard and the plugin is public and shows which data is transmitted and how it is processed. Further audits are possible after timely notice in text form, without disproportionately disrupting operations.</p>
+  <p>The processor makes available all information necessary to demonstrate compliance with Art. 28 GDPR. It allows for and contributes to audits, including inspections, conducted by the controller or an auditor appointed by the controller (Art. 28(3)(h) GDPR). The source code of the dashboard and plugin is public. Audits are coordinated in text form to protect operations and other controllers' data.</p>
 
   <h2 id="controller">11. Obligations of the controller</h2>
   <ul>
     <li>It ensures a legal basis for processing its players' data and informs players under Art. 13 and 14 GDPR, for example in its server's privacy notice.</li>
-    <li>It links only servers it operates or is authorised for.</li>
+    <li>It links only servers it operates or is authorised for, and ensures that only authorised representatives accept this agreement for its network.</li>
     <li>It informs the processor without delay if it notices errors or irregularities in the processing.</li>
   </ul>
 
@@ -89,7 +91,7 @@ const toc: [string, string][] = [
     <li><strong>Access control:</strong> dashboard sign-in only via Discord. Roles per network (owner, admin, viewer). Sessions expire after 30 days and are stored server-side only as a hash. Servers authenticate with a secret stored only as a hash. Only the processor has administrative access to the infrastructure.</li>
     <li><strong>Transmission:</strong> encrypted transport only (TLS). API keys and webhook addresses are encrypted with AES-GCM and deleted once the server confirms them.</li>
     <li><strong>Storage:</strong> database with EU jurisdiction, encrypted at rest. Check results are stored per network and shown only to its members.</li>
-    <li><strong>Data minimisation:</strong> the plugin sends individual entries only after linking. Check results contain the name a player reported at login only from plugin 0.6.2 and only for networks that accepted this version of the agreement; otherwise the cloud drops it on arrival. Product analytics strips IP addresses and UUIDs and hides areas showing player data.</li>
+    <li><strong>Data minimisation:</strong> the plugin sends individual entries only after linking. From plugin 0.6.2, transmitted check results can include the reported name before the network has accepted this version of the agreement. The cloud checks acceptance on receipt and, without the applicable version, discards the name before storage and keeps the rest of the check result. Product analytics excludes areas displaying player data.</li>
     <li><strong>Input control:</strong> an audit log records who changed which settings, rules or links and when.</li>
     <li><strong>Availability:</strong> Cloudflare's distributed infrastructure. The plugin checks players independently of the dashboard, so an outage does not affect logins.</li>
     <li><strong>Separation and deletion:</strong> access is limited to the respective network. Automatic deletion after the periods in section 9.</li>

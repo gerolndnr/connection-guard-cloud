@@ -16,11 +16,12 @@ export function DpaUpdate({ networkId }: { networkId: string }) {
   const [error, setError] = useState<string | null>(null);
   if (!net.data || net.data.dpa_current !== false || !config.data) return null;
   const manager = net.data.role !== "viewer";
+  const version = config.data.dpa_version;
 
   async function accept() {
     setBusy(true); setError(null);
     try {
-      await api.acceptDpa(networkId, config.data!.dpa_version);
+      await api.acceptDpa(networkId, version);
       await qc.invalidateQueries({ queryKey: ["network", networkId] });
     } catch (err) {
       setError(err instanceof ApiError && err.code === "dpa_outdated"
@@ -30,22 +31,25 @@ export function DpaUpdate({ networkId }: { networkId: string }) {
   }
 
   return (
-    <div role="status" className="border-b border-line bg-subtle">
-      <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 text-[0.8125rem] sm:px-6">
+    <section aria-label="Data processing agreement update" className="border-b border-line bg-subtle">
+      <div className="mx-auto flex max-w-[1200px] flex-wrap items-start gap-x-4 gap-y-2 px-4 py-3 text-[0.8125rem] sm:flex-nowrap sm:px-6">
         <FileText aria-hidden className="size-4 shrink-0 text-fg-2" />
-        <p className="min-w-0 flex-1">
-          <span className="font-medium">Updated data processing agreement.</span>{" "}
-          Plugins from 0.6.2 send the name a player reported at login, so decisions show who it was. Until{" "}
-          {manager ? "you accept" : "an owner or admin accepts"} the new version, names are dropped on arrival.{" "}
-          <a href="https://connectionguard.net/dpa" target="_blank" rel="noopener" className="underline underline-offset-4">Read the agreement</a>
-          {error && <span role="alert" className="ml-2 text-danger-text">{error}</span>}
-        </p>
+        <div className="min-w-0 flex-1 basis-[calc(100%_-_2rem)] sm:basis-auto">
+          <p><span className="font-medium">Updated data processing agreement ({version}).</span>{" "}
+            From plugin 0.6.2, decisions can include the name reported at login. The cloud discards the name until{" "}
+            {manager ? "you accept" : "an authorised owner or admin accepts"} the agreement for this network.{" "}
+            <a href="https://connectionguard.net/avv" target="_blank" rel="noopener" className="underline underline-offset-4">Read the binding German agreement</a>
+            {" · "}<a href="https://connectionguard.net/dpa" target="_blank" rel="noopener" className="underline underline-offset-4">English translation</a>.
+          </p>
+          {manager && <p className="mt-1 text-fg-2">By accepting, you confirm you can enter into this agreement for the server operator.</p>}
+          {error && <p role="alert" className="mt-1 text-danger-text">{error}</p>}
+        </div>
         {manager && (
-          <button type="button" className="btn btn-primary h-8 px-3 text-[0.8125rem]" disabled={busy} onClick={accept}>
+          <button type="button" className="btn btn-primary ml-8 h-8 px-3 text-[0.8125rem] sm:ml-0" disabled={busy} onClick={accept}>
             {busy ? "Saving…" : "Accept for this network"}
           </button>
         )}
       </div>
-    </div>
+    </section>
   );
 }

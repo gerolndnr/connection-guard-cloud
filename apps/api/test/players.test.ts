@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { namesFor, uuidForName } from "../src/players.ts";
+import { namesFor } from "../src/players.ts";
 
 // Each test uses its own UUIDs/names: the edge cache persists across tests in this worker.
 type Reply = { status: number; body?: unknown } | "throw";
@@ -63,13 +63,4 @@ describe("player name lookup", () => {
     expect(calls).toEqual([]);
   });
 
-  it("finds a UUID by name with the same fallback", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    stub((url) => url.host === "api.mojang.com" ? "throw" : { status: 200, body: { id: "0a00000000004000800000000000000a", name: "Delta" } });
-    expect(await uuidForName("Delta_lookup")).toBe("0a000000-0000-4000-8000-00000000000a");
-    expect(calls).toEqual(["api.mojang.com", "api.minecraftservices.com"]);
-    stub(() => ({ status: 404 }));
-    expect(await uuidForName("Nobody_here")).toBeNull();
-    expect(await uuidForName("bad name!")).toBeNull();
-  });
 });

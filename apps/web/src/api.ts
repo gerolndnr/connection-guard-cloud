@@ -94,10 +94,10 @@ export const api = {
     request<{ ok: true }>(`/networks/${id}/dpa`, { json: { accept_dpa: true, dpa_version: dpaVersion } }),
   stats: (id: string, range: Range, install?: string) =>
     request<Stats>(`/networks/${id}/stats?range=${range}${install ? `&install=${install}` : ""}`),
-  events: (id: string, params: { outcome?: string | undefined; q?: string; before?: number | undefined; limit?: number; install?: string | undefined }) => {
+  events: (id: string, { q, ...params }: { outcome?: string | undefined; q?: string | undefined; before?: number | undefined; limit?: number; install?: string | undefined }) => {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== "") qs.set(k, String(v));
-    return request<{ events: RegisterEvent[]; next_before: number | null }>(`/networks/${id}/events?${qs}`);
+    return request<{ events: RegisterEvent[]; next_before: number | null }>(`/networks/${id}/events?${qs}`, q ? { json: { q } } : undefined);
   },
   renameInstall: (id: string, name: string | null) => request<{ ok: true }>(`/installs/${id}`, { method: "PATCH", json: { name } }),
   unlink: (id: string) => request<{ ok: true }>(`/installs/${id}/unlink`, { json: {} }),

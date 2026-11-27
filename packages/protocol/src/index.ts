@@ -175,7 +175,7 @@ export const EventRule = z.object({
 
 // The name the player reported at login (plugins from 0.6.2). Not authentication proof: identity_trust says how far
 // the entry is verified, and offline-mode, Floodgate and pre-authentication entries have a name but no verified UUID.
-export const PlayerName = z.string().min(1).max(32).regex(/^[^\p{Cc}\p{Cf}]+$/u);
+export const PlayerName = z.string().min(1).max(32).regex(/^[^\p{Cc}\p{Cf}\p{Cs}]+$/u);
 
 // One login decision. Only sent once the install is linked to a network.
 export const DecisionEvent = z.object({

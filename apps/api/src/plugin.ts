@@ -60,10 +60,10 @@ async function authenticate(env: Env, header: string | undefined) {
   if (!match) return null;
   const [, installId, secret] = match;
   const row = await env.DB.prepare(
-    "SELECT i.id, i.secret_hash, i.network_id, i.last_seq, i.last_seen_at, i.created_at, i.status_json, i.plugin_version, i.platform, " +
+    "SELECT i.id, i.secret_hash, i.network_id, i.claimed_at, i.last_seq, i.last_seen_at, i.created_at, i.status_json, i.plugin_version, i.platform, " +
     "i.platform_version, i.java_version, n.name AS network_name, COALESCE(n.watched_until, 0) AS watched_until, i.hot_until FROM installs i LEFT JOIN networks n ON n.id = i.network_id WHERE i.id = ?",
   ).bind(installId).first<{
-    id: string; secret_hash: string; network_id: string | null; last_seq: number; last_seen_at: number; created_at: number;
+    id: string; secret_hash: string; network_id: string | null; claimed_at: number | null; last_seq: number; last_seen_at: number; created_at: number;
     status_json: string | null; plugin_version: string; platform: string; platform_version: string; java_version: string; network_name: string | null; watched_until: number; hot_until: number;
   }>();
   if (!row) return null;
@@ -308,7 +308,7 @@ plugin.post("/v1/sync", async (c) => {
     await writeRollup(env, install.id, req.counters);
     writeMetrics(env, install.id, req.status.mode, req.plugin_version, req.counters, claimed);
 
-    if (claimed && req.events.length > 0) {
+    if (install.network_id !== null && req.events.length > 0) {
       // Activation: the first decisions this server ever sent to the dashboard.
       const first = !(await env.DB.prepare("SELECT 1 FROM event_batches WHERE install_id = ? LIMIT 1").bind(install.id).first());
       if (first) {
@@ -319,14 +319,15 @@ plugin.post("/v1/sync", async (c) => {
         });
       }
       // Names only for networks whose DPA covers them; otherwise they are dropped on arrival, never stored.
-      const events = req.events.some((e) => e.name !== undefined) && !(await acceptedSince(env, install.network_id!, NAMES_SINCE_DPA))
+      const events = req.events.some((e) => e.name !== undefined) && !(await acceptedSince(env, install.network_id, NAMES_SINCE_DPA))
         ? req.events.map(({ name: _name, ...e }) => e) : req.events;
       const ats = events.map((e) => e.at);
+      // A sync in flight must not restore deleted decisions after the server is unlinked.
       await env.DB.prepare(
         `INSERT INTO event_batches (network_id, install_id, received_at, first_at, last_at, event_count, denied_count, payload)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      ).bind(install.network_id, install.id, now, Math.min(...ats), Math.max(...ats), req.events.length,
-        events.filter((e) => e.outcome === "DENY").length, await gzipJson(events)).run();
+         SELECT network_id, id, ?, ?, ?, ?, ?, ? FROM installs WHERE id = ? AND network_id = ? AND claimed_at IS ?`,
+      ).bind(now, Math.min(...ats), Math.max(...ats), events.length, events.filter((e) => e.outcome === "DENY").length,
+        await gzipJson(events), install.id, install.network_id, install.claimed_at).run();
     }
 
     if (req.errors?.length) await recordErrors(c, install, req, now);

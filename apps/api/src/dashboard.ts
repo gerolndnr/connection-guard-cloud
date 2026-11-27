@@ -12,7 +12,6 @@ import { audit, canManage, roleIn, type Role } from "./access.ts";
 import { acceptedSince } from "./dpa.ts";
 import { WATCH_WINDOW } from "./governor.ts";
 import { registerNetwork, rulesForNewInstall } from "./network.ts";
-import { isPlayerName, uuidForName } from "./players.ts";
 
 const ONLINE_WINDOW = 20 * 60_000;
 
@@ -314,16 +313,18 @@ dashboard.get("/networks/:id/stats", async (c) => {
     previous: prev ?? { checks: 0, denied: 0, vpn_positive: 0 } });
 });
 
-dashboard.get("/networks/:id/events", async (c) => {
+const EventSearch = z.object({ q: z.string().max(128) });
+
+dashboard.on(["GET", "POST"], "/networks/:id/events", async (c) => {
   const env = c.env;
   const id = c.req.param("id");
   if (!(await roleIn(env, id, c.get("user").id))) return c.json({ error: "not_found" }, 404);
   const before = Number(c.req.query("before") ?? Date.now() + 1);
   const outcome = c.req.query("outcome");
-  const query = (c.req.query("q") ?? "").trim().toLowerCase();
-  // Decisions from plugins since 0.6.2 carry the reported name. For older ones the name is looked up at Mojang, which
-  // may refuse requests from the cloud; then only the stored names match.
-  const nameUuid = env.ENVIRONMENT !== "test" && isPlayerName(query) && !/^[0-9a-f.:]+$/.test(query) ? await uuidForName(query) : null;
+  // New dashboards keep search terms (which may be player names or IPs) out of request URLs and their logs.
+  const search = EventSearch.safeParse(c.req.method === "POST" ? await c.req.json().catch(() => null) : { q: c.req.query("q") ?? "" });
+  if (!search.success) return c.json({ error: "bad_request" }, 400);
+  const query = search.data.q.trim().toLowerCase();
   const limit = Math.min(200, Math.max(1, Number(c.req.query("limit") ?? 50)));
   const installId = c.req.query("install");
   const batches = await env.DB.prepare(
@@ -338,7 +339,7 @@ dashboard.get("/networks/:id/events", async (c) => {
         // Observe mode: flagged but admitted, i.e. what ENFORCE would have refused.
         if (!(e.mode === "OBSERVE" && e.outcome === "ALLOW" && e.flags.length > 0)) continue;
       } else if (outcome && e.outcome !== outcome) continue;
-      if (query && !e.ip.toLowerCase().includes(query) && !(e.uuid ?? "").includes(query) && !(nameUuid && e.uuid === nameUuid)
+      if (query && !e.ip.toLowerCase().includes(query) && !(e.uuid ?? "").includes(query)
         && !(e.name ?? "").toLowerCase().includes(query)
         && !e.sources.some((s) => (s.country ?? "").toLowerCase() === query || (s.isp ?? "").toLowerCase().includes(query))) continue;
       events.push({ ...e, install_id: b.install_id });
@@ -360,9 +361,16 @@ dashboard.post("/networks/:id/dpa", async (c) => {
   const body = z.object({ accept_dpa: z.literal(true), dpa_version: z.string().max(32) }).safeParse(await c.req.json().catch(() => null));
   if (!body.success) return c.json({ error: "bad_request" }, 400);
   if (body.data.dpa_version !== env.DPA_VERSION) return c.json({ error: "dpa_outdated" }, 409);
-  await env.DB.prepare("INSERT OR IGNORE INTO dpa_acceptances (network_id, user_id, version, accepted_at) VALUES (?, ?, ?, ?)")
-    .bind(id, user.id, env.DPA_VERSION, Date.now()).run();
-  await audit(env, id, user.id, "dpa.accepted", { version: env.DPA_VERSION });
+  const now = Date.now();
+  const [acceptance] = await env.DB.batch([
+    env.DB.prepare(`INSERT OR IGNORE INTO dpa_acceptances (network_id, user_id, version, accepted_at)
+      SELECT network_id, user_id, ?, ? FROM memberships WHERE network_id = ? AND user_id = ? AND role IN ('owner', 'admin')`)
+      .bind(env.DPA_VERSION, now, id, user.id),
+    env.DB.prepare(`INSERT INTO audit_log (network_id, user_id, action, detail_json, at)
+      SELECT ?, ?, 'dpa.accepted', ?, ? WHERE changes() = 1`)
+      .bind(id, user.id, JSON.stringify({ version: env.DPA_VERSION }), now),
+  ]);
+  if (!acceptance?.meta.changes && !canManage(await roleIn(env, id, user.id))) return c.json({ error: "forbidden" }, 403);
   return c.json({ ok: true });
 });
 

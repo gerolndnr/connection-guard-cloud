@@ -24,7 +24,7 @@ describe("reported player names", () => {
     await syncOk(ins, { seq: 1, events: [named("192.0.2.31", "Offline_Steve", now - 2000), { ...decisionEvent, id: crypto.randomUUID(), at: now - 1000, ip: "192.0.2.32" }] });
     const all = await (await api(cookie, `/networks/${network_id}/events`)).json<Listed>();
     expect(all.events.map((e) => [e.ip, e.name])).toEqual([["192.0.2.32", undefined], ["192.0.2.31", "Offline_Steve"]]);
-    const found = await (await api(cookie, `/networks/${network_id}/events?q=offline_st`)).json<Listed>();
+    const found = await (await api(cookie, `/networks/${network_id}/events`, { json: { q: "OFFLINE_st" } })).json<Listed>();
     expect(found.events.map((e) => e.ip)).toEqual(["192.0.2.31"]);
     const net = await (await api(cookie, `/networks/${network_id}`)).json<{ dpa_current: boolean }>();
     expect(net.dpa_current).toBe(true);
@@ -43,11 +43,14 @@ describe("reported player names", () => {
     expect(listed.events[0]).not.toHaveProperty("name");
 
     expect((await api(cookie, `/networks/${network_id}/dpa`, { json: { accept_dpa: true, dpa_version: "2026-10-04" } })).status).toBe(409);
-    expect((await api(cookie, `/networks/${network_id}/dpa`, { json: { accept_dpa: true, dpa_version: env.DPA_VERSION } })).status).toBe(200);
+    const accept = () => api(cookie, `/networks/${network_id}/dpa`, { json: { accept_dpa: true, dpa_version: env.DPA_VERSION } });
+    expect((await accept()).status).toBe(200);
+    expect((await accept()).status).toBe(200);
     expect((await (await api(cookie, `/networks/${network_id}`)).json<{ dpa_current: boolean }>()).dpa_current).toBe(true);
-    const audit = await env.DB.prepare("SELECT action FROM audit_log WHERE network_id = ? AND action = 'dpa.accepted'").bind(network_id).first();
-    expect(audit).not.toBeNull();
+    const audit = await env.DB.prepare("SELECT COUNT(*) AS count FROM audit_log WHERE network_id = ? AND action = 'dpa.accepted'").bind(network_id).first<number>("count");
+    expect(audit).toBe(1);
 
+    await syncOk(ins, { seq: 1, events: [named("192.0.2.41", "Before_Accept", now - 3000)] });
     await syncOk(ins, { seq: 2, events: [named("192.0.2.42", "After_Accept", now - 1000)] });
     listed = await (await api(cookie, `/networks/${network_id}/events`)).json<Listed>();
     expect(listed.events.map((e) => e.name)).toEqual(["After_Accept", undefined]);
@@ -61,11 +64,18 @@ describe("reported player names", () => {
     const viewer = await login("DpaViewer");
     await api(viewer, `/invites/${url.split("/invite/")[1]}/accept`, { json: { accept_terms: true, terms_version: env.DPA_VERSION } });
     expect((await api(viewer, `/networks/${network_id}/dpa`, { json: { accept_dpa: true, dpa_version: env.DPA_VERSION } })).status).toBe(403);
+    const adminInvite = await (await api(owner, `/networks/${network_id}/invites`, { json: { role: "admin" } })).json<{ url: string }>();
+    const admin = await login("DpaAdmin");
+    await api(admin, `/invites/${adminInvite.url.split("/invite/")[1]}/accept`, { json: { accept_terms: true, terms_version: env.DPA_VERSION } });
+    await env.DB.prepare("DELETE FROM dpa_acceptances WHERE network_id = ?").bind(network_id).run();
+    expect((await api(admin, `/networks/${network_id}/dpa`, { json: { accept_dpa: true, dpa_version: env.DPA_VERSION } })).status).toBe(200);
+    const net = await (await api(owner, `/networks/${network_id}`)).json<{ dpa_current: boolean }>();
+    expect(net.dpa_current).toBe(true);
   });
 
   it("keep a decision whose name is unreadable, without the name", async () => {
     const { ins, cookie, network_id } = await linked("BadNames");
-    const bad = ["", "x".repeat(33), "evil\u202ename", "line\nbreak"];
+    const bad = ["", "x".repeat(33), "evil\u202ename", "line\nbreak", "\ud800"];
     const now = Date.now();
     const res = await sync(ins, { seq: 1, events: bad.map((n, i) => named(`192.0.2.${51 + i}`, n, now - 4000 + i)) });
     expect(res.status).toBe(200);
