@@ -9,6 +9,7 @@ import { DAY, HOUR, gunzipJson, mergeCounts, newId, newNetworkToken, normalizeLi
 import { verifyTurnstile } from "./turnstile.ts";
 import { registerSettings } from "./settings.ts";
 import { audit, canManage, roleIn, type Role } from "./access.ts";
+import { acceptedSince } from "./dpa.ts";
 import { WATCH_WINDOW } from "./governor.ts";
 import { registerNetwork, rulesForNewInstall } from "./network.ts";
 import { isPlayerName, uuidForName } from "./players.ts";
@@ -278,7 +279,9 @@ dashboard.get("/networks/:id", async (c) => {
     `SELECT e.install_id, e.fingerprint, e.type, e.cause_type, e.context, e.top_frame, e.plugin_version, e.count, e.first_at, e.last_at
      FROM install_errors e JOIN installs i ON i.id = e.install_id WHERE i.network_id = ? AND e.last_at > ? ORDER BY e.last_at DESC LIMIT 100`,
   ).bind(id, now - 7 * DAY).all<InstallErrorRow>()).results;
-  return c.json({ network, role, installs: installs.results.map((row) => ({
+  // False while the network has not accepted the current DPA; the dashboard then asks a manager to accept it.
+  const dpa_current = await acceptedSince(env, id, env.DPA_VERSION);
+  return c.json({ network, role, dpa_current, installs: installs.results.map((row) => ({
     ...installView(row, now),
     errors: errors.filter((e) => e.install_id === row.id).slice(0, 5).map(({ install_id: _install, ...e }) => e),
   })) });
@@ -318,7 +321,8 @@ dashboard.get("/networks/:id/events", async (c) => {
   const before = Number(c.req.query("before") ?? Date.now() + 1);
   const outcome = c.req.query("outcome");
   const query = (c.req.query("q") ?? "").trim().toLowerCase();
-  // A player name is looked up at Mojang so decisions can be found by name; names are not stored with decisions.
+  // Decisions from plugins since 0.6.2 carry the reported name. For older ones the name is looked up at Mojang, which
+  // may refuse requests from the cloud; then only the stored names match.
   const nameUuid = env.ENVIRONMENT !== "test" && isPlayerName(query) && !/^[0-9a-f.:]+$/.test(query) ? await uuidForName(query) : null;
   const limit = Math.min(200, Math.max(1, Number(c.req.query("limit") ?? 50)));
   const installId = c.req.query("install");
@@ -335,6 +339,7 @@ dashboard.get("/networks/:id/events", async (c) => {
         if (!(e.mode === "OBSERVE" && e.outcome === "ALLOW" && e.flags.length > 0)) continue;
       } else if (outcome && e.outcome !== outcome) continue;
       if (query && !e.ip.toLowerCase().includes(query) && !(e.uuid ?? "").includes(query) && !(nameUuid && e.uuid === nameUuid)
+        && !(e.name ?? "").toLowerCase().includes(query)
         && !e.sources.some((s) => (s.country ?? "").toLowerCase() === query || (s.isp ?? "").toLowerCase().includes(query))) continue;
       events.push({ ...e, install_id: b.install_id });
     }
@@ -342,6 +347,23 @@ dashboard.get("/networks/:id/events", async (c) => {
   events.sort((a, b) => b.at - a.at);
   const page = events.slice(0, limit);
   return c.json({ events: page, next_before: page.length === limit ? page[page.length - 1]!.at : null });
+});
+
+// A manager accepts a new DPA version for an existing network (the link flow accepts it for new ones).
+dashboard.post("/networks/:id/dpa", async (c) => {
+  const env = c.env;
+  const id = c.req.param("id");
+  const user = c.get("user");
+  const role = await roleIn(env, id, user.id);
+  if (!role) return c.json({ error: "not_found" }, 404);
+  if (!canManage(role)) return c.json({ error: "forbidden" }, 403);
+  const body = z.object({ accept_dpa: z.literal(true), dpa_version: z.string().max(32) }).safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: "bad_request" }, 400);
+  if (body.data.dpa_version !== env.DPA_VERSION) return c.json({ error: "dpa_outdated" }, 409);
+  await env.DB.prepare("INSERT OR IGNORE INTO dpa_acceptances (network_id, user_id, version, accepted_at) VALUES (?, ?, ?, ?)")
+    .bind(id, user.id, env.DPA_VERSION, Date.now()).run();
+  await audit(env, id, user.id, "dpa.accepted", { version: env.DPA_VERSION });
+  return c.json({ ok: true });
 });
 
 dashboard.post("/networks/:id/tokens", async (c) => {

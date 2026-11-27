@@ -138,7 +138,7 @@ export function Overview() {
   const week = useQuery({ queryKey: ["stats", networkId, "7d", undefined], queryFn: () => api.stats(networkId, "7d"), staleTime: 15 * 60_000 });
   const [reviewState] = useState(readReviewState);
   const release = useQuery({ queryKey: ["plugin-release"], queryFn: api.pluginRelease, staleTime: 60 * 60_000 });
-  const players = usePlayerNames(latest.data?.events.map((e) => e.uuid) ?? []);
+  const players = usePlayerNames(latest.data?.events.filter((e) => !e.name).map((e) => e.uuid) ?? []);
   // On phones the overview leads with what needs a decision; charts and breakdowns open on request.
   const [desktop, setDesktop] = useState(() => window.matchMedia("(min-width: 1024px)").matches);
   useEffect(() => {

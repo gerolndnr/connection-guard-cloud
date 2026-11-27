@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { api, type RegisterEvent } from "../api.ts";
 import { Shell } from "../components/Shell.tsx";
-import { DecisionTable, WhySheet } from "../components/Register.tsx";
+import { DecisionTable, WhySheet, displayName } from "../components/Register.tsx";
 import { usePlayerNames } from "../players.ts";
 import { track } from "../analytics.ts";
 
@@ -44,7 +44,8 @@ export function RegisterPage() {
   }, [rows]);
 
   const installs = net.data?.installs ?? [];
-  const players = usePlayerNames(rows.map((e) => e.uuid));
+  // Only decisions without a reported name need a Mojang lookup.
+  const players = usePlayerNames(rows.filter((e) => !e.name).map((e) => e.uuid));
   return (
     <>
     <Shell networkId={networkId}>
@@ -96,7 +97,7 @@ export function RegisterPage() {
       </div>
     </Shell>
     {/* Outside <main> so it stays usable while the page behind it is inert. */}
-    {selected && <WhySheet event={selected} installs={installs} onClose={() => setSelected(null)} networkId={networkId} canManage={net.data?.role !== "viewer"} playerName={selected.uuid ? players.get(selected.uuid) ?? null : null} />}
+    {selected && <WhySheet event={selected} installs={installs} onClose={() => setSelected(null)} networkId={networkId} canManage={net.data?.role !== "viewer"} playerName={displayName(selected, players)} />}
     </>
   );
 }

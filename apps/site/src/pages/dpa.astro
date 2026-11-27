@@ -37,9 +37,9 @@ const toc: [string, string][] = [
   <p><strong>Data subjects:</strong> players who connect to a linked server of the controller or who are named in its rules and exemptions.</p>
   <p><strong>Types of data:</strong></p>
   <ul>
-    <li>Per login check: time, IP address, the player's verified UUID, verdict and reason, rules applied, and the answers of the detection services (country, network or ASN, provider, risk score, VPN or proxy detection).</li>
+    <li>Per login check: time, IP address, the player's verified UUID, the name the player reported at login (plugin 0.6.2 or newer; it is not verified unless the UUID is), verdict and reason, rules applied, and the answers of the detection services (country, network or ASN, provider, risk score, VPN or proxy detection).</li>
     <li>Entries in exemptions and access rules set by the controller: player name, UUID or IP address and an optional note.</li>
-    <li>Public Minecraft player names for these UUIDs, looked up for display and cached for at most 24 hours, but not stored.</li>
+    <li>For entries without a reported name: public Minecraft player names for their UUIDs, looked up for display and cached for at most 24 hours, but not stored.</li>
     <li>Hourly statistics derived from these, which no longer identify individuals.</li>
   </ul>
   <p>No special categories of personal data (Art. 9 GDPR) are processed.</p>
@@ -63,7 +63,7 @@ const toc: [string, string][] = [
 
   <h2 id="assistance">8. Assistance to the controller</h2>
   <ul>
-    <li><strong>Data subject rights:</strong> the dashboard lets the controller find a player's data (search by IP address or UUID), review it and delete it by unlinking a server. Beyond that, the processor assists with requests under Art. 12 to 23 GDPR. If a player contacts the processor directly, it refers the player to the controller where it can identify the controller.</li>
+    <li><strong>Data subject rights:</strong> the dashboard lets the controller find a player's data (search by IP address, UUID or name), review it and delete it by unlinking a server. Beyond that, the processor assists with requests under Art. 12 to 23 GDPR. If a player contacts the processor directly, it refers the player to the controller where it can identify the controller.</li>
     <li><strong>Art. 32 to 36 GDPR:</strong> it assists the controller with security, breach notifications, data protection impact assessments and prior consultation, as far as it has the relevant information.</li>
   </ul>
 
@@ -89,7 +89,7 @@ const toc: [string, string][] = [
     <li><strong>Access control:</strong> dashboard sign-in only via Discord. Roles per network (owner, admin, viewer). Sessions expire after 30 days and are stored server-side only as a hash. Servers authenticate with a secret stored only as a hash. Only the processor has administrative access to the infrastructure.</li>
     <li><strong>Transmission:</strong> encrypted transport only (TLS). API keys and webhook addresses are encrypted with AES-GCM and deleted once the server confirms them.</li>
     <li><strong>Storage:</strong> database with EU jurisdiction, encrypted at rest. Check results are stored per network and shown only to its members.</li>
-    <li><strong>Data minimisation:</strong> the plugin sends individual entries only after linking. Player names are not part of check results. Product analytics strips IP addresses and UUIDs and hides areas showing player data.</li>
+    <li><strong>Data minimisation:</strong> the plugin sends individual entries only after linking. Check results contain the name a player reported at login only from plugin 0.6.2 and only for networks that accepted this version of the agreement; otherwise the cloud drops it on arrival. Product analytics strips IP addresses and UUIDs and hides areas showing player data.</li>
     <li><strong>Input control:</strong> an audit log records who changed which settings, rules or links and when.</li>
     <li><strong>Availability:</strong> Cloudflare's distributed infrastructure. The plugin checks players independently of the dashboard, so an outage does not affect logins.</li>
     <li><strong>Separation and deletion:</strong> access is limited to the respective network. Automatic deletion after the periods in section 9.</li>

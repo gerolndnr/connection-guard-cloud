@@ -17,6 +17,14 @@ const trustText: Record<RegisterEvent["identity_trust"], string> = {
 
 const primarySource = (e: RegisterEvent) => e.sources.find((s) => s.country || s.isp) ?? e.sources[0];
 
+/** The name the plugin reported with the decision, else the Mojang name for its verified UUID, else null. */
+export function displayName(e: RegisterEvent, players?: Map<string, string | null>): string | null {
+  return e.name ?? (e.uuid ? players?.get(e.uuid) ?? null : null);
+}
+
+/** A reported name without verified identity (offline mode, before authentication) is the player's own claim. */
+export const unverifiedName = (e: RegisterEvent) => Boolean(e.name) && e.identity_trust === "UNTRUSTED";
+
 /** Decisions table. Rows open the why sheet; the newest rows briefly highlight when they arrive. */
 export function DecisionTable({ events, installs, selected, onSelect, compact = false, narrow = false, fresh, players }: {
   events: RegisterEvent[]; installs: Install[]; selected?: string | null; onSelect?: ((e: RegisterEvent) => void) | undefined;
@@ -49,9 +57,9 @@ export function DecisionTable({ events, installs, selected, onSelect, compact = 
               <td>
                 <div className="flex min-w-0 items-baseline gap-2">
                   {(() => {
-                    const player = e.uuid ? players?.get(e.uuid) : null;
+                    const player = displayName(e, players);
                     const label = player
-                      ? <><span className="font-medium">{player}</span> <span className="mono text-[0.8125rem] font-normal text-fg-3">{e.ip}</span></>
+                      ? <><span className="font-medium" title={unverifiedName(e) ? "Name reported by the player, not verified" : undefined}>{player}</span> <span className="mono text-[0.8125rem] font-normal text-fg-3">{e.ip}</span></>
                       : <span className="mono font-medium">{e.ip}</span>;
                     return onSelect
                       ? <button type="button" className="truncate text-left hover:underline" onClick={(ev) => { ev.stopPropagation(); onSelect(e); }}>{label}</button>
@@ -143,6 +151,7 @@ export function WhySheet({ event, installs, onClose, networkId, canManage = fals
           <Row label="Mode">{event.mode === "ENFORCE" ? "Enforce" : "Observe (logs only)"}</Row>
           <Row label="Reason">{reasonLabel(event)}</Row>
           <Row label="Identity">{trustText[event.identity_trust]}</Row>
+          {playerName && unverifiedName(event) && <Row label="Name"><span>{playerName} <span className="text-fg-3">· reported by the player, not verified</span></span></Row>}
           {event.uuid && <Row label="Player UUID"><span className="mono break-all text-[0.8125rem]">{event.uuid}</span></Row>}
           <Row label="Checked in"><span className="num">{ms(event.duration_ms)}</span></Row>
           <Row label="VPN check">{checkText(event.vpn)}</Row>

@@ -3,6 +3,7 @@
 // background thread and treats every failure as "try again later".
 import { Hono, type Context } from "hono";
 import { capture, type ServerEvent } from "./analytics.ts";
+import { NAMES_SINCE_DPA, acceptedSince } from "./dpa.ts";
 import {
   Command, InstallRequest, MAX_BODY_BYTES, SyncRequest, tolerateSync,
   type Counters, type DesiredConfig, type ErrorReport, type ErrorResponse, type InstallResponse, type SyncResponse,
@@ -317,12 +318,15 @@ plugin.post("/v1/sync", async (c) => {
             minutes_since_install: Math.round((now - install.created_at) / 60_000), decisions: req.events.length },
         });
       }
-      const ats = req.events.map((e) => e.at);
+      // Names only for networks whose DPA covers them; otherwise they are dropped on arrival, never stored.
+      const events = req.events.some((e) => e.name !== undefined) && !(await acceptedSince(env, install.network_id!, NAMES_SINCE_DPA))
+        ? req.events.map(({ name: _name, ...e }) => e) : req.events;
+      const ats = events.map((e) => e.at);
       await env.DB.prepare(
         `INSERT INTO event_batches (network_id, install_id, received_at, first_at, last_at, event_count, denied_count, payload)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       ).bind(install.network_id, install.id, now, Math.min(...ats), Math.max(...ats), req.events.length,
-        req.events.filter((e) => e.outcome === "DENY").length, await gzipJson(req.events)).run();
+        events.filter((e) => e.outcome === "DENY").length, await gzipJson(events)).run();
     }
 
     if (req.errors?.length) await recordErrors(c, install, req, now);

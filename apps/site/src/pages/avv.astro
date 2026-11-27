@@ -37,9 +37,9 @@ const toc: [string, string][] = [
   <p><strong>Betroffene Personen:</strong> Spieler, die sich mit einem verknüpften Server des Verantwortlichen verbinden oder in dessen Regeln und Ausnahmen genannt werden.</p>
   <p><strong>Datenarten:</strong></p>
   <ul>
-    <li>Je Anmeldeprüfung: Zeitpunkt, IP-Adresse, verifizierte UUID des Spielers, Ergebnis und Grund, angewandte Regeln sowie die Antworten der Erkennungsdienste (Land, Netzwerk bzw. ASN, Anbieter, Risikowert, Erkennung als VPN oder Proxy).</li>
+    <li>Je Anmeldeprüfung: Zeitpunkt, IP-Adresse, verifizierte UUID des Spielers, der vom Spieler bei der Anmeldung angegebene Name (ab Plugin 0.6.2; nicht geprüft, sofern die UUID nicht verifiziert ist), Ergebnis und Grund, angewandte Regeln sowie die Antworten der Erkennungsdienste (Land, Netzwerk bzw. ASN, Anbieter, Risikowert, Erkennung als VPN oder Proxy).</li>
     <li>Einträge in Ausnahmen und Zugriffsregeln, die der Verantwortliche festlegt: Spielername, UUID oder IP-Adresse und eine optionale Notiz.</li>
-    <li>Öffentliche Minecraft-Spielernamen zu diesen UUIDs, die zur Anzeige abgefragt und höchstens 24 Stunden zwischengespeichert, aber nicht gespeichert werden.</li>
+    <li>Für Einträge ohne angegebenen Namen: öffentliche Minecraft-Spielernamen zu ihren UUIDs, die zur Anzeige abgefragt und höchstens 24 Stunden zwischengespeichert, aber nicht gespeichert werden.</li>
     <li>Statistiken je Stunde, die aus diesen Daten gebildet werden und keine Einzelpersonen mehr erkennen lassen.</li>
   </ul>
   <p>Besondere Kategorien personenbezogener Daten (Art. 9 DSGVO) werden nicht verarbeitet.</p>
@@ -63,7 +63,7 @@ const toc: [string, string][] = [
 
   <h2 id="unterstuetzung">8. Unterstützung des Verantwortlichen</h2>
   <ul>
-    <li><strong>Rechte betroffener Personen:</strong> Das Dashboard ermöglicht dem Verantwortlichen, die Daten eines Spielers zu finden (Suche nach IP-Adresse oder UUID), zu sichten und durch Entknüpfen eines Servers zu löschen. Darüber hinaus unterstützt der Auftragsverarbeiter bei Anträgen nach Art. 12 bis 23 DSGVO. Wendet sich ein Spieler direkt an ihn, verweist er ihn an den Verantwortlichen, soweit er diesen erkennen kann.</li>
+    <li><strong>Rechte betroffener Personen:</strong> Das Dashboard ermöglicht dem Verantwortlichen, die Daten eines Spielers zu finden (Suche nach IP-Adresse, UUID oder Name), zu sichten und durch Entknüpfen eines Servers zu löschen. Darüber hinaus unterstützt der Auftragsverarbeiter bei Anträgen nach Art. 12 bis 23 DSGVO. Wendet sich ein Spieler direkt an ihn, verweist er ihn an den Verantwortlichen, soweit er diesen erkennen kann.</li>
     <li><strong>Art. 32 bis 36 DSGVO:</strong> Er unterstützt den Verantwortlichen bei Sicherheit, Meldungen von Datenschutzverletzungen, Datenschutz-Folgenabschätzungen und vorheriger Konsultation, soweit ihm Informationen dazu vorliegen.</li>
   </ul>
 
@@ -89,7 +89,7 @@ const toc: [string, string][] = [
     <li><strong>Zugang und Zugriff:</strong> Anmeldung am Dashboard nur über Discord. Rollen je Netzwerk (Inhaber, Administrator, Betrachter). Sitzungen laufen nach 30 Tagen ab und werden serverseitig nur als Hash gespeichert. Server authentifizieren sich mit einem Geheimnis, das nur als Hash gespeichert wird. Administrativer Zugang zur Infrastruktur hat nur der Auftragsverarbeiter.</li>
     <li><strong>Weitergabe:</strong> Übertragungen ausschließlich verschlüsselt (TLS). API-Schlüssel und Webhook-Adressen werden mit AES-GCM verschlüsselt und nach Bestätigung durch den Server gelöscht.</li>
     <li><strong>Speicherung:</strong> Datenbank mit EU-Jurisdiktion, auf Datenträgern verschlüsselt. Prüfergebnisse werden je Netzwerk zugeordnet gespeichert und nur dessen Mitgliedern angezeigt.</li>
-    <li><strong>Datenminimierung:</strong> Das Plugin überträgt Einzeldaten erst nach dem Verknüpfen. Spielernamen werden in Prüfergebnissen nicht übertragen. Die Produktanalyse filtert IP-Adressen und UUIDs heraus und blendet Bereiche mit Spielerdaten aus.</li>
+    <li><strong>Datenminimierung:</strong> Das Plugin überträgt Einzeldaten erst nach dem Verknüpfen. Prüfergebnisse enthalten den bei der Anmeldung angegebenen Namen erst ab Plugin 0.6.2 und nur für Netzwerke, die diese Fassung des Vertrags akzeptiert haben; andernfalls verwirft die Cloud ihn beim Empfang. Die Produktanalyse filtert IP-Adressen und UUIDs heraus und blendet Bereiche mit Spielerdaten aus.</li>
     <li><strong>Eingabekontrolle:</strong> Ein Änderungsprotokoll hält fest, wer welche Einstellungen, Regeln oder Verknüpfungen wann geändert hat.</li>
     <li><strong>Verfügbarkeit:</strong> Verteilte Infrastruktur von Cloudflare. Das Plugin prüft Spieler unabhängig vom Dashboard, ein Ausfall beeinträchtigt die Anmeldung nicht.</li>
     <li><strong>Trennung und Löschung:</strong> Zugriff ist auf das jeweilige Netzwerk beschränkt. Automatische Löschung nach den Fristen in Abschnitt 9.</li>

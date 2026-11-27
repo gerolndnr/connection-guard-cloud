@@ -41,7 +41,11 @@ export interface InstallError {
 }
 /** The newest published plugin release (from GitHub). */
 export interface PluginRelease { version: string; url: string; published_at: string }
-export interface NetworkView { network: { id: string; name: string; retention_days: number; created_at: number }; role: Role; installs: Install[] }
+export interface NetworkView {
+  network: { id: string; name: string; retention_days: number; created_at: number }; role: Role; installs: Install[];
+  /** False while the network has not accepted the current DPA version (absent from older APIs: treat as accepted). */
+  dpa_current?: boolean;
+}
 export type Range = "24h" | "7d" | "30d" | "90d";
 export interface Stats {
   range: Range; from: number; to: number; bucket_ms: number;
@@ -86,6 +90,8 @@ export const api = {
   claim: (code: string, body: { network_id?: string; network_name?: string; server_name?: string; accept_dpa: true; dpa_version: string; turnstile_token: string }) =>
     request<{ network_id: string; install_id: string }>(`/link/${encodeURIComponent(code)}`, { json: body }),
   network: (id: string) => request<NetworkView>(`/networks/${id}`),
+  acceptDpa: (id: string, dpaVersion: string) =>
+    request<{ ok: true }>(`/networks/${id}/dpa`, { json: { accept_dpa: true, dpa_version: dpaVersion } }),
   stats: (id: string, range: Range, install?: string) =>
     request<Stats>(`/networks/${id}/stats?range=${range}${install ? `&install=${install}` : ""}`),
   events: (id: string, params: { outcome?: string | undefined; q?: string; before?: number | undefined; limit?: number; install?: string | undefined }) => {
