@@ -55,7 +55,7 @@ async function ensureLinkCode(env: Env, installId: string, now: number): Promise
   throw new Error("could not allocate link code");
 }
 
-async function authenticate(env: Env, header: string | undefined) {
+export async function authenticate(env: Env, header: string | undefined) {
   const match = /^Bearer (ins_[A-Za-z0-9]{20,32})\.(cgs_[A-Za-z0-9_-]{40,64})$/.exec(header ?? "");
   if (!match) return null;
   const [, installId, secret] = match;

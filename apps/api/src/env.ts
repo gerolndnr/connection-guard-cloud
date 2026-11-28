@@ -5,6 +5,9 @@ export interface Env {
   ASSETS?: Fetcher;
   INSTALL_LIMITER?: RateLimit;
   SYNC_LIMITER?: RateLimit;
+  INTEL_LIMITER?: RateLimit;
+  /** Intel Cloud (Player Intelligence), a separate private Worker bound by Service Binding. Absent when self-hosted. */
+  INTEL?: IntelService;
   ENVIRONMENT: "development" | "test" | "production";
   APP_ORIGIN: string;
   DISCORD_CLIENT_ID: string;
@@ -26,3 +29,23 @@ export interface SessionUser {
 }
 
 export type AppEnv = { Bindings: Env; Variables: { user: SessionUser } };
+
+/** A result Intel Cloud computed; apps/api returns it to the plugin or dashboard as is. */
+export interface IntelResult { status: number; body: unknown }
+export interface IntelCaller { network_id: string; install_id: string }
+
+/** The RPC methods of Intel Cloud's `IntelRpc` entrypoint (connection-guard-intel-cloud, src/rpc.ts). */
+export interface IntelService {
+  lookup(caller: IntelCaller, json: unknown): Promise<IntelResult>;
+  contribute(caller: IntelCaller, json: unknown): Promise<IntelResult>;
+  report(caller: { network_id: string }, uuid: string, sections?: string[], detail?: "summary" | "full"): Promise<IntelResult>;
+  forgetNetwork(networkId: string): Promise<boolean>;
+  forgetInstall(installId: string): Promise<boolean>;
+  info(): Promise<IntelInfo>;
+}
+export interface IntelInfo {
+  offered: boolean;
+  agreement_version: string | null;
+  accept_kinds: string[];
+  sources: { id: string; name: string; available: boolean }[];
+}

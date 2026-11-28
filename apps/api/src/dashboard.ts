@@ -12,6 +12,7 @@ import { audit, canManage, roleIn, type Role } from "./access.ts";
 import { acceptedSince } from "./dpa.ts";
 import { WATCH_WINDOW } from "./governor.ts";
 import { registerNetwork, rulesForNewInstall } from "./network.ts";
+import { forgetInIntel, registerIntel } from "./intel.ts";
 
 const ONLINE_WINDOW = 20 * 60_000;
 
@@ -410,6 +411,7 @@ dashboard.patch("/installs/:id", async (c) => {
 
 registerSettings(dashboard);
 registerNetwork(dashboard);
+registerIntel(dashboard);
 
 dashboard.post("/installs/:id/unlink", async (c) => {
   const env = c.env;
@@ -427,6 +429,7 @@ dashboard.post("/installs/:id/unlink", async (c) => {
     env.DB.prepare("INSERT INTO audit_log (network_id, user_id, action, detail_json, at) VALUES (?, ?, 'install.unlinked', ?, ?)")
       .bind(networkId, user.id, JSON.stringify({ install_id: installId }), now),
   ]);
+  forgetInIntel(env, c.executionCtx, "install", installId);
   capture(c, { event: "server_unlinked", distinct_id: user.id, groups: { network: networkId } });
   return c.json({ ok: true });
 });

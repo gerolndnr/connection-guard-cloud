@@ -8,7 +8,9 @@
     ".": "./src/index.ts",
     "./examples": "./src/examples.ts",
     "./scrub": "./src/scrub.ts",
-    "./rules": "./src/rules.ts"
+    "./rules": "./src/rules.ts",
+    "./intel": "./src/intel.ts",
+    "./intel-examples": "./src/intel-examples.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Ban, Check, RotateCw, ShieldCheck, X } from "lucide-react";
 import { api, ApiError, type Install, type RegisterEvent, type RuleEffect, type RuleScope } from "../api.ts";
 import { track } from "../analytics.ts";
 import { RULE_DURATIONS, ago, clock, countryName, day, explain, ms, reasonLabel, serverName, supportsExpiry, verdict } from "../format.ts";
 import { VerdictBadge } from "./Badge.tsx";
 import { isLocalList, sourceLabel, sourceVerdict, unconfirmedListing } from "../sources.ts";
+import { intelReady, useIntel } from "../intel.ts";
 
 const trustText: Record<RegisterEvent["identity_trust"], string> = {
   UNTRUSTED: "Not verified",
@@ -14,6 +16,9 @@ const trustText: Record<RegisterEvent["identity_trust"], string> = {
   FLOODGATE: "Bedrock (Floodgate)",
   VERIFIED_FORWARDING: "Verified proxy forwarding",
 };
+
+/** Identities whose UUID was verified; Player Intelligence only knows these (TRUSTED_IDENTITIES in @cg/protocol/intel). */
+const verifiedIdentity = new Set<RegisterEvent["identity_trust"]>(["AUTHENTICATED", "PLATFORM_ONLINE", "VERIFIED_FORWARDING"]);
 
 const primarySource = (e: RegisterEvent) => e.sources.find((s) => s.country || s.isp) ?? e.sources[0];
 
@@ -105,6 +110,7 @@ export function WhySheet({ event, installs, onClose, networkId, canManage = fals
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const opener = useRef<Element | null>(null);
+  const intel = useIntel(networkId);
   const [modal, setModal] = useState(() => window.matchMedia("(max-width: 1023px)").matches);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 1023px)");
@@ -157,7 +163,14 @@ export function WhySheet({ event, installs, onClose, networkId, canManage = fals
           <Row label="Mode">{event.mode === "ENFORCE" ? "Enforce" : "Observe (logs only)"}</Row>
           <Row label="Reason">{reasonLabel(event)}</Row>
           <Row label="Identity">{trustText[event.identity_trust]}</Row>
-          {event.uuid && <Row label="Player UUID"><span className="mono break-all text-[0.8125rem]">{event.uuid}</span></Row>}
+          {event.uuid && (
+            <Row label="Player UUID">
+              <span className="mono break-all text-[0.8125rem]">{event.uuid}</span>
+              {networkId && intelReady(intel.data) && verifiedIdentity.has(event.identity_trust) && (
+                <Link to="/n/$networkId/players" params={{ networkId }} search={{ uuid: event.uuid }} className="mt-0.5 block text-[0.8125rem] underline underline-offset-4">Player report</Link>
+              )}
+            </Row>
+          )}
           <Row label="Checked in"><span className="num">{ms(event.duration_ms)}</span></Row>
           <Row label="VPN check">{checkText(event.vpn)}</Row>
           <Row label="Country check">{countryCheck(event)}</Row>

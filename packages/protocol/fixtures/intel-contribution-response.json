@@ -1,0 +1,11 @@
+{
+  "accepted": 7,
+  "rejected": 0,
+  "enabled": true,
+  "accept_kinds": [
+    "login_observation",
+    "punishment",
+    "punishment_revoked"
+  ],
+  "retry_in": null
+}

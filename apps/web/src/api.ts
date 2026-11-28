@@ -1,5 +1,6 @@
 // Typed client for apps/api/src/dashboard.ts.
 import type { ConfigSnapshot, DecisionEvent, Status } from "@cg/protocol";
+import type { ContributionKind, IntelLookupResponse, PlayerReport } from "@cg/protocol/intel";
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, public issues: { path: string; message: string }[] = []) { super(code); }
@@ -79,6 +80,24 @@ export interface InvitePreview { network_name: string; network_id: string; role:
 export type AlertKind = "server_offline" | "provider_trouble" | "quota_low" | "refusal_spike" | "weekly_digest";
 export interface AlertSettings { webhook_set: boolean; webhook_hint: string | null; kinds: AlertKind[] }
 export interface ActivityEntry { action: string; at: number; user_name: string | null; detail: Record<string, unknown> }
+/** Player Intelligence (Intel Cloud) for one network: what is offered, the network's choice and its API keys. */
+export interface IntelSettings {
+  /** False when this cloud has no Intel Cloud (self-hosted) or it did not answer. */
+  available: boolean;
+  /** False until an agreement version covering Player Intelligence is published. */
+  offered: boolean;
+  agreement_version: string | null;
+  agreement_accepted: boolean;
+  contribute: boolean;
+  accept_kinds: ContributionKind[];
+  sources: { id: string; name: string; available: boolean }[];
+  can_manage: boolean;
+  /** Owners and admins only. */
+  keys: IntelKey[];
+}
+export interface IntelKey { id: string; name: string; hint: string; created_at: number; revoked_at: number | null; revoked: boolean; created_by_name: string | null }
+export type { IntelLookupResponse, PlayerReport };
+
 export interface Announcement { id: string; tone?: "info" | "warn" | "danger"; text: string; url?: string }
 
 export const api = {
@@ -129,6 +148,11 @@ export const api = {
   activity: (networkId: string) => request<{ activity: ActivityEntry[] }>(`/networks/${networkId}/activity`),
   deleteNetwork: (networkId: string, confirm: string) => request<{ ok: true }>(`/networks/${networkId}`, { method: "DELETE", json: { confirm } }),
   deleteAccount: () => request<{ ok: true }>("/me", { method: "DELETE", json: { confirm: "DELETE" } }),
+  intel: (networkId: string) => request<IntelSettings>(`/networks/${networkId}/intel`),
+  setIntelContribute: (networkId: string, contribute: boolean) => request<{ ok: true }>(`/networks/${networkId}/intel`, { method: "PUT", json: { contribute } }),
+  createIntelKey: (networkId: string, name: string) => request<{ id: string; key: string }>(`/networks/${networkId}/intel/keys`, { json: { name } }),
+  revokeIntelKey: (networkId: string, keyId: string) => request<{ ok: true }>(`/networks/${networkId}/intel/keys/${keyId}`, { method: "DELETE", json: {} }),
+  playerIntel: (networkId: string, uuid: string) => request<IntelLookupResponse>(`/networks/${networkId}/players/${uuid}/intel`),
   announcement: () => request<{ announcement: Announcement | null }>("/announcement"),
   pluginRelease: () => request<{ release: PluginRelease | null }>("/plugin-release"),
 };

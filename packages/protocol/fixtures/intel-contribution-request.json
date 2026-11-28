@@ -1,0 +1,65 @@
+{
+  "protocol": 1,
+  "batch_id": "b_7f3a9c2e41d8",
+  "items": [
+    {
+      "kind": "login_observation",
+      "uuid": "4b1c7d6e-2f3a-4c5b-9d8e-7f6a5b4c3d2e",
+      "name": "Example_Player",
+      "at": 1793000000000,
+      "trust": "AUTHENTICATED",
+      "address": "198.51.100.23",
+      "address_class": "RESIDENTIAL",
+      "textures": {
+        "value": "eyJ0aW1lc3RhbXAiOjE3OTMwMDAwMDAwMDB9",
+        "signature": "c2lnbmF0dXJl"
+      }
+    },
+    {
+      "kind": "punishment",
+      "ref": "litebans:bans:1042",
+      "source": "litebans",
+      "uuid": "4b1c7d6e-2f3a-4c5b-9d8e-7f6a5b4c3d2e",
+      "type": "ban",
+      "category": "cheating",
+      "issued_at": 1793000050000,
+      "expires_at": null,
+      "ip_ban": false
+    },
+    {
+      "kind": "punishment_revoked",
+      "ref": "litebans:mutes:77",
+      "source": "litebans",
+      "revoked_at": 1793000060000
+    },
+    {
+      "kind": "anticheat",
+      "source": "grimac",
+      "uuid": "4b1c7d6e-2f3a-4c5b-9d8e-7f6a5b4c3d2e",
+      "day": 1792972800000,
+      "category": "combat",
+      "violations": 37,
+      "punished": true
+    },
+    {
+      "kind": "bot",
+      "source": "sonar",
+      "uuid": "9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b",
+      "at": 1793000070000
+    },
+    {
+      "kind": "chat_violation",
+      "source": "chatsentry",
+      "uuid": "9e8d7c6b-5a4f-4e3d-8c2b-1a0f9e8d7c6b",
+      "at": 1793000080000,
+      "category": "advertising"
+    },
+    {
+      "kind": "playtime",
+      "source": "plan",
+      "uuid": "4b1c7d6e-2f3a-4c5b-9d8e-7f6a5b4c3d2e",
+      "day": 1792972800000,
+      "minutes": 95
+    }
+  ]
+}
