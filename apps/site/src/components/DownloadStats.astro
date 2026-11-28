@@ -1,10 +1,10 @@
 ---
 import stats from "../data/stats.json";
-const sources = Object.values(stats.sources as Record<string, { name: string; url: string; downloads: number; stale: boolean }>).sort((a, b) => b.downloads - a.downloads);
+const sources = Object.values(stats.sources as Record<string, { name: string; url: string; downloads: number; stale: boolean; fetchedAt?: string }>).sort((a, b) => b.downloads - a.downloads);
 const total = sources.reduce((n, s) => n + s.downloads, 0);
 const max = Math.max(...sources.map((s) => s.downloads));
 const fmt = new Intl.NumberFormat("en-US");
-const date = new Date(stats.fetchedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+const date = (value: string) => new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 ---
 <section aria-labelledby="dl-h" class="card relative overflow-hidden p-6">
   <div class="flex items-baseline justify-between gap-4">
@@ -18,7 +18,7 @@ const date = new Date(stats.fetchedAt).toLocaleDateString("en-GB", { day: "numer
         <a href={s.url} class="group block no-underline" data-ph-event="download_clicked" data-ph-destination={s.name.toLowerCase()} data-ph-location="hero_stats">
           <span class="flex items-baseline justify-between text-sm">
             <span class="text-fg group-hover:underline">{s.name}</span>
-            <span class="num text-fg-2">{fmt.format(s.downloads)}{s.stale && <span class="text-fg-3"> (last known)</span>}</span>
+            <span class="num text-fg-2">{fmt.format(s.downloads)}{s.stale && <span class="text-fg-3"> (last read {date(s.fetchedAt ?? stats.fetchedAt)})</span>}</span>
           </span>
           <span aria-hidden="true" class="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-subtle">
             <span class="block h-full rounded-full bg-accent" style={`width:${Math.max(2, (s.downloads / max) * 100)}%`}></span>
@@ -27,5 +27,5 @@ const date = new Date(stats.fetchedAt).toLocaleDateString("en-GB", { day: "numer
       </li>
     ))}
   </ul>
-  <p class="mt-6 border-t border-line pt-3 text-[0.75rem] text-fg-3">Read from each platform's public API on {date}. Downloads are not active servers.</p>
+  <p class="mt-6 border-t border-line pt-3 text-[0.75rem] text-fg-3">Public platform counts, last checked {date(stats.fetchedAt)}. Downloads are not active servers.</p>
 </section>

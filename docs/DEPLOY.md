@@ -72,6 +72,18 @@ npx wrangler deploy              # connectionguard.net
 cd www && npx wrangler deploy    # www → apex redirect, only needed when it changes
 ```
 
+The [Website data workflow](https://github.com/gerolndnr/mc-antivpn-bench/actions/workflows/website-data.yml)
+builds the static site daily at 20:37 UTC from the benchmark's published run selection. It uses the benchmark
+repository's own Actions read token for `results-public`. It checks the Intel manifest's signature and seeds each
+build with the data from the currently deployed `/site-data.json`, so a failed source keeps its last measurement.
+Prices, licences and other editorial comparison facts keep their checked date.
+
+The workflow's `website-production` environment in `mc-antivpn-bench` needs the `CLOUDFLARE_ACCOUNT_ID` variable and
+a `CLOUDFLARE_API_TOKEN` secret with permission to deploy the existing site Worker. A manual workflow run builds and
+checks the site without deploying unless **Publish** is selected. To refresh before a manual deploy, run
+`python3 apps/site/scripts/refresh-data.py --bench /path/to/mc-antivpn-bench` from the Cloud repo root with `gh`
+authenticated and an up-to-date benchmark checkout, then build as above.
+
 Social images and icons are committed; regenerate them with `node scripts/site-images.mjs` after changing page titles there. Check every page with `node scripts/site-seo-check.mjs` against `astro preview --port 4330`.
 
 After the first deploy: verify the domain in Google Search Console and Bing Webmaster Tools and submit `https://connectionguard.net/sitemap-index.xml`.
