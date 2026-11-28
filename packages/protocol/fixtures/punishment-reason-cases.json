@@ -1,0 +1,358 @@
+[
+  {
+    "reason": null,
+    "category": "unknown"
+  },
+  {
+    "reason": "",
+    "category": "unknown"
+  },
+  {
+    "reason": "   ",
+    "category": "unknown"
+  },
+  {
+    "reason": "-",
+    "category": "unknown"
+  },
+  {
+    "reason": "Banned by an operator.",
+    "category": "unknown"
+  },
+  {
+    "reason": "The Ban Hammer has spoken!",
+    "category": "unknown"
+  },
+  {
+    "reason": "&cNo reason specified",
+    "category": "unknown"
+  },
+  {
+    "reason": "Kein Grund angegeben",
+    "category": "unknown"
+  },
+  {
+    "reason": "Sin razón",
+    "category": "unknown"
+  },
+  {
+    "reason": "Без причины",
+    "category": "unknown"
+  },
+  {
+    "reason": "Hacking",
+    "category": "cheating"
+  },
+  {
+    "reason": "&4Cheating &7(30d)",
+    "category": "cheating"
+  },
+  {
+    "reason": "KillAura + Reach",
+    "category": "cheating"
+  },
+  {
+    "reason": "Using a hacked client",
+    "category": "cheating"
+  },
+  {
+    "reason": "X-Ray",
+    "category": "cheating"
+  },
+  {
+    "reason": "Unfair Advantage",
+    "category": "cheating"
+  },
+  {
+    "reason": "[AntiCheat] Speed (Type B)",
+    "category": "cheating"
+  },
+  {
+    "reason": "Blacklisted modifications",
+    "category": "cheating"
+  },
+  {
+    "reason": "autoclicker",
+    "category": "cheating"
+  },
+  {
+    "reason": "Unerlaubte Clientmodifikation",
+    "category": "cheating"
+  },
+  {
+    "reason": "Cheaten auf dem Server",
+    "category": "cheating"
+  },
+  {
+    "reason": "Hacken",
+    "category": "cheating"
+  },
+  {
+    "reason": "Uso de hacks",
+    "category": "cheating"
+  },
+  {
+    "reason": "Hacer trampas",
+    "category": "cheating"
+  },
+  {
+    "reason": "Trapaça (hack de voo)",
+    "category": "cheating"
+  },
+  {
+    "reason": "Mods ilegais",
+    "category": "cheating"
+  },
+  {
+    "reason": "Triche",
+    "category": "cheating"
+  },
+  {
+    "reason": "Client modifié",
+    "category": "cheating"
+  },
+  {
+    "reason": "Czitowanie",
+    "category": "cheating"
+  },
+  {
+    "reason": "Читы",
+    "category": "cheating"
+  },
+  {
+    "reason": "Использование запрещённых модов",
+    "category": "cheating"
+  },
+  {
+    "reason": "Hile kullanmak",
+    "category": "cheating"
+  },
+  {
+    "reason": "Valsspelen",
+    "category": "cheating"
+  },
+  {
+    "reason": "Ban evasion",
+    "category": "evasion"
+  },
+  {
+    "reason": "Alt of a banned player",
+    "category": "evasion"
+  },
+  {
+    "reason": "Bannumgehung",
+    "category": "evasion"
+  },
+  {
+    "reason": "Ban-Umgehung (Zweitaccount)",
+    "category": "evasion"
+  },
+  {
+    "reason": "Evasión de baneo",
+    "category": "evasion"
+  },
+  {
+    "reason": "Evasão de banimento",
+    "category": "evasion"
+  },
+  {
+    "reason": "Multicompte",
+    "category": "evasion"
+  },
+  {
+    "reason": "Обход бана",
+    "category": "evasion"
+  },
+  {
+    "reason": "Ban evasion for hacking",
+    "category": "evasion"
+  },
+  {
+    "reason": "Bot attack",
+    "category": "bot"
+  },
+  {
+    "reason": "Spam bot",
+    "category": "bot"
+  },
+  {
+    "reason": "Bug abuse",
+    "category": "exploit"
+  },
+  {
+    "reason": "Duping items",
+    "category": "exploit"
+  },
+  {
+    "reason": "Bugusing",
+    "category": "exploit"
+  },
+  {
+    "reason": "Ausnutzen von Bugs",
+    "category": "exploit"
+  },
+  {
+    "reason": "Abuso de bugs",
+    "category": "exploit"
+  },
+  {
+    "reason": "Дюп",
+    "category": "exploit"
+  },
+  {
+    "reason": "Compromised account",
+    "category": "other"
+  },
+  {
+    "reason": "Account hacked, contact support",
+    "category": "other"
+  },
+  {
+    "reason": "Gehackter Account",
+    "category": "other"
+  },
+  {
+    "reason": "Cuenta hackeada",
+    "category": "other"
+  },
+  {
+    "reason": "Scamming players",
+    "category": "scam"
+  },
+  {
+    "reason": "Chargeback",
+    "category": "scam"
+  },
+  {
+    "reason": "Real money trading",
+    "category": "scam"
+  },
+  {
+    "reason": "Betrug",
+    "category": "scam"
+  },
+  {
+    "reason": "Estafa",
+    "category": "scam"
+  },
+  {
+    "reason": "Golpe em jogadores",
+    "category": "scam"
+  },
+  {
+    "reason": "Arnaque",
+    "category": "scam"
+  },
+  {
+    "reason": "Мошенничество",
+    "category": "scam"
+  },
+  {
+    "reason": "Harassment",
+    "category": "harassment"
+  },
+  {
+    "reason": "DDoS threats",
+    "category": "harassment"
+  },
+  {
+    "reason": "Doxxing",
+    "category": "harassment"
+  },
+  {
+    "reason": "Racism",
+    "category": "harassment"
+  },
+  {
+    "reason": "Rassistische Äußerungen",
+    "category": "harassment"
+  },
+  {
+    "reason": "Belästigung",
+    "category": "harassment"
+  },
+  {
+    "reason": "Amenazas",
+    "category": "harassment"
+  },
+  {
+    "reason": "Угрозы",
+    "category": "harassment"
+  },
+  {
+    "reason": "Irkçılık",
+    "category": "harassment"
+  },
+  {
+    "reason": "Griefing",
+    "category": "griefing"
+  },
+  {
+    "reason": "Destroying builds",
+    "category": "griefing"
+  },
+  {
+    "reason": "Zerstörung fremder Bauten",
+    "category": "griefing"
+  },
+  {
+    "reason": "Гриферство",
+    "category": "griefing"
+  },
+  {
+    "reason": "Spam",
+    "category": "chat"
+  },
+  {
+    "reason": "Advertising other servers",
+    "category": "chat"
+  },
+  {
+    "reason": "Toxicity",
+    "category": "chat"
+  },
+  {
+    "reason": "Inappropriate language",
+    "category": "chat"
+  },
+  {
+    "reason": "Fremdwerbung",
+    "category": "chat"
+  },
+  {
+    "reason": "Beleidigung",
+    "category": "chat"
+  },
+  {
+    "reason": "Insultos",
+    "category": "chat"
+  },
+  {
+    "reason": "Xingamento",
+    "category": "chat"
+  },
+  {
+    "reason": "Оскорбление игроков",
+    "category": "chat"
+  },
+  {
+    "reason": "Küfür",
+    "category": "chat"
+  },
+  {
+    "reason": "Reklama innych serwerów",
+    "category": "chat"
+  },
+  {
+    "reason": "Inappropriate skin",
+    "category": "other"
+  },
+  {
+    "reason": "Breaking rule 4",
+    "category": "other"
+  },
+  {
+    "reason": "Teaming in solo",
+    "category": "other"
+  }
+]

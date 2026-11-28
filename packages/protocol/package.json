@@ -10,7 +10,8 @@
     "./scrub": "./src/scrub.ts",
     "./rules": "./src/rules.ts",
     "./intel": "./src/intel.ts",
-    "./intel-examples": "./src/intel-examples.ts"
+    "./intel-examples": "./src/intel-examples.ts",
+    "./reasons": "./src/reasons.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
