@@ -446,6 +446,9 @@ export const SyncResponse = z.object({
   accept_events: z.boolean(),
   commands: z.array(Command).max(32),
   config: DesiredConfig.nullable(),
+  // Linked servers: tunes the connection probe without a plugin release. session_check is the share of logins whose
+  // session the probe asks Mojang about again (Velocity plugins from 0.6.3). Absent: the plugin keeps its last value.
+  probe: z.object({ session_check: z.number().min(0).max(1) }).strict().optional(),
 }).strict();
 export type SyncResponse = z.infer<typeof SyncResponse>;
 

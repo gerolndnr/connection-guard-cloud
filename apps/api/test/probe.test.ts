@@ -5,6 +5,7 @@ import type { ProbeCounts } from "@cg/protocol";
 import { claim, install, login, sync, syncOk } from "./helpers.ts";
 import { PROBE_REPORT_SQL, PROBE_RETENTION, PROBE_WINDOWS_PER_DAY, recordProbe, rollUpProbe } from "../src/probe.ts";
 import { DAY } from "../src/util.ts";
+import { probeSessionShare } from "../src/plugin.ts";
 
 const probe = (counts: ProbeCounts["counts"] = syncRequestWithProbe.probe!.counts): ProbeCounts => ({ logins: 6, overflow: 0, counts });
 const linked = async () => {
@@ -14,6 +15,22 @@ const linked = async () => {
 };
 const windows = () => env.DB.prepare("SELECT * FROM probe_windows").all<Record<string, number | string>>().then((r) => r.results);
 const clear = () => env.DB.batch([env.DB.prepare("DELETE FROM probe_windows"), env.DB.prepare("DELETE FROM probe_daily")]);
+
+describe("connection-probe settings", () => {
+  it("tells linked servers the session check's share and unlinked ones nothing", async () => {
+    const { ins } = await linked();
+    expect((await syncOk(ins, { seq: 20 })).probe).toEqual({ session_check: 1 });
+    const unlinked = await install();
+    expect((await syncOk(unlinked, { seq: 21 })).probe).toBeUndefined();
+  });
+
+  it("reads the share only as a number between 0 and 1", () => {
+    expect(probeSessionShare({ PROBE_SESSION_CHECK: "0" })).toBe(0);
+    expect(probeSessionShare({ PROBE_SESSION_CHECK: "0.25" })).toBe(0.25);
+    expect(probeSessionShare({ PROBE_SESSION_CHECK: " 1 " })).toBe(1);
+    for (const raw of [undefined, "", "1.5", "-0.1", "off", "1e-3", "NaN"]) expect(probeSessionShare({ PROBE_SESSION_CHECK: raw })).toBeNull();
+  });
+});
 
 describe("connection-probe counts", () => {
   it("stores a linked server's window once, never a retry twice, and nothing from an unlinked server", async () => {
