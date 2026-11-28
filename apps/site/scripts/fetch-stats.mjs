@@ -5,7 +5,10 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 const out = new URL("../src/data/stats.json", import.meta.url);
 const previous = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : { sources: {} };
 const get = async (url, headers = {}) => {
-  const res = await fetch(url, { headers: { "user-agent": "connectionguard.net build (github.com/gerolndnr/connection-guard-cloud)", ...headers } });
+  const res = await fetch(url, {
+    headers: { "user-agent": "connectionguard.net build (github.com/gerolndnr/connection-guard-cloud)", ...headers },
+    signal: AbortSignal.timeout(15_000),
+  });
   if (!res.ok) throw new Error(`${url}: ${res.status}`);
   return res.json();
 };
@@ -25,32 +28,48 @@ const sources = {
 };
 const result = { fetchedAt: new Date().toISOString(), sources: {}, latest: previous.latest ?? null };
 for (const [id, s] of Object.entries(sources)) {
-  try { result.sources[id] = { name: s.name, url: s.url, downloads: await s.read(), stale: false }; }
+  try {
+    const downloads = await s.read();
+    if (!Number.isSafeInteger(downloads) || downloads < 0) throw new Error("invalid download count");
+    result.sources[id] = { name: s.name, url: s.url, downloads, fetchedAt: result.fetchedAt, stale: false };
+  }
   catch (e) {
     console.warn(`stats: ${id} unavailable (${e.message}); keeping last known value`);
     const last = previous.sources?.[id];
-    if (last) result.sources[id] = { ...last, stale: true };
+    if (last) result.sources[id] = { ...last, fetchedAt: last.fetchedAt ?? previous.fetchedAt, stale: true };
   }
 }
-// The newest release wins, wherever it is published first (GitHub releases can precede the plugin stores).
-const newer = (a, b) => { const p = (x) => (x.match(/\d+/g) ?? []).slice(0, 3).map(Number); const x = p(a), y = p(b);
-  for (let i = 0; i < 3; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) > (y[i] ?? 0); return false; };
+// The newest stable release wins, wherever it is published first.
+const stable = (version) => /^v?\d+\.\d+\.\d+$/.test(version);
+function newer(a, b) {
+  const x = a.replace(/^v/, "").split(".").map(Number);
+  const y = b.replace(/^v/, "").split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (x[i] !== y[i]) return x[i] > y[i];
+  }
+  return false;
+}
 let modrinth = null, github = null;
 try {
-  const [v] = await get("https://api.modrinth.com/v2/project/connectionguard/version");
+  const versions = await get("https://api.modrinth.com/v2/project/connectionguard/version");
+  const v = versions.find((entry) => entry.version_type === "release" && stable(entry.version_number));
   // The primary file, for the direct download button: Modrinth's CDN URL, so the download still counts there.
-  const f = v.files.find((x) => x.primary) ?? v.files[0];
+  const jars = v.files.filter((x) => x.filename.endsWith(".jar") && x.url.startsWith("https://cdn.modrinth.com/"));
+  const f = jars.find((x) => x.primary) ?? jars[0];
+  if (!f) throw new Error("stable JAR unavailable");
   modrinth = { version: v.version_number, published: v.date_published, loaders: v.loaders, source: "modrinth",
-    file: f ? { name: f.filename, size: f.size, url: f.url } : null };
+    file: { name: f.filename, size: f.size, url: f.url } };
 } catch (e) { console.warn("stats: Modrinth version unavailable"); }
 try {
   const r = await get("https://api.github.com/repos/gerolndnr/connection-guard/releases/latest");
   const f = r.assets.find((a) => /^connection-guard-[\d.]+-all\.jar$/.test(a.name));
+  if (r.draft || r.prerelease || !stable(r.tag_name) || !f) throw new Error("stable JAR unavailable");
   github = { version: r.tag_name.replace(/^v/, ""), published: r.published_at, loaders: modrinth?.loaders ?? [], source: "github",
-    url: r.html_url, file: f ? { name: f.name, size: f.size, url: f.browser_download_url } : null };
+    url: r.html_url, file: { name: f.name, size: f.size, url: f.browser_download_url } };
 } catch (e) { console.warn("stats: GitHub release unavailable"); }
-const best = github?.file && (!modrinth || newer(github.version, modrinth.version)) ? github : modrinth;
-if (best) result.latest = best;
+const best = github && (!modrinth || newer(github.version, modrinth.version)) ? github : modrinth;
+const known = result.latest;
+if (best && (modrinth && github || !known || !stable(known.version) || !newer(known.version, best.version))) result.latest = best;
 else console.warn("stats: latest version unavailable; keeping last known");
 writeFileSync(out, JSON.stringify(result, null, 2) + "\n");
 console.log("stats:", Object.entries(result.sources).map(([k, v]) => `${k}=${v.downloads}${v.stale ? " (stale)" : ""}`).join(" "), "latest", result.latest?.version);

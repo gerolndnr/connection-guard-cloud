@@ -14,6 +14,7 @@ The score is mc-antivpn-bench's (METHODOLOGY 7.9): 100 × (share caught − 3 ×
 median time (at most 10), floored at 0; unavailable services get none.
 """
 import argparse
+import datetime
 import json
 import os
 import re
@@ -97,18 +98,15 @@ def licence(src):
     return 'published for this use'
 
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument('--manifest', required=True)
-    p.add_argument('--summary', action='append', required=True)
-    p.add_argument('--run', action='append', required=True)
-    a = p.parse_args()
-    if len(a.summary) != len(a.run):
-        raise SystemExit('one --run per --summary')
+def provider_data(summaries):
     services, newest_meta = {}, None
-    for path, run in zip(a.summary, a.run):
-        summary = json.load(open(path))
-        meta = summary.get('meta') or {}
+    for path, run in summaries:
+        with open(path) as handle:
+            summary = json.load(handle)
+        meta = summary['meta']
+        datetime.date.fromisoformat(meta['started'][:10])
+        if meta['subjects'] <= 0 or not summary['services']:
+            raise ValueError(f'empty provider results: run {run}')
         newest_meta = newest_meta or dict(meta, run=run)
         for sid, s in summary['services'].items():
             taken = services.get(sid)
@@ -126,7 +124,14 @@ def main():
     intel = services['cg-intel']
     cohorts = [dict(id=cid, label=label, n=intel['cohorts'][cid]['n'], hit=intel['cohorts'][cid]['positive'])
                for cid, label in COHORTS if cid in intel['cohorts']]
-    m = json.load(open(a.manifest))
+    return dict(run=newest_meta['run'], date=newest_meta['started'][:10], subjects=newest_meta['subjects'],
+                services=rows, intel_cohorts=cohorts)
+
+
+def manifest_data(m):
+    datetime.datetime.fromisoformat(m['as_of'])
+    if m['schema'] != 1 or m['evaluation_only'] is not False:
+        raise ValueError('expected a published schema 1 Intel manifest')
     # Address counts only where they are countable people-facing numbers (Tor exits, proxies); a hosting range holds
     # 10^32 IPv6 addresses, which says nothing.
     lists = {k: dict(networks=v.get('networks'), addresses=v.get('addresses') if k == 'TOR' else None) for k, v in m['lists'].items()}
@@ -134,17 +139,35 @@ def main():
     lists['PROXY'] = dict(networks=proxy.get('networks'), addresses=proxy.get('addresses'))
     sources = [dict(id=s['id'], category=s['category'], name=source_label(s), licence=licence(s), terms=s.get('terms'),
                     url=s.get('url'), entries=s.get('entries'), ok=s.get('status') == 'ok') for s in with_asn_terms(m)]
-    out = dict(
-        benchmark=dict(run=newest_meta['run'], date=(newest_meta.get('started') or '')[:10], subjects=newest_meta.get('subjects'),
-                       services=rows, intel_cohorts=cohorts),
-        manifest=dict(as_of=m['as_of'], lists=lists, tor_history_days=m.get('tor_history_days'),
-                      proxy_history_days=7, sources=sources),
-    )
+    if not sources or set(m['lists']) != {'VPN', 'TOR', 'RELAY', 'HOSTING'}:
+        raise ValueError('incomplete Intel manifest')
+    return dict(as_of=m['as_of'], lists=lists, tor_history_days=m.get('tor_history_days'),
+                proxy_history_days=m.get('proxy', {}).get('history_days', 7), sources=sources)
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument('--manifest')
+    p.add_argument('--summary', action='append', default=[])
+    p.add_argument('--run', action='append', default=[])
+    a = p.parse_args()
+    if len(a.summary) != len(a.run) or not (a.manifest or a.summary):
+        p.error('supply a manifest or provider summaries with one --run each')
+    # The provider benchmark and the signed lists have separate publication schedules.
+    out = {}
+    if not a.manifest or not a.summary:
+        with open(OUT) as handle:
+            out = json.load(handle)
+    if a.summary:
+        out['benchmark'] = provider_data(zip(a.summary, a.run))
+    if a.manifest:
+        with open(a.manifest) as handle:
+            out['manifest'] = manifest_data(json.load(handle))
     with open(OUT, 'w') as handle:
         json.dump(out, handle, indent=1, ensure_ascii=False)
         handle.write('\n')
-    top = ', '.join(f"{r['name']} {r['score']}" for r in rows[:4])
-    print(f'{OUT}: {len(rows)} services ({top}), {len(sources)} sources, lists as of {m["as_of"]}')
+    print(f"{OUT}: {len(out['benchmark']['services'])} services measured {out['benchmark']['date']}, "
+          f"{len(out['manifest']['sources'])} sources as of {out['manifest']['as_of']}")
 
 
 if __name__ == '__main__':
