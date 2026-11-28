@@ -187,11 +187,17 @@ describe("alerts", () => {
 describe("self-service deletion", () => {
   it("deletes a network after confirming its name; servers become unlinked", async () => {
     const { ins, cookie, network_id } = await linkedNetwork();
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO probe_windows (day, source, received_at, schema, logins, counts) VALUES (0, ?, 1, 1, 5, '[]')").bind(network_id),
+      env.DB.prepare("INSERT INTO probe_daily (day, source, schema, signal, value, label, n) VALUES (0, ?, 1, 'all', 'all', 'clean', 5)").bind(network_id),
+    ]);
     expect((await api(cookie, `/networks/${network_id}`, { method: "DELETE", json: { confirm: "wrong" } })).status).toBe(400);
     expect((await api(cookie, `/networks/${network_id}`, { method: "DELETE", json: { confirm: "Test Network" } })).status).toBe(200);
     const row = await env.DB.prepare("SELECT network_id FROM installs WHERE id = ?").bind(ins.install_id).first<{ network_id: string | null }>();
     expect(row!.network_id).toBeNull();
     expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM networks WHERE id = ?").bind(network_id).first("n")).toBe(0);
+    for (const table of ["probe_windows", "probe_daily"])
+      expect(await env.DB.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE source = ?`).bind(network_id).first("n"), table).toBe(0);
     const res = await syncOk(ins, { seq: 30 });
     expect(res.claimed).toBe(false);
   });

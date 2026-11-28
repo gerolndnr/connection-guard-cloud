@@ -6,7 +6,7 @@ import { claim, install, login, sync, syncOk } from "./helpers.ts";
 import { PROBE_REPORT_SQL, PROBE_RETENTION, PROBE_WINDOWS_PER_DAY, recordProbe, rollUpProbe } from "../src/probe.ts";
 import { DAY } from "../src/util.ts";
 
-const probe = (counts: ProbeCounts["counts"] = syncRequestWithProbe.probe!.counts): ProbeCounts => ({ logins: 6, overflow: 0, counts });
+const probe = (counts: ProbeCounts["counts"] = syncRequestWithProbe.probe!.counts, schema = 1): ProbeCounts => ({ schema, logins: 6, overflow: 0, counts });
 const linked = async () => {
   const ins = await install();
   const { network_id } = await (await claim(await login(), ins.link_code!)).json<{ network_id: string }>();
@@ -23,7 +23,7 @@ describe("connection-probe counts", () => {
     await syncOk(ins, { seq: 10, probe: probe() }); // retried body
     const stored = await windows();
     expect(stored).toHaveLength(1);
-    expect(stored[0]).toMatchObject({ source: network_id, logins: 6 });
+    expect(stored[0]).toMatchObject({ source: network_id, schema: 1, logins: 6 });
     expect(JSON.parse(String(stored[0]!.counts))).toEqual(syncRequestWithProbe.probe!.counts);
     const unlinked = await install();
     expect((await sync(unlinked, { seq: 11, probe: probe() })).status).toBe(200);
@@ -42,7 +42,7 @@ describe("connection-probe counts", () => {
     await clear();
     const now = Date.now(), day = Math.floor(now / DAY) * DAY;
     const filler = Array.from({ length: PROBE_WINDOWS_PER_DAY - 1 }, (_, i) =>
-      env.DB.prepare("INSERT INTO probe_windows VALUES (?, ?, ?, 5, '[]')").bind(day, "net_fill", i));
+      env.DB.prepare("INSERT INTO probe_windows VALUES (?, ?, ?, 1, 5, '[]')").bind(day, "net_fill", i));
     for (let i = 0; i < filler.length; i += 500) await env.DB.batch(filler.slice(i, i + 500));
     const results = await Promise.all(["net_a", "net_b", "net_c"].map((source) => recordProbe(env, source, probe(), now)));
     expect(results.filter(Boolean)).toHaveLength(1);
@@ -50,7 +50,7 @@ describe("connection-probe counts", () => {
     await clear();
   });
 
-  it("rolls past days up into daily totals per signal value and label, and reports them with today's windows", async () => {
+  it("rolls past days up into daily totals per network, schema, signal value and label, and reports them with today's windows", async () => {
     await clear();
     const now = Date.UTC(2026, 9, 25, 3, 17), today = Math.floor(now / DAY) * DAY;
     const wg = (n: number) => [{ s: "mss_class", v: "wireguard", l: "vpn" as const, n }, { s: "all", v: "all", l: "vpn" as const, n }];
@@ -58,17 +58,21 @@ describe("connection-probe counts", () => {
     await recordProbe(env, "net_b", probe(wg(2)), today - DAY + 2000);
     await recordProbe(env, "net_a", probe(wg(1)), today - 2 * DAY);
     await recordProbe(env, "net_a", probe(wg(7)), today + 1000); // today: stays raw
-    await env.DB.prepare("INSERT INTO probe_daily VALUES (?, 'mss_class', 'wireguard', 'vpn', 99, 1)").bind(today - PROBE_RETENTION - DAY).run();
+    await recordProbe(env, "net_c", probe(wg(50), 2), today - DAY + 3000); // other definitions: never mixed in
+    await env.DB.prepare("INSERT INTO probe_daily VALUES (?, 'net_old', 1, 'mss_class', 'wireguard', 'vpn', 99)").bind(today - PROBE_RETENTION - DAY).run();
     await rollUpProbe(env, now);
-    const daily = (await env.DB.prepare("SELECT day, signal, value, label, n, sources FROM probe_daily WHERE signal = 'mss_class' ORDER BY day").all()).results;
+    const daily = (await env.DB.prepare("SELECT day, source, schema, value, n FROM probe_daily WHERE signal = 'mss_class' ORDER BY day, source").all()).results;
     expect(daily).toEqual([
-      { day: today - 2 * DAY, signal: "mss_class", value: "wireguard", label: "vpn", n: 1, sources: 1 },
-      { day: today - DAY, signal: "mss_class", value: "wireguard", label: "vpn", n: 5, sources: 2 },
+      { day: today - 2 * DAY, source: "net_a", schema: 1, value: "wireguard", n: 1 },
+      { day: today - DAY, source: "net_a", schema: 1, value: "wireguard", n: 3 },
+      { day: today - DAY, source: "net_b", schema: 1, value: "wireguard", n: 2 },
+      { day: today - DAY, source: "net_c", schema: 2, value: "wireguard", n: 50 },
     ]);
     expect(await windows()).toHaveLength(1); // today's window waits for tomorrow
-    const report = (await env.DB.prepare(PROBE_REPORT_SQL).all()).results;
+    const report = (await env.DB.prepare(PROBE_REPORT_SQL).bind(1).all()).results;
     expect(report).toContainEqual({ signal: "mss_class", value: "wireguard", label: "vpn", n: 13, sources: 2 });
+    expect((await env.DB.prepare(PROBE_REPORT_SQL).bind(2).all()).results).toContainEqual({ signal: "mss_class", value: "wireguard", label: "vpn", n: 50, sources: 1 });
     await rollUpProbe(env, now); // a second run adds nothing
-    expect((await env.DB.prepare(PROBE_REPORT_SQL).all()).results).toContainEqual({ signal: "mss_class", value: "wireguard", label: "vpn", n: 13, sources: 2 });
+    expect((await env.DB.prepare(PROBE_REPORT_SQL).bind(1).all()).results).toContainEqual({ signal: "mss_class", value: "wireguard", label: "vpn", n: 13, sources: 2 });
   });
 });

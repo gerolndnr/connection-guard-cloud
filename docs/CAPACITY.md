@@ -49,12 +49,16 @@ This Worker uses no queues. Intel Cloud does.
   (4,100 writes with the purge), so the cap holds about five such servers at full size; later windows are dropped
   (signals are best effort, nothing else depends on them). The daily cron purges rows older than 7 days and the old
   budget rows (both counted above) and publishes `intel:signals` to KV with one aggregate query (one KV write a day).
-- **Connection-probe counts** (Velocity plugins 0.6.2+, linked servers that send signals) arrive with the signal window,
-  at most once per six hours per install, as one `probe_windows` row (a JSON array of at most 600 counts). The insert checks
-  the day's limit of 2,000 windows in the same statement. The daily cron adds past days into `probe_daily` with one
-  `INSERT … SELECT FROM json_each` (one row per day, signal, value and label, about 100 to 600 a day) and deletes the
-  windows, so a window costs two row writes and storage stays at two days of windows plus 90 days of daily totals
-  (well under 10 MB). There is no public endpoint: `scripts/probe-report.mjs` reads the totals through wrangler.
+- **Connection-probe counts** (Velocity plugins 0.6.3+, linked servers that send signals) arrive with the signal window,
+  at most once per six hours per install, as one `probe_windows` row (a JSON array of at most 1,000 counts, about 40 KB).
+  The insert checks the day's limit of 2,000 windows in the same statement. The daily cron adds past days into
+  `probe_daily` with one `INSERT … SELECT FROM json_each` and deletes the windows. Daily totals stay per network and
+  schema (docs/PROBE_DATA.md), so `probe_daily` gets up to about 1,000 rows per network and day (signal values per label
+  plus the combinations that reached three logins), about 150 bytes each with the key. At 50 networks that is 50,000 row
+  writes a day and about 0.7 GB over 90 days; at 500 networks it would be 15 million writes a month (inside the 50 million
+  included) but about 7 GB, close to D1's 10 GB per database. Before the network count gets there, add days older than
+  30 into totals across networks or move older days to R2. There is no public endpoint: `scripts/probe-report.mjs` and
+  `scripts/probe-export.mjs` read through wrangler.
 - **Analytics Engine** gets one data point per sync, with no personal data.
 
 ## Rough numbers

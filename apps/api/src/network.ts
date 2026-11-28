@@ -75,6 +75,9 @@ async function deleteNetworkStatements(env: Env, networkId: string) {
       env.DB.prepare("DELETE FROM install_configs WHERE install_id = ?").bind(id),
     ]),
     env.DB.prepare("UPDATE installs SET network_id = NULL, claimed_at = NULL, display_name = NULL WHERE network_id = ?").bind(networkId),
+    // Probe totals are kept per network for 90 days (probe.ts); they go with it.
+    env.DB.prepare("DELETE FROM probe_windows WHERE source = ?").bind(networkId),
+    env.DB.prepare("DELETE FROM probe_daily WHERE source = ?").bind(networkId),
     // Cascades: memberships, DPA acceptances, tokens, events, audit log, rules, invites, alerts.
     env.DB.prepare("DELETE FROM networks WHERE id = ?").bind(networkId),
   ];

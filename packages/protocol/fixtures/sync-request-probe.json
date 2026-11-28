@@ -131,6 +131,7 @@
     "overflow": 0
   },
   "probe": {
+    "schema": 1,
     "logins": 6,
     "overflow": 0,
     "counts": [
@@ -163,6 +164,24 @@
         "v": "<10",
         "l": "clean",
         "n": 4
+      },
+      {
+        "s": "protocol",
+        "v": "_other",
+        "l": "clean",
+        "n": 1
+      },
+      {
+        "s": "joint",
+        "v": "s0mvnnj",
+        "l": "clean",
+        "n": 3
+      },
+      {
+        "s": "joint",
+        "v": "_suppressed",
+        "l": "vpn",
+        "n": 1
       }
     ]
   }

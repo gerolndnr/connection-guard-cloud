@@ -265,12 +265,16 @@ export const NetworkSignals = z.object({
 export type NetworkSignals = z.infer<typeof NetworkSignals>;
 
 /**
- * Connection-probe counts (Velocity plugins from 0.6.2, linked servers that contribute signals): per six-hour window, how
+ * Connection-probe counts (Velocity plugins from 0.6.3, linked servers that contribute signals): per six-hour window, how
  * often each measured connection trait value occurred on logins the plugin judged VPN, hosting or clean or could not
  * judge. Signal names and values are short closed tokens (a bucket such as "<40", a class such as "wireguard"); never a
  * record, address, prefix, account, name, skin or locale. The plugin holds back windows with fewer than five logins.
+ * Signal "joint" counts combinations of seven coarse traits (a seven-character code), each only once at least three
+ * logins had it; "_other" holds a signal's rarest values and "_suppressed" combinations that never reached three.
+ * `schema` versions the plugin's definitions (ProbeCounts.SCHEMA); totals are kept per schema. Meaning of every
+ * signal and code: docs/PROBE_DATA.md.
  */
-export const MAX_PROBE_COUNTS = 600;
+export const MAX_PROBE_COUNTS = 1000;
 export const ProbeLabel = z.enum(["vpn", "hosting", "clean", "unlabelled"]);
 export const ProbeCount = z.object({
   s: z.string().regex(/^[a-z0-9_]{1,40}$/),
@@ -280,6 +284,8 @@ export const ProbeCount = z.object({
   n: count,
 }).strict();
 export const ProbeCounts = z.object({
+  // Absent: definitions before the first release (stored as 0).
+  schema: z.number().int().min(0).max(1000).optional(),
   logins: z.number().int().min(5).max(1_000_000_000),
   overflow: count,
   counts: z.array(ProbeCount).max(MAX_PROBE_COUNTS),
