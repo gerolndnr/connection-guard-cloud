@@ -68,7 +68,7 @@ const sourceGroups = [
 const unlicensed = sources.filter((s) => s.licence !== "MIT" && s.category === "PROXY").length;
 
 const faq = [
-  { q: "Does Connection Guard Intel send my players' IP addresses anywhere?", a: "No. Your server downloads the lists once a day and checks every login against them in memory. The download sends no player IP, UUID or name; the list server only sees your server's own download request, like any other file download." },
+  { q: "Does Intel Local send my players' IP addresses anywhere?", a: "No. Your server downloads the lists once a day and checks every login against them in memory. The download sends no player IP, UUID or name; the list server only sees your server's own download request, like any other file download." },
   { q: "Is it free?", a: "Yes. No account, no key, no quota. It is on by default in new Connection Guard 0.6 installs. Intel publishes its compilation under CC BY 4.0, so other projects may use it with attribution; each source keeps its own terms, listed in SOURCES.md and the manifest." },
   { q: "How fresh are the lists?", a: `A new build is published every day and Connection Guard checks for it every 24 hours. Tor exits stay listed ${m.tor_history_days} days and proxies ${m.proxy_history_days} days after they were last seen. Lists older than 72 hours stop deciding, so stale data never refuses anyone.` },
   { q: "A real player is on a list. What now?", a: "Run /cg explain with their address to see which list matched, and let them in with an allow rule. Please also report the address on GitHub, so the next build can correct it for everyone." },
@@ -105,7 +105,7 @@ const dataset = {
       <div>
         <Breadcrumbs items={[["Connection Guard Intel", "/intel"]]} />
         <h1 class="display mt-6 text-[clamp(2.375rem,5vw,3.5rem)]">VPN and Tor lists, checked on your server.</h1>
-        <p class="lede mt-6 max-w-xl">Connection Guard Intel is a signed set of VPN, Tor, relay and proxy lists. Your server downloads them once a day and checks every login against them itself: no API key, no daily quota, and checking a list sends no player's IP anywhere. Connection Guard 0.6 reads the VPN, Tor and relay lists; the proxy list follows in 0.6.1.</p>
+        <p class="lede mt-6 max-w-xl">Intel Local, the part of Connection Guard Intel that runs on your server, is a signed set of VPN, Tor, relay and proxy lists. Your server downloads them once a day and checks every login against them itself: no API key, no daily quota, and checking a list sends no player's IP anywhere. Connection Guard 0.6 reads the VPN, Tor and relay lists; the proxy list follows in 0.6.1.</p>
         <DownloadCta location="intel_hero" class="mt-9">
           <a href="#measured" class="btn btn-secondary btn-lg no-underline" data-ph-event="cta_clicked" data-ph-cta="intel_measured" data-ph-location="intel_hero">How it's measured</a>
         </DownloadCta>
@@ -369,6 +369,28 @@ if (r.block()) &#123;
       <p class="mt-8 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
         Attribution: Tor Project; Apple; RIPE NCC (RIPEstat); Amazon Web Services, Google Cloud, Oracle, DigitalOcean, Akamai; the VPN operators and proxy list maintainers named above. Every source's exact terms are in the signed manifest and in <a href={`${INTEL_REPO}/blob/main/SOURCES.md`} class="underline">SOURCES.md</a>.
       </p>
+    </div>
+  </section>
+
+  <!-- Intel Cloud is announced here, not launched: it starts with the agreement version that covers it. -->
+  <section id="cloud" aria-labelledby="cloud-h" class="scroll-mt-28 border-b border-line md:scroll-mt-20">
+    <div class="container-site py-16 sm:py-20">
+      <p class="text-[0.8125rem] font-medium text-fg-3">Coming next</p>
+      <h2 id="cloud-h" class="section-title mt-2 max-w-2xl">Intel Cloud: what other networks know about a player.</h2>
+      <p class="lede mt-4">The second part of Connection Guard Intel is a hosted service for servers linked to the dashboard. When a player joins, staff see what other networks and public sources know about the account. It informs staff; it never refuses anyone on its own.</p>
+      <dl class="mt-12 divide-y divide-line border-y border-line">
+        {[
+          { t: "Five parts, one report.", d: "Punishments in force elsewhere, account history (names, skins, how long the account has been around), gameplay, possible alts and where the account plays. Each part names its sources." },
+          { t: "Counts, never names.", d: "Other networks see that a player was banned for cheating on two networks, not which ones, and never your staff or the reason text. Alts sharing an address show as a number, never as accounts." },
+          { t: "Linked servers only.", d: "Only servers linked to the dashboard take part, and only after an owner or admin accepts the updated agreement. Each network can stop sharing in the dashboard." },
+          { t: "Intel Local stays as it is.", d: "The lists on this page stay free, need no account and send nothing about your players. Intel Cloud is a separate choice." },
+        ].map((r) => (
+          <div class="grid grid-cols-[minmax(0,1fr)] gap-2 py-6 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-10">
+            <dt class="text-[1.0625rem] font-semibold tracking-[-0.015em] text-fg">{r.t}</dt>
+            <dd class="max-w-[36rem] text-[0.9375rem] leading-relaxed text-fg-2">{r.d}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   </section>
 
