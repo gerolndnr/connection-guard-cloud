@@ -448,5 +448,14 @@ plugin.post("/v1/sync", async (c) => {
     commands,
     config: desired,
   };
+  const share = probeSessionShare(env);
+  if (claimed && share !== null) body.probe = { session_check: share };
   return c.json(body);
 });
+
+/** PROBE_SESSION_CHECK as a share of logins, or null when unset or not a number between 0 and 1. */
+export function probeSessionShare(env: Pick<Env, "PROBE_SESSION_CHECK">): number | null {
+  const raw = env.PROBE_SESSION_CHECK?.trim();
+  if (!raw || !/^(0(\.\d+)?|1(\.0+)?)$/.test(raw)) return null;
+  return Number(raw);
+}

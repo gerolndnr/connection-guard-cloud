@@ -15,6 +15,12 @@ export interface Env {
   TURNSTILE_SITE_KEY: string;
   TURNSTILE_SECRET?: string;
   DPA_VERSION: string;
+  /**
+   * Share of logins (0..1) the connection probe's session check asks Mojang about, sent to linked servers with every
+   * sync (plugin docs/CLOUD.md#connection-probe-counts-velocity). Unset or invalid: the field is left out and plugins keep
+   * their last value (1 by default). "0" stops the check on all servers without a plugin release.
+   */
+  PROBE_SESSION_CHECK?: string;
   CONFIG_SECRET_KEY?: string;
   /** PostHog project token (public). Empty disables product analytics everywhere. */
   POSTHOG_KEY?: string;
