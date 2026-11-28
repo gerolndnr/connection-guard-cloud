@@ -31,3 +31,11 @@ const parsedItems = parseContributions(IntelContributionRequest.parse(contributi
 if (parsedItems.rejected > 0) throw new Error("an example contribution does not parse");
 write("intel-contribution-request.json", contributionRequest);
 write("intel-contribution-response.json", IntelContributionResponse.parse(contributionResponse));
+
+// Punishment reasons to categories (src/reasons.ts): the rules the plugin ships, and the cases both classifiers must pass.
+import { REASON_RULES, classifyReason } from "../src/reasons.ts";
+import { REASON_CASES } from "../src/reason-examples.ts";
+
+for (const c of REASON_CASES) if (classifyReason(c.reason) !== c.category) throw new Error(`reason case fails: ${JSON.stringify(c)}`);
+write("punishment-reasons.json", REASON_RULES);
+write("punishment-reason-cases.json", REASON_CASES);
