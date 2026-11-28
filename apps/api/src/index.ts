@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv, Env } from "./env.ts";
 import { plugin } from "./plugin.ts";
+import { intelPlugin } from "./intel.ts";
 import { auth } from "./auth.ts";
 import { dashboard } from "./dashboard.ts";
 import { scheduled } from "./cron.ts";
@@ -29,6 +30,7 @@ app.use("*", async (c, next) => {
 });
 
 app.route("/", plugin);
+app.route("/", intelPlugin);
 app.route("/api/auth", auth);
 app.route("/api", dashboard);
 app.get("/v1/health", (c) => c.json({ ok: true }));

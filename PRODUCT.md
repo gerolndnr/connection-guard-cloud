@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-React + Vite + TypeScript SPA (`apps/web`), Tailwind CSS, served by Cloudflare Workers Static Assets on `app.connectionguard.net`. API in the same Worker (`apps/api`, Hono, D1). Decided in the approved cloud plan (`delivery/cloud-dashboard-plan.md` in the operations workspace). Strictly Cloudflare Free plan.
+React + Vite + TypeScript SPA (`apps/web`), Tailwind CSS, served by Cloudflare Workers Static Assets on `app.connectionguard.net`. API in the same Worker (`apps/api`, Hono, D1). Decided in the approved cloud plan (`delivery/cloud-dashboard-plan.md` in the operations workspace). Cloudflare Workers Paid since 28 Nov 2026 (before that, strictly the Free plan).
 
 ## Users
 

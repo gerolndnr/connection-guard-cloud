@@ -7,6 +7,7 @@ import type { AppEnv, Env } from "./env.ts";
 import { WATCH_WINDOW } from "./governor.ts";
 import { audit, canManage, roleIn, type Role } from "./access.ts";
 import { capture } from "./analytics.ts";
+import { forgetInIntel } from "./intel.ts";
 import { COLOR, isDiscordWebhook, postWebhook, webhookHint } from "./discord.ts";
 import { openSecrets, sealSecrets } from "./secrets.ts";
 import { namesFor } from "./players.ts";
@@ -373,6 +374,7 @@ export function registerNetwork(app: Hono<AppEnv>) {
     const parsed = z.object({ confirm: z.string() }).safeParse(await c.req.json().catch(() => null));
     if (!network || !parsed.success || parsed.data.confirm.trim() !== network.name) return c.json({ error: "confirm_mismatch" }, 400);
     await env.DB.batch(await deleteNetworkStatements(env, id));
+    forgetInIntel(env, c.executionCtx, "network", id);
     capture(c, { event: "network_deleted", distinct_id: c.get("user").id, groups: { network: id } });
     return c.json({ ok: true });
   });
@@ -384,6 +386,7 @@ export function registerNetwork(app: Hono<AppEnv>) {
     if (!parsed.success) return c.json({ error: "confirm_mismatch" }, 400);
     const owned = (await env.DB.prepare("SELECT network_id FROM memberships WHERE user_id = ? AND role = 'owner'").bind(user.id).all<{ network_id: string }>()).results;
     const statements: D1PreparedStatement[] = [];
+    const deletedNetworks: string[] = [];
     for (const { network_id } of owned) {
       const other = await env.DB.prepare("SELECT user_id FROM memberships WHERE network_id = ? AND role = 'owner' AND user_id != ? LIMIT 1")
         .bind(network_id, user.id).first<{ user_id: string }>();
@@ -395,6 +398,7 @@ export function registerNetwork(app: Hono<AppEnv>) {
         );
       } else {
         statements.push(...(await deleteNetworkStatements(env, network_id)));
+        deletedNetworks.push(network_id);
       }
     }
     statements.push(
@@ -409,6 +413,7 @@ export function registerNetwork(app: Hono<AppEnv>) {
       env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id),
     );
     await env.DB.batch(statements);
+    for (const n of deletedNetworks) forgetInIntel(env, c.executionCtx, "network", n);
     capture(c, { event: "account_deleted", distinct_id: user.id, properties: { networks_deleted: owned.length } });
     return c.json({ ok: true });
   });

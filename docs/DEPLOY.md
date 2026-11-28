@@ -1,6 +1,7 @@
 # Deploy
 
-Everything stays on the Cloudflare **Workers Free** plan. Never enable Workers Paid or any auto-upgrade; see `docs/CAPACITY.md`.
+The account is on Cloudflare **Workers Paid** since 28 Nov 2026; see `docs/CAPACITY.md` for what is included and what the budgets are.
+Intel Cloud is deployed from its own private repository before this Worker; see `docs/INTEL_CLOUD.md`.
 
 ## Current production
 
@@ -46,7 +47,7 @@ pnpm install && pnpm -r typecheck && pnpm -r test
 pnpm --filter @cg/web build
 cd apps/api
 npx wrangler d1 migrations apply cg --remote --env production
-npx wrangler deploy --env production
+npx wrangler deploy --env production   # needs connection-guard-intel-cloud deployed (Service Binding INTEL)
 ```
 
 ## Announcements in the dashboard

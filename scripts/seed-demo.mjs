@@ -111,6 +111,8 @@ const intelHit = (e, at) => ({ ...e, sources: [{ id: "connectionguard-intel", sc
 const torExit = (e) => ({ ...e, sources: [{ id: "torexitlist", scope: "VPN", status: "POSITIVE", reason: "NONE", duration_ms: 0, voting: true, from_cache: false,
   country: null, asn: null, isp: null, risk: null }] });
 
+// The agreement version the local API asks for right now, so the seed keeps working when it changes.
+const { dpa_version: dpaVersion } = await (await fetch(`${base}/api/config`)).json();
 const login = await post("/api/auth/dev-login", { name: "Demo Operator" });
 const cookie = login.res.headers.get("set-cookie").split(";")[0];
 let networkId = null;
@@ -119,7 +121,7 @@ for (const s of servers) {
   const auth = { authorization: `Bearer ${ins.install_id}.${ins.secret}` };
   const claim = await post(`/api/link/${ins.link_code}`, {
     ...(networkId ? { network_id: networkId } : { network_name: "Blockhaven (synthetic demo)" }),
-    server_name: s.name, accept_dpa: true, dpa_version: "2026-10-04", turnstile_token: "dev",
+    server_name: s.name, accept_dpa: true, dpa_version: dpaVersion, turnstile_token: "dev",
   }, { cookie });
   networkId = claim.json.network_id;
   let seq = 0;
