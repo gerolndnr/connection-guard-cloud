@@ -1,5 +1,4 @@
-// Connection Guard Cloud worker. Everything here must stay inside the
-// Cloudflare Workers Free plan (see docs/CAPACITY.md).
+// Connection Guard Cloud worker, on Cloudflare Workers Paid since 28 Nov 2026 (see docs/CAPACITY.md).
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "connection-guard-cloud",
@@ -34,7 +33,7 @@
     "DISCORD_CLIENT_ID": "",
     // Cloudflare's documented always-pass Turnstile test site key. Replaced in production.
     "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
-    "DPA_VERSION": "2026-10-04"
+    "DPA_VERSION": "2026-11-29"
   },
   "env": {
     "production": {
@@ -51,7 +50,7 @@
         // DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET are Worker secrets (wrangler secret put ... --env production).
         // Turnstile is optional: set TURNSTILE_SITE_KEY here and the TURNSTILE_SECRET secret to enable it.
         "TURNSTILE_SITE_KEY": "",
-        "DPA_VERSION": "2026-10-04",
+        "DPA_VERSION": "2026-11-29",
         // PostHog project token (public). Empty keeps product analytics off; see docs/ANALYTICS.md.
         "POSTHOG_KEY": "phc_zG73iBb7Ss45EkrRE72dqEDamuxs9rCoyEBCJnooCaCe",
         "POSTHOG_HOST": "https://t.connectionguard.net"
@@ -68,7 +67,14 @@
       // "analytics_engine_datasets": [{ "binding": "METRICS", "dataset": "cg_sync" }],
       "ratelimits": [
         { "name": "INSTALL_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
-        { "name": "SYNC_LIMITER", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } }
+        { "name": "SYNC_LIMITER", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } },
+        // Player Intelligence calls per install: lookups at every join wave and contribution batches.
+        { "name": "INTEL_LIMITER", "namespace_id": "1003", "simple": { "limit": 120, "period": 60 } }
+      ],
+      // Intel Cloud (private Worker connection-guard-intel-cloud, deployed first). Self-hosted setups leave this out:
+      // the plugin's /v1/intel/* calls then answer intel_unavailable.
+      "services": [
+        { "binding": "INTEL", "service": "connection-guard-intel-cloud", "entrypoint": "IntelRpc" }
       ]
     }
   }

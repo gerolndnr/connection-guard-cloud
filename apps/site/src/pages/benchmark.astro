@@ -22,7 +22,6 @@ const outages = faults.filter((f) => f !== "control");
 // Reliability compares every plugin measured under failure; the previous Connection Guard release goes last.
 const failCols = [...COMPARED, PREVIOUS].filter((p) => failure[p]);
 const notes = (bench as { notes?: Record<string, string> }).notes ?? {};
-const note = (section: string) => notes[section] ? `<p class="mt-3 text-[0.8125rem] text-fg-3">Measured with ${notes[section]}.</p>` : "";
 const phases = [
   { id: "cold", title: "First join of a new player", hint: "50 new players, one after another" },
   { id: "warm", title: "The same players again", hint: "Answers can come from the cache" },
@@ -48,7 +47,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
     <div class="container-site py-16 sm:py-20">
       <p class="flex flex-wrap items-center gap-2 text-sm text-fg-2">
         <span class={`chip ${preliminary ? "border-warn/40 bg-warn-soft text-warn-text" : "chip-soon"}`}>{preliminary ? "Preliminary run" : "Published run"}</span>
-        <span>{dateLabel} · {bench.platform[0]!.toUpperCase() + bench.platform.slice(1)} · {bench.rounds} {bench.rounds === 1 ? "round" : "rounds"}</span>
+        <span>{dateLabel} · {bench.platform[0]!.toUpperCase() + bench.platform.slice(1)} · {bench.rounds} {bench.rounds === 1 ? "performance round" : "performance rounds"}</span>
       </p>
       <h1 class="display mt-5 text-[clamp(2.25rem,5vw,3.5rem)]">Measured, not claimed.</h1>
       <p class="lede mt-5 max-w-2xl">We run the popular free anti-VPN plugins under the same conditions, with the same players and addresses, and publish every number and log. Connection Guard included, so check our work.</p>
@@ -60,7 +59,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         Conflict of interest: the benchmark is built by Connection Guard's author. The method, the adapters and every log are public, and any plugin author can contest a result.
         {preliminary
           ? " These are preliminary results: speed and detection come from a quick run. The published run repeats everything three times on all 692 addresses and replaces them here."
-          : " Every plugin runs as it ships, without API keys, each on a server of its own. A second table with each plugin's best configuration and free keys follows on 18 October."}
+          : " Every plugin runs with its documented enforcement settings, without API keys, each on a server of its own."}
         {releaseCandidate && ` Connection Guard ${versionOf(CURRENT)} is a release candidate: downloads deliver ${versionOf(PREVIOUS)} until it ships, and ${versionOf(PREVIOUS)}'s results are shown where they differ.`}
       </p>
     </div>
@@ -72,7 +71,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
       {[
         { href: "#speed", k: "Stress test", big: `${num(us.checked)} / ${num(us.subjects)}`, text: `players checked when 1,000 joined in 20 seconds. The other plugins checked at most ${num(bestOtherChecked)}; the rest got in unchecked or were cut off.` },
         { href: "#reliability", k: "Detection services down", big: `${outages.filter((f) => failure[CURRENT]![f]!.vpn?.blocked && failure[CURRENT]![f]!.tor?.blocked).length} / ${outages.length}`, text: "failure cases with VPN and Tor still blocked, without a single lookup." },
-        { href: "#detection", k: "Caught", big: `${vpnCaught(CURRENT)} / ${vpnN}`, text: `VPN and Tor addresses blocked. ${spareTotal(CURRENT)} of ${spareN} home and mobile players were refused too, the fewest of the plugins that block most VPNs.` },
+        { href: "#detection", k: "Caught", big: `${vpnCaught(CURRENT)} / ${vpnN}`, text: `VPN and Tor addresses blocked. ${spareTotal(CURRENT)} of ${spareN} home and mobile players were refused.` },
       ].map((c) => (
         <a href={c.href} class="card group block p-6 no-underline transition-colors hover:border-line-strong">
           <p class="text-[0.8125rem] font-medium text-fg-2">{c.k}</p>
@@ -88,7 +87,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
     <div class="container-site py-16 sm:py-20">
       <h2 id="speed-h" class="section-title">Stress test: 1,000 players join at once.</h2>
       <p class="lede mt-4">Does the plugin still check every player under heavy load? 50 new players per second for 20 seconds. Each detection service is simulated with the same delay and its real free-tier limit, so a plugin can't look fast by asking a service that would refuse it in reality.</p>
-      <Fragment set:html={note("performance")} />
+      {notes.performance && <p class="mt-3 text-[0.8125rem] text-fg-3">Measured with {notes.performance}.</p>}
 
       <div class="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div class="card p-6">
@@ -126,9 +125,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
             })}
           </ul>
           <p class="mt-6 border-t border-line pt-4 text-[0.8125rem] leading-relaxed text-fg-2">
-            {us.outcomes.DENY_LOGIN === 1
-              ? "One player in the stress test was refused: its random addresses include one in a range Connection Guard Intel lists as VPN. It was decided from that list on the server, without a lookup, and counts as checked."
-              : us.outcomes.DENY_LOGIN ? `${num(us.outcomes.DENY_LOGIN)} players refused.` : "No player in the stress test was refused."}
+            {us.outcomes.DENY_LOGIN ? `Refused ${num(us.outcomes.DENY_LOGIN)} of ${num(us.subjects)} players in the stress test.` : "No player in the stress test was refused."}
           </p>
         </div>
       </div>
@@ -165,7 +162,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
     <div class="container-site py-16 sm:py-20">
       <h2 id="rel-h" class="section-title">When the detection services fail.</h2>
       <p class="lede mt-4">Free detection services time out, rate-limit and break. We make every one of them fail in five ways and send a VPN, a Tor exit and a home player during the outage.</p>
-      <Fragment set:html={note("failure")} />
+      {notes.failure && <p class="mt-3 text-[0.8125rem] text-fg-3">Measured with {notes.failure}.</p>}
       <div class="card mt-10 overflow-x-auto">
         <table class="w-full min-w-[46rem] text-left text-sm">
           <caption class="sr-only">VPN and Tor blocked during service failures, per plugin</caption>
@@ -200,7 +197,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
         </table>
       </div>
       <p class="mt-5 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
-        A check means the VPN or Tor exit was still refused while every detection service failed that way. Connection Guard checks its own signed lists of VPN servers and Tor exits (<a href="/intel" class="underline">Connection Guard Intel</a>) on the server before asking any service, so a known VPN needs no lookup at all. When several services hang at once, a home player's first login can take up to about 5 seconds; services that time out are then skipped for a while.
+        A check means the VPN or Tor exit was still refused while every detection service failed that way. Connection Guard checks its own signed lists of VPN servers and Tor exits (<a href="/intel" class="underline">Connection Guard Intel Local</a>) on the server before asking any service, so a known VPN needs no lookup at all. When several services hang at once, a home player's first login can take up to about 5 seconds; services that time out are then skipped for a while.
       </p>
     </div>
   </section>
@@ -209,7 +206,7 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
     <div class="container-site py-16 sm:py-20">
       <h2 id="det-h" class="section-title">Who gets caught, who gets in.</h2>
       <p class="lede mt-4">{num(bench.detection.subjects)} labelled addresses, each with its source: VPN servers from the providers' own lists, Tor exits from the Tor Project, and home and mobile connections from volunteers' RIPE Atlas probes.</p>
-      <Fragment set:html={note("detection")} />
+      {notes.detection && <p class="mt-3 text-[0.8125rem] text-fg-3">Measured with {notes.detection}.</p>}
       <div class="card mt-10 overflow-x-auto">
         <table class="w-full min-w-[44rem] text-left text-sm">
           <caption class="sr-only">Blocked addresses per group and plugin</caption>
@@ -242,11 +239,6 @@ const cross = `<svg viewBox="0 0 24 24" aria-hidden="true" class="size-4 text-da
       {unnormalized.size > 0 && (
         <p class="mt-3 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
           *{[...unnormalized].map(label).join(", ")} ask ProxyCheck without a key, as shipped. ProxyCheck answers 100 such lookups a day per server; each plugin ran on a server of its own, and after its 100 ProxyCheck answered it no more, as on a busy real server.
-        </p>
-      )}
-      {!preliminary && (
-        <p class="mt-3 max-w-3xl text-[0.8125rem] leading-relaxed text-fg-3">
-          Connection Guard {versionOf(CURRENT)} refused {spareTotal(CURRENT)} of {spareN} home and mobile players. Two changes in 0.6.1 are behind that. A Blackbox listing only counts when the address is in a data centre: version 0.6.0 refused four home players on a Blackbox answer alone. And new installs ask zowi, Blackbox and IPQuery, with ProxyCheck off: in our runs with a key, every home player the 0.6.1 release candidate refused was refused on a ProxyCheck answer.
         </p>
       )}
     </div>

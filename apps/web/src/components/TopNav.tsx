@@ -6,6 +6,7 @@ import { serverName } from "../format.ts";
 import { ThemeToggle } from "./ThemeToggle.tsx";
 import { AccountMenu } from "./AccountMenu.tsx";
 import { resetAnalytics } from "../analytics.ts";
+import { useIntel } from "../intel.ts";
 
 function Slash() {
   return <svg aria-hidden viewBox="0 0 24 24" className="size-5 shrink-0 text-line-strong"><path d="M16.88 3.549L7.12 20.451" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>;
@@ -20,7 +21,10 @@ export function TopNav({ me, networkId }: { me?: Me | undefined; networkId?: str
   const net = useQuery({ queryKey: ["network", networkId], queryFn: () => api.network(networkId!), enabled: Boolean(networkId) });
   const installs = net.data?.installs ?? [];
   const keep = search.server ? { server: search.server } : {};
-  // Five tabs fit a 360 px phone with the tighter padding; the row scrolls instead of widening the page if not.
+  // The Players tab appears once Player Intelligence is offered; until then there is nothing to use on it.
+  const intel = useIntel(networkId);
+  const showPlayers = Boolean(intel.data?.available && intel.data.offered);
+  // Five tabs fit a 360 px phone with the tighter padding; with Players, the row scrolls instead of widening the page.
   const tab = "relative shrink-0 whitespace-nowrap px-2.5 py-3 text-[0.8125rem] font-medium text-fg-2 no-underline transition-colors hover:text-fg sm:px-3";
   const active = { className: "!text-fg after:absolute after:inset-x-2.5 after:-bottom-px sm:after:inset-x-3 after:h-0.5 after:rounded-full after:bg-fg", "aria-current": "page" as const };
 
@@ -72,6 +76,7 @@ export function TopNav({ me, networkId }: { me?: Me | undefined; networkId?: str
         <nav aria-label="Pages" className="mx-auto flex max-w-[1200px] overflow-x-auto px-1 [scrollbar-width:none] sm:px-3">
           <Link to="/n/$networkId" params={{ networkId }} search={keep} activeOptions={{ exact: true, includeSearch: false }} className={tab} activeProps={active}>Overview</Link>
           <Link to="/n/$networkId/register" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Decisions</Link>
+          {showPlayers && <Link to="/n/$networkId/players" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Players</Link>}
           <Link to="/n/$networkId/insights" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Insights</Link>
           <Link to="/n/$networkId/settings" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Settings</Link>
           <Link to="/n/$networkId/network" params={{ networkId }} search={keep} activeOptions={{ includeSearch: false }} className={tab} activeProps={active}>Network</Link>

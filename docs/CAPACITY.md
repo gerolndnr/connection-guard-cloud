@@ -1,6 +1,17 @@
-# Free-plan capacity
+# Capacity
 
-## Limits (Workers Free, per day, UTC)
+The account is on **Workers Paid** since 28 Nov 2026 (5 USD a month). It includes per month:
+- 10 M requests and 30 M CPU ms;
+- 25 B D1 rows read, 50 M D1 rows written and 5 GB of D1 storage;
+- 1 M queue operations.
+
+Anything beyond that is billed, so nothing fails at a limit any more.
+
+The budgets below were sized for the Free plan and still hold, so they are now conservative rather than hard limits. Raising them (a shorter sync floor, a larger signal budget) is a product decision. Write down the expected cost when making it.
+
+Intel Cloud (Player Intelligence) is a separate Worker with its own D1 database, queues and budget. It is bound to this Worker by Service Binding: see `docs/INTEL_CLOUD.md`.
+
+## Free-plan limits the budgets were sized for (per day, UTC)
 
 | Resource | Limit |
 | --- | --- |
@@ -12,7 +23,7 @@
 
 Since 2026-09-01, D1 queries fail when the daily limit is exceeded.
 
-Queues are deliberately not used: the free plan allows only 10,000 operations a day.
+This Worker uses no queues. Intel Cloud does.
 
 ## How we stay inside
 
@@ -54,6 +65,6 @@ Queues are deliberately not used: the free plan allows only 10,000 operations a 
 | 300 | 65 s | 40,000 |
 | 1,000 | 216 s | 40,000 |
 
-When the network grows beyond what one interval per few minutes can serve, the dashboard gets slower updates. It never costs money and never affects logins. Going beyond that needs an explicit decision by the owner.
+When the network grows beyond what one interval per few minutes can serve, the dashboard gets slower updates. That never affects logins. Raising the budgets costs money on Workers Paid, so it needs an explicit decision by the owner, with the expected cost.
 
 **Open item:** a 24-hour load test with 300 simulated installs is still to be run and recorded in `delivery/` of the operations workspace.

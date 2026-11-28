@@ -2,16 +2,18 @@
 // listing, its shipped configuration (recorded by mc-antivpn-bench's clean-install test) or the benchmark; each
 // carries its source. Numbers are never typed here: the page reads them from src/data/benchmark.json, and every
 // benchmark-based point states the condition under which it holds, so a newer run cannot leave a stale claim behind.
-import { bench, blocked, catchCohorts, failure, perf, spareTotal, spareN } from "../lib/benchmark";
+import { bench, blocked, catchCohorts, CURRENT, failure, perf, spareTotal, spareN } from "../lib/benchmark";
 
 export const CHECKED = "13 October 2026";
 const BENCH_REPO = "https://github.com/gerolndnr/mc-antivpn-bench";
-export const US = "connection-guard-061";
+export const US = CURRENT;
+export const measuredId = (id: string) => bench.detection.products.find((p) => p === id || p.startsWith(`${id}-`));
 
 /** The measured numbers of one plugin, from the published benchmark run. */
 export interface Metrics {
   caught: number; bad: number; refused: number; good: number; ipv6: number; ipv6N: number; proxies: number; proxiesN: number;
-  waveP95: number | null; waveChecked: number | null; coldP95: number | null; warmP50: number | null; start: number | null;
+  waveP95: number | null; waveChecked: number | null; waveSubjects: number | null;
+  coldP95: number | null; warmP50: number | null; start: number | null;
   /** Failure cases (of four) in which a VPN and a Tor exit were still refused while every service failed that way. */
   keptBlocking: number; outages: number;
 }
@@ -19,11 +21,12 @@ export interface Metrics {
 export function metrics(id: string): Metrics {
   const cohort = (cid: string) => catchCohorts.find((c) => c.id === cid);
   const outages = Object.keys(failure[id] ?? {}).filter((f) => f !== "control");
+  const burst = perf(id, "burst");
   return {
     caught: catchCohorts.reduce((s, c) => s + blocked(c.id, id), 0), bad: catchCohorts.reduce((s, c) => s + c.n, 0),
     refused: spareTotal(id), good: spareN,
     ipv6: blocked("vpn_v6", id), ipv6N: cohort("vpn_v6")?.n ?? 0, proxies: blocked("proxy", id), proxiesN: cohort("proxy")?.n ?? 0,
-    waveP95: perf(id, "burst")?.decision_p95 ?? null, waveChecked: perf(id, "burst")?.checked ?? null,
+    waveP95: burst?.decision_p95 ?? null, waveChecked: burst?.checked ?? null, waveSubjects: burst?.subjects ?? null,
     coldP95: perf(id, "cold")?.decision_p95 ?? null, warmP50: perf(id, "warm")?.decision_p50 ?? null,
     start: (bench.performance as Record<string, { start_s?: number }>)[id]?.start_s ?? null,
     keptBlocking: outages.filter((f) => failure[id]![f]!.vpn?.blocked && failure[id]![f]!.tor?.blocked).length, outages: outages.length,

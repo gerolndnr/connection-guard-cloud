@@ -2,8 +2,8 @@
 import Base from "../layouts/Base.astro";
 import stats from "../data/stats.json";
 import { breadcrumbs, software } from "../lib/seo";
-import { showBenchmark, perf, CURRENT, num } from "../lib/benchmark";
-type Source = { name: string; url: string; downloads: number; stale: boolean };
+import { showBenchmark, perf, CURRENT, num, versionOf } from "../lib/benchmark";
+type Source = { name: string; url: string; downloads: number; stale: boolean; fetchedAt?: string };
 const s = stats.sources as Record<string, Source>;
 const v = stats.latest?.version;
 const published = stats.latest?.published
@@ -21,6 +21,9 @@ const platforms = [
   { name: "Velocity", folder: "plugins/", java: "Java 17 or newer", note: "Targets the Velocity 3.3 API. Install on the proxy only." },
 ];
 const fmt = new Intl.NumberFormat("en-US");
+const readDate = (fetchedAt?: string) => new Date(fetchedAt ?? stats.fetchedAt)
+  .toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const burst = perf(CURRENT, "burst");
 ---
 <Base title="Download Connection Guard: Free Anti-VPN Plugin for Minecraft" path="/download" og="/og/download.png"
   description="Download the free Connection Guard anti-VPN plugin for Paper, Spigot, BungeeCord and Velocity. One JAR from Modrinth, Hangar, SpigotMC or GitHub."
@@ -28,7 +31,7 @@ const fmt = new Intl.NumberFormat("en-US");
   <section class="border-b border-line">
     <div class="container-site py-16 sm:py-20">
       <h1 class="display text-[clamp(2.25rem,5vw,3.5rem)]">Download Connection Guard</h1>
-      <p class="lede mt-5 max-w-2xl">One JAR runs on every supported platform. Pick whichever site you already use; the file is the same everywhere.</p>
+      <p class="lede mt-5 max-w-2xl">One JAR runs on every supported platform. Pick whichever download site you already use.</p>
       {v && (
         <p class="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-fg-2">
           <span class="chip mono">v{v}</span>
@@ -36,8 +39,8 @@ const fmt = new Intl.NumberFormat("en-US");
           <a href="https://github.com/gerolndnr/connection-guard/blob/master/CHANGELOG.md" class="font-medium text-fg underline">What changed</a>
         </p>
       )}
-      {showBenchmark && (
-        <p class="mt-4 text-sm text-fg-2">In the open benchmark's stress test it checked all {num(perf(CURRENT, "burst")!.subjects)} players joining at once. <a href="/benchmark" class="font-medium text-fg underline" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="download_page">See the results</a></p>
+      {showBenchmark && burst && (
+        <p class="mt-4 text-sm text-fg-2">In the open benchmark's stress test, Connection Guard {versionOf(CURRENT)} checked {num(burst.checked)} of {num(burst.subjects)} players joining at once. <a href="/benchmark" class="font-medium text-fg underline" data-ph-event="cta_clicked" data-ph-cta="benchmark" data-ph-location="download_page">See the results</a></p>
       )}
     </div>
   </section>
@@ -55,7 +58,7 @@ const fmt = new Intl.NumberFormat("en-US");
                   {x.primary && <span class="chip chip-soon h-5 text-xs">Recommended</span>}
                 </span>
                 <span class="mt-1 block text-sm text-fg-2">{x.note.replace("Recommended. ", "")}</span>
-                <span class="num mt-2 block text-[0.75rem] text-fg-3">{fmt.format(x.downloads)} downloads</span>
+                <span class="num mt-2 block text-[0.75rem] text-fg-3">{fmt.format(x.downloads)} downloads{x.stale && ` · last read ${readDate(x.fetchedAt)}`}</span>
               </span>
               <span aria-hidden="true" class={`btn ${x.primary ? "btn-primary" : "btn-secondary"} shrink-0`}>Open</span>
             </a>
@@ -100,7 +103,7 @@ const fmt = new Intl.NumberFormat("en-US");
           {[
             ["Stop the server.", "Or the proxy, on a network."],
             ["Put the JAR into the plugins folder.", "Remove older Connection Guard JARs first."],
-            ["Start the server.", "New 0.6 installs protect right away: Connection Guard Intel and the keyless services, no API key needed. Country lookups stay off until you add a country rule. Upgrading keeps your mode, services and keys."],
+            ["Start the server.", "New 0.6 installs protect right away: Connection Guard Intel Local and the keyless services, no API key needed. Country lookups stay off until you add a country rule. Upgrading keeps your mode, services and keys."],
             ["Set it up.", "Open the link from the console for the dashboard's setup assistant, or edit config.yml. Run /cg doctor and /cg explain <IP> to inspect your setup and decisions. Prefer to watch first? Set operation.mode to OBSERVE, then /cg reload."],
           ].map(([t, d], i) => (
             <li class="flex gap-4">

@@ -5,18 +5,19 @@ import Faq from "../../components/Faq.astro";
 import DownloadCta from "../../components/DownloadCta.astro";
 import { article, breadcrumbs, faq as faqSchema } from "../../lib/seo";
 import { bench, dateLabel, runUrlFor, versionOf } from "../../lib/benchmark";
-import { CHECKED, COMPETITORS, US, benchmarkRepo, fmt, metrics, type Competitor } from "../../data/competitors";
+import { CHECKED, COMPETITORS, US, benchmarkRepo, fmt, measuredId, metrics, type Competitor } from "../../data/competitors";
 
 export function getStaticPaths() {
   return COMPETITORS.map((c) => ({ params: { slug: c.slug }, props: { c } }));
 }
 const { c } = Astro.props as { c: Competitor };
-const them = metrics(c.id), us = metrics(US);
+const measured = measuredId(c.id);
+const them = metrics(measured ?? c.id), us = metrics(US);
 const path = `/compare/${c.slug}`;
 const crumbs: [string, string][] = [["Compare", "/compare"], [`Connection Guard vs ${c.name}`, path]];
-const points = c.points.filter((p) => !p.when || p.when(them, us));
-const strengths = c.strengths.flatMap((s) => typeof s === "string" ? [s] : s.when(them, us) ? [s.text(them, us)] : []);
-const usVersion = versionOf(US), themVersion = versionOf(c.id);
+const points = c.points.filter((p) => (measured || p.source !== "benchmark") && (!p.when || p.when(them, us)));
+const strengths = c.strengths.flatMap((s) => typeof s === "string" ? [s] : measured && s.when(them, us) ? [s.text(them, us)] : []);
+const usVersion = versionOf(US), themVersion = measured ? versionOf(measured) : "";
 const late = c.id === "kaurivpn";
 const SOURCE: Record<string, string> = { benchmark: "Measured", config: "From its configuration", listing: "From its listing" };
 
@@ -34,7 +35,7 @@ const facts: Row[] = [
 const shownEqual = (a: number, b: number) => fmt.sec(a) === fmt.sec(b);
 const lower = (a: number | null, b: number | null) => a === null || b === null || a === b || shownEqual(a, b) ? null : a < b ? "us" : "them";
 const higher = (a: number | null, b: number | null) => a === null || b === null || a === b ? null : a > b ? "us" : "them";
-const measured: Row[] = [
+const measurements: Row[] = measured ? [
   { label: "VPN, Tor and proxy addresses blocked", us: `${us.caught} of ${us.bad}`, them: `${them.caught} of ${them.bad}`, better: higher(us.caught, them.caught) },
   { label: "Home and mobile players refused", us: `${us.refused} of ${us.good}`, them: `${them.refused} of ${them.good}`, better: lower(us.refused, them.refused) },
   { label: "VPNs over IPv6 blocked", us: `${us.ipv6} of ${us.ipv6N}`, them: `${them.ipv6} of ${them.ipv6N}`, better: higher(us.ipv6, them.ipv6) },
@@ -45,8 +46,10 @@ const measured: Row[] = [
     { label: "First join of a new player (p95)", us: fmt.sec(us.coldP95), them: fmt.sec(them.coldP95), better: lower(us.coldP95, them.coldP95) },
     { label: "Same player again (median)", us: fmt.sec(us.warmP50), them: fmt.sec(them.warmP50), better: lower(us.warmP50, them.warmP50) },
   ]),
-  { label: "Outages with VPN and Tor still refused", us: `${us.keptBlocking} of ${us.outages}`, them: `${them.keptBlocking} of ${them.outages}`, better: higher(us.keptBlocking, them.keptBlocking) },
-];
+  ...(them.outages && them.outages === us.outages ? [
+    { label: "Outages with VPN and Tor still refused", us: `${us.keptBlocking} of ${us.outages}`, them: `${them.keptBlocking} of ${them.outages}`, better: higher(us.keptBlocking, them.keptBlocking) },
+  ] : []),
+] : [];
 const title = c.title, description = c.description;
 const schema = [
   article({ title: `Connection Guard vs ${c.name}`, description, path, published: "2026-10-13", modified: "2026-10-13", image: "/og/home.png" }),
@@ -62,7 +65,7 @@ const cell = (r: Row, side: "us" | "them") => `px-4 py-3 align-top ${r.better ==
       <p class="lede mt-5 max-w-2xl text-pretty">{c.lede}</p>
       <div class="mt-8"><DownloadCta location={`compare_${c.slug}`} /></div>
       <p class="mt-6 max-w-2xl text-[0.8125rem] leading-relaxed text-fg-3">
-        Connection Guard {usVersion} against {c.name} {themVersion}, measured {dateLabel} on the same server with the same players, each as it ships and without API keys.
+        {measured ? `Connection Guard ${usVersion} against ${c.name} ${themVersion}, measured ${dateLabel} with the same benchmark setup, without API keys.` : "No comparable measurement in the latest published benchmark."}{" "}
         Facts about {c.name} from its own listing and configuration, checked {CHECKED}. Written by Connection Guard's author: <a href="/benchmark" class="text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-fg">check the benchmark</a>.
       </p>
     </div>
@@ -84,8 +87,8 @@ const cell = (r: Row, side: "us" | "them") => `px-4 py-3 align-top ${r.better ==
                 <td class="px-4 py-3 align-top text-fg-2">{r.them}</td>
               </tr>
             ))}
-            <tr class="border-b border-line"><th colspan="3" scope="colgroup" class="bg-subtle px-4 py-2 text-[0.75rem] font-medium text-fg-2 dark:bg-[#111]">Measured in the benchmark · {dateLabel}</th></tr>
-            {measured.map((r) => (
+            {measurements.length > 0 && <tr class="border-b border-line"><th colspan="3" scope="colgroup" class="bg-subtle px-4 py-2 text-[0.75rem] font-medium text-fg-2 dark:bg-[#111]">Measured in the benchmark · {dateLabel}</th></tr>}
+            {measurements.map((r) => (
               <tr class="border-b border-line last:border-0">
                 <th scope="row" class="px-4 py-3 align-top text-[0.875rem] font-medium text-fg">{r.label}</th>
                 <td class={`num ${cell(r, "us")}`}>{r.us}{r.better === "us" && <span class="sr-only"> (better)</span>}</td>

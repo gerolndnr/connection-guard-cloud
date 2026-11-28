@@ -16,6 +16,8 @@ import argparse
 import glob
 import json
 import os
+import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, '..', 'src', 'data', 'benchmark.json')
@@ -53,7 +55,7 @@ def product_meta(bench, product_id, candidate_label, current='connection-guard-c
     return dict(name=name, version=version.split('+')[0], us=False, after_join=late)
 
 
-def performance(folders):
+def performance(folders, complete_rounds=None):
     """Per product and phase, the median across rounds (r0, r1, r2...) of each value. `folders`: one folder, or several
     holding disjoint products (bench.latest's per-product selection)."""
     import statistics
@@ -61,11 +63,21 @@ def performance(folders):
     for folder in ([folders] if isinstance(folders, str) else folders):
         for path in sorted(glob.glob(os.path.join(folder, 'performance', '*-r[0-9]-*.json'))):
             d = json.load(open(path))
-            if d.get('platform', 'velocity') == 'velocity':
-                rounds.setdefault(d['product'], []).append(d)
+            if d.get('platform', 'velocity') != 'velocity':
+                continue
+            if complete_rounds is not None and (
+                d.get('profile') != 'enforce' or d.get('harness_error')
+                or any(not d.get(p) or d[p].get('template_misses') for p in PHASES)
+            ):
+                continue
+            rounds.setdefault(d['product'], []).append(d)
     med = lambda values: statistics.median(values) if values else None
     out = {}
     for product, ds in rounds.items():
+        if complete_rounds is not None and (
+            len(ds) != complete_rounds or {r.get('round') for r in ds} != set(range(complete_rounds))
+        ):
+            continue
         entry = dict(rounds=len(ds), start_s=round(med([d.get('start', {}).get('ready_s', 0) for d in ds]), 1),
                      errors=med([d['product_error_lines'] for d in ds if d.get('product_error_lines') is not None]))
         for phase in PHASES:
@@ -119,36 +131,83 @@ def failure(folders):
     return out
 
 
-def from_latest(args):
+def published_performance(run_ids, base, products, complete_rounds):
+    """Newest complete standard-profile results among the overview's performance runs."""
+    from bench import latest
+    results, sources, folders = {}, {}, []
+    for run in sorted(run_ids, key=int, reverse=True):
+        folder = os.path.join(base, run)
+        manifest = latest.load(os.path.join(folder, 'manifest.json'))
+        if not manifest or manifest['family'] != 'performance' or latest.keyed_run(manifest):
+            continue
+        if any(latest.pre_release(p) for p in manifest['products']):
+            continue
+        for product, result in performance(folder, complete_rounds).items():
+            if product in products and product not in results:
+                results[product], sources[product] = result, [run]
+                if folder not in folders:
+                    folders.append(folder)
+    missing = products - results.keys()
+    if missing:
+        raise ValueError('missing complete standard Velocity rounds: ' + ', '.join(sorted(missing)))
+    return results, sources, folders
+
+
+def from_latest(args, base):
     """Every product's newest complete result per family, as the mc-antivpn-bench README overview shows it."""
-    import sys
-    import tempfile
     sys.path.insert(0, os.path.join(args.bench, 'harness'))
     from bench import latest, overview
-    base = tempfile.mkdtemp()
-    chosen, providers, profile = latest.select(args.from_latest, base, 60)
+    if args.from_overview:
+        # Use the same selection as the published overview, without re-downloading the rolling nightly-run window.
+        with open(os.path.join(args.bench, 'docs', 'overview', 'latest.json')) as handle:
+            published = json.load(handle)
+        families = ('detection', 'performance', 'failure')
+        previous = {'runs': {family: published['runs'][family] for family in families}}
+        chosen, providers, profile = latest.select(args.from_overview, base, limit=0, previous=previous)
+        # A newer run in the index can use a nonstandard performance profile. Pick comparable rounds below.
+        del chosen['performance']
+    else:
+        chosen, providers, profile = latest.select(args.from_latest, base, 60)
     dirs = latest.merge(chosen, providers, profile, base)
     used = latest.sources(chosen, providers)
-    det = overview.detection(dirs['detection'])
+    det = overview.detection(dirs['detection'], profile=profile)
     keep = [p for p in overview.newest_only(sorted(det['products'], key=lambda p: overview.PRODUCT_ORDER.index(p)
                                                    if p in overview.PRODUCT_ORDER else 99))]
-    ids = keep + ([args.previous] if args.previous and args.previous not in keep else [])
+    if args.from_overview:
+        current = next((p for p in keep if overview.pin_of(p).get('project') == 'connectionguard'), None)
+        candidate_label = overview.pin_of(current).get('version') if current else None
+        if profile != 'enforce' or set(keep) != set(published['products']['detection']) or not candidate_label:
+            raise ValueError('published keyless detection results are incomplete')
+        # Previous Connection Guard versions are already kept in the run history.
+        ids = keep
+    else:
+        current, candidate_label = args.current, args.candidate_label
+        ids = keep + ([args.previous] if args.previous and args.previous not in keep else [])
     cohorts = [dict(id=cid, label=label, kind=kind, n=det['cohorts'][cid]['n'],
                     blocked={p: det['cohorts'][cid]['blocked'].get(p, 0) for p in keep})
                for cid, label, kind in COHORTS if cid in det['cohorts']]
-    perf = performance(dirs['performance'])
-    manifests = overview.manifests(sorted({d for v in dirs.values() for d in v}))
+    failures = failure(dirs['failure'])
+    if args.from_overview:
+        perf, used['performance'], dirs['performance'] = published_performance(
+            published['runs']['performance'], base, set(keep + ['none']), args.rounds)
+        current_failures = failures.get(current, {})
+        if any(not {'vpn', 'tor', 'residential'} <= current_failures.get(fault, {}).keys() for fault in FAULTS):
+            raise ValueError('published Connection Guard failure results are incomplete')
+        if not det['subjects'] or {c['kind'] for c in cohorts} != {'catch', 'spare'}:
+            raise ValueError('published detection results are missing graded cohorts')
+    else:
+        perf = performance(dirs['performance'])
+    dates = {family: overview.measured_dates(overview.manifests(dirs[family]))
+             for family in ('detection', 'performance', 'failure')}
+    manifests = overview.manifests(sorted({d for family in dates for d in dirs[family]}))
     newest = max((m.get('environment', {}).get('started', '') for m in manifests), default='')
     run_of = lambda family, pid: (used.get(family, {}).get(pid) or [None])[0]
-    names = {p: product_meta(args.bench, p, args.candidate_label, args.current, args.previous) for p in ids}
+    names = {p: product_meta(args.bench, p, candidate_label, current, args.previous) for p in ids}
     label = lambda p: f"{names[p]['name']} {names[p]['version']}"
-    others = lambda family: sorted({r for p, rs in used.get(family, {}).items() if p in keep and p != args.current for r in rs})
-    notes = {
-        'detection': (f"run {run_of('detection', args.current)} for {label(args.current)} and runs {', '.join(others('detection'))} "
-                      f"for the other plugins, keyless"),
-        'performance': f"run {run_of('performance', args.current)} for {label(args.current)} and run {', '.join(others('performance'))} for the others",
-        'failure': f"run {run_of('failure', args.current)} for {label(args.current)} and runs {', '.join(others('failure'))} for the others",
-    }
+    notes = {}
+    for family, measured in dates.items():
+        run_ids = sorted({r for p, rs in used.get(family, {}).items() if p in keep or p == 'none' for r in rs})
+        notes[family] = f"{label(current)}, {measured} (runs {', '.join(run_ids)})"
     # --note section=text replaces a generated note (e.g. when a column comes from an earlier build of the same code).
     notes.update(dict(n.split('=', 1) for n in args.note))
     unnormalized = sorted(p for p in det.get('unnormalized', set()) if p in keep and p != args.current)
@@ -159,13 +218,13 @@ def from_latest(args):
         platform='velocity',
         rounds=args.rounds,
         host=next((m['environment'].get('host') for m in manifests if m.get('environment', {}).get('host')), None),
-        runs=dict(performance=run_of('performance', args.current), detection=run_of('detection', args.current),
-                  failure=run_of('failure', args.current)),
+        runs={family: run_of(family, current) for family in dates},
+        dates=dates,
         products=names,
         performance={p: v for p, v in perf.items() if p in ids or p == 'none'},
         detection=dict(subjects=det['subjects'], products=keep, cohorts=cohorts, profile=profile,
                        unnormalized=unnormalized),
-        failure={p: v for p, v in failure(dirs['failure']).items() if p in ids},
+        failure={p: v for p, v in failures.items() if p in ids},
         notes=notes,
     )
     return data
@@ -178,7 +237,9 @@ def main():
     ap.add_argument('--candidate-label', default='0.6 build')
     ap.add_argument('--performance')
     ap.add_argument('--detection')
-    ap.add_argument('--from-latest', metavar='REPO', help='take every product from its newest complete run (bench.latest)')
+    selection = ap.add_mutually_exclusive_group()
+    selection.add_argument('--from-latest', metavar='REPO', help='take every product from its newest complete run (bench.latest)')
+    selection.add_argument('--from-overview', metavar='REPO', help='use the run IDs from the benchmark’s published overview')
     ap.add_argument('--current', default='connection-guard-candidate', help='product id shown as the current Connection Guard')
     ap.add_argument('--previous', default='connection-guard', help='product id shown as the previous release (reference only)')
     ap.add_argument('--failure', action='append', default=[])
@@ -186,8 +247,9 @@ def main():
     ap.add_argument('--rounds', type=int, default=1)
     ap.add_argument('--note', action='append', default=[], help='section=text, e.g. "failure=Connection Guard 0.6.0, 7 Oct 2026"')
     args = ap.parse_args()
-    if args.from_latest:
-        data = from_latest(args)
+    if args.from_latest or args.from_overview:
+        with tempfile.TemporaryDirectory() as base:
+            data = from_latest(args, base)
         with open(OUT, 'w') as handle:
             json.dump(data, handle, indent=2)
             handle.write('\n')

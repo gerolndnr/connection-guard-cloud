@@ -6,10 +6,10 @@ Status 2026-10-04: the operator lives in Germany. Drafts are written and in the 
 | --- | --- | --- |
 | Impressum (§ 5 DDG, § 18 Abs. 2 MStV) | `apps/site/src/pages/impressum.astro`, English `legal-notice.astro` | Live; operator details in `apps/site/src/data/operator.ts` (the production build fails if they are missing) |
 | Datenschutzerklärung | `apps/site/src/pages/datenschutz.astro` (binding), English `privacy.astro` | Live |
-| Data processing agreement (AVV, Art. 28) | `apps/site/src/pages/avv.astro` (binding), English `dpa.astro` | Written, version 2026-10-04; accepted with the terms when linking a server |
-| Terms of service | `apps/site/src/pages/nutzungsbedingungen.astro` (binding), English `terms.astro` | Written, version 2026-10-04; accepted when linking, referenced at sign-in |
+| Data processing agreement (AVV, Art. 28) | `apps/site/src/pages/avv.astro` (binding), English `dpa.astro` | Version 2026-11-28; accepted when linking or by an authorised network owner or admin in the dashboard |
+| Terms of service | `apps/site/src/pages/nutzungsbedingungen.astro` (binding), English `terms.astro` | Shares the AVV version marker; accepted when linking, referenced at sign-in |
 
-All legal pages are linked from every website page and from the dashboard footer. Keep `LEGAL_UPDATED` in `operator.ts` current when changing them. Terms and AVV share one version: `LEGAL_VERSION` in `operator.ts` must equal `DPA_VERSION` in `apps/api/wrangler.jsonc` (the site build fails otherwise). Raising it makes the next person who links a server accept again; announce sub-processor changes 30 days ahead (AVV section 6). Update the privacy policy when adding a processor, cookie or tracking (for example Turnstile, which is not active yet).
+All legal pages are linked from every website page and from the dashboard footer. Keep `LEGAL_UPDATED` in `operator.ts` current when changing them. Terms and AVV share one version: `LEGAL_VERSION` in `operator.ts` must equal `DPA_VERSION` in `apps/api/wrangler.jsonc` (the site build fails otherwise). Publish and verify the website before deploying an API with a new `DPA_VERSION`. The banner shows the current version until it is accepted for that network. Names received without a covering version are discarded before storage; older decisions stay available. Announce sub-processor changes 30 days ahead (AVV section 6). Update the privacy policy when adding a processor, cookie or tracking.
 
 ## Original checklist
 
@@ -20,7 +20,7 @@ All legal pages are linked from every website page and from the dashboard footer
    - PostHog (EU cloud) as sub-processor for product analytics: website cookieless (daily hash, no profile), dashboard usage linked to the random account ID with masked session replay and opt-out, server lifecycle events without player data; legal basis to be reviewed (legitimate interest), DPA with PostHog to be signed; see `docs/ANALYTICS.md`
    - retention (30 days, 13 months, 30 days for unlinked installs)
    - data subject rights and contact (`privacy@connectionguard.net`)
-2. **Data processing agreement (DPA / AVV)** accepted when linking. Its version string is `DPA_VERSION` in `apps/api/wrangler.jsonc`. Changing it asks the next linker to accept again.
+2. **Data processing agreement (DPA / AVV)** accepted when linking or through the network banner. Its version string is `DPA_VERSION` in `apps/api/wrangler.jsonc`.
 3. **Legal notice (Impressum)**, if required for the owner's residence.
 4. **Terms of service** for the free dashboard: no warranty, fair use, account deletion.
 

@@ -17,6 +17,8 @@ import { InsightsPage } from "./routes/InsightsPage.tsx";
 import { NetworkPage } from "./routes/NetworkPage.tsx";
 import { AccountPage } from "./routes/AccountPage.tsx";
 import { InvitePage } from "./routes/InvitePage.tsx";
+import { PlayersPage } from "./routes/PlayersPage.tsx";
+import { parseUuid } from "./intel.ts";
 import { useConfig, useMe } from "./components/Shell.tsx";
 import { identifyUser, setNetworkGroup, startAnalytics } from "./analytics.ts";
 
@@ -73,6 +75,12 @@ const registerSearch = (s: Record<string, unknown>): { server?: string; q?: stri
   ...(typeof s.q === "string" && s.q.length <= 100 ? { q: s.q } : {}),
 });
 const register = createRoute({ getParentRoute: () => root, path: "/n/$networkId/register", component: RegisterPage, validateSearch: registerSearch });
+// ?uuid= opens a player's report, e.g. from a decision.
+const playersSearch = (s: Record<string, unknown>): { server?: string; uuid?: string } => {
+  const uuid = typeof s.uuid === "string" ? parseUuid(s.uuid) : null;
+  return { ...serverSearch(s), ...(uuid ? { uuid } : {}) };
+};
+const players = createRoute({ getParentRoute: () => root, path: "/n/$networkId/players", component: PlayersPage, validateSearch: playersSearch });
 const insights = createRoute({ getParentRoute: () => root, path: "/n/$networkId/insights", component: InsightsPage, validateSearch: serverSearch });
 
 const settings = createRoute({ getParentRoute: () => root, path: "/n/$networkId/settings", component: SettingsPage, validateSearch: serverSearch });
@@ -89,7 +97,7 @@ const network = createRoute({ getParentRoute: () => root, path: "/n/$networkId/n
 const account = createRoute({ getParentRoute: () => root, path: "/account", component: AccountPage });
 const invite = createRoute({ getParentRoute: () => root, path: "/invite/$token", component: InvitePage });
 
-const router = createRouter({ routeTree: root.addChildren([home, link, overview, register, insights, settings, setup, network, account, invite]), defaultPreload: "intent" });
+const router = createRouter({ routeTree: root.addChildren([home, link, overview, register, players, insights, settings, setup, network, account, invite]), defaultPreload: "intent" });
 
 declare module "@tanstack/react-router" {
   interface Register { router: typeof router }
